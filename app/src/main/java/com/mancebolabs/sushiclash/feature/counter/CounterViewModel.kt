@@ -11,10 +11,12 @@ import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import com.mancebolabs.sushiclash.domain.repository.HistoryRepository
+import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -56,6 +58,7 @@ data class CounterUiState(
 class CounterViewModel(
     private val gameRepository: GameRepository,
     private val historyRepository: HistoryRepository,
+    private val onboardingRepository: OnboardingRepository,
 ) : ViewModel() {
 
     private val startupState = MutableStateFlow<AppStartupState>(AppStartupState.Loading)
@@ -65,14 +68,22 @@ class CounterViewModel(
     private val showSetupDialog = MutableStateFlow(false)
 
     init {
-        // Resolve startup state once from persistence to prevent setup-popup flicker on launch.
+        // Resolve startup only after onboarding preference and game state are known.
+        // First-launch onboarding is shown by the app shell; this VM stays in Loading until it completes.
         viewModelScope.launch {
-            val loadedState = gameRepository.gameState.first()
-            startupState.value = if (loadedState.hasActiveGame) {
-                AppStartupState.ActiveGame
-            } else {
-                AppStartupState.NoActiveGame
+            if (!onboardingRepository.hasCompletedOnboarding.first()) {
+                onboardingRepository.hasCompletedOnboarding.filter { completed -> completed }.first()
             }
+            resolveStartupStateFromPersistence()
+        }
+    }
+
+    private suspend fun resolveStartupStateFromPersistence() {
+        val loadedState = gameRepository.gameState.first()
+        startupState.value = if (loadedState.hasActiveGame) {
+            AppStartupState.ActiveGame
+        } else {
+            AppStartupState.NoActiveGame
         }
     }
 
@@ -244,11 +255,16 @@ class CounterViewModel(
         fun factory(
             gameRepository: GameRepository,
             historyRepository: HistoryRepository,
+            onboardingRepository: OnboardingRepository,
         ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return CounterViewModel(gameRepository, historyRepository) as T
+                    return CounterViewModel(
+                        gameRepository,
+                        historyRepository,
+                        onboardingRepository,
+                    ) as T
                 }
             }
         }

@@ -83,6 +83,16 @@ class AppPreferencesDataStore(
         decodeGroupHistory(preferences[GROUP_HISTORY_KEY])
     }
 
+    val hasCompletedOnboarding: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[HAS_COMPLETED_ONBOARDING_KEY] ?: false
+    }
+
+    suspend fun setOnboardingCompleted() {
+        context.dataStore.edit { preferences ->
+            preferences[HAS_COMPLETED_ONBOARDING_KEY] = true
+        }
+    }
+
     suspend fun setThemeMode(themeMode: AppThemeMode) {
         context.dataStore.edit { preferences ->
             preferences[THEME_MODE_KEY] = themeMode.name
@@ -229,6 +239,7 @@ class AppPreferencesDataStore(
         private val RANDOM_ROULETTE_FIXED_THRESHOLD_KEY = intPreferencesKey("random_roulette_fixed_threshold")
         private val SOLO_HISTORY_KEY = stringPreferencesKey("solo_history")
         private val GROUP_HISTORY_KEY = stringPreferencesKey("group_history")
+        private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         const val SOLO_PLAYER_ID = "solo_player"
         const val MAX_GROUP_PLAYERS = GameSetupRules.MAX_GROUP_PLAYERS
         const val MIN_GROUP_PLAYERS = GameSetupRules.MIN_GROUP_PLAYERS

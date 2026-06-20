@@ -9,6 +9,7 @@ import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
 import com.mancebolabs.sushiclash.feature.counter.RouletteTriggerEvent
 import com.mancebolabs.sushiclash.testutil.FakeGameRepository
 import com.mancebolabs.sushiclash.testutil.FakeHistoryRepository
+import com.mancebolabs.sushiclash.testutil.FakeOnboardingRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
 import com.mancebolabs.sushiclash.testutil.TestGameStates
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -62,7 +63,7 @@ class CounterViewModelTest {
     @Test
     fun givenSetupConfirmed_whenStartingSoloGame_thenActivatesGameAndHidesSetup() = runTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onSetupConfirmed(
@@ -79,7 +80,7 @@ class CounterViewModelTest {
     @Test
     fun givenActiveSoloGame_whenSushiTapped_thenCounterIncrements() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 2))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -91,7 +92,7 @@ class CounterViewModelTest {
     @Test
     fun givenNoActiveGame_whenSushiTapped_thenCounterDoesNotIncrement() = runTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -107,7 +108,7 @@ class CounterViewModelTest {
             Player(id = "p2", name = "Luis", sushiCount = 2),
         )
         val gameRepository = FakeGameRepository(TestGameStates.groupActive(players))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onPlayerResetRequested("p1")
@@ -124,7 +125,7 @@ class CounterViewModelTest {
     @Test
     fun givenActiveGame_whenFinishRequested_thenClearsActiveGameAndShowsSaveDialog() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -141,7 +142,7 @@ class CounterViewModelTest {
     fun givenPendingFinishedGame_whenSaving_thenPersistsHistoryAndClosesDialog() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
         val historyRepository = FakeHistoryRepository()
-        val viewModel = CounterViewModel(gameRepository, historyRepository)
+        val viewModel = CounterViewModel(gameRepository, historyRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -158,7 +159,7 @@ class CounterViewModelTest {
     fun givenPendingFinishedGame_whenNotSaving_thenDoesNotPersistHistory() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
         val historyRepository = FakeHistoryRepository()
-        val viewModel = CounterViewModel(gameRepository, historyRepository)
+        val viewModel = CounterViewModel(gameRepository, historyRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -173,7 +174,7 @@ class CounterViewModelTest {
     @Test
     fun givenPendingFinishedGame_whenCancelled_thenDoesNotRestoreActiveGame() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -195,7 +196,7 @@ class CounterViewModelTest {
                 fixedThreshold = 5,
             ),
         )
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -208,6 +209,7 @@ class CounterViewModelTest {
         return CounterViewModel(
             FakeGameRepository(initialState),
             FakeHistoryRepository(),
+            FakeOnboardingRepository(completed = true),
         )
     }
 }

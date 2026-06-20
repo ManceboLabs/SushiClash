@@ -9,13 +9,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,16 +29,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.di.AppContainer
+import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
 import com.mancebolabs.sushiclash.feature.counter.CounterScreen
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
 import com.mancebolabs.sushiclash.feature.history.HistoryScreen
 import com.mancebolabs.sushiclash.feature.history.HistoryViewModel
+import com.mancebolabs.sushiclash.feature.onboarding.OnboardingScreen
+import com.mancebolabs.sushiclash.feature.onboarding.defaultOnboardingSteps
 import com.mancebolabs.sushiclash.feature.settings.SettingsScreen
 import com.mancebolabs.sushiclash.feature.settings.SettingsViewModel
 import com.mancebolabs.sushiclash.feature.wheel.WheelScreen
@@ -44,6 +52,8 @@ import com.mancebolabs.sushiclash.ui.components.ItamaeFloatingNavBar
 import com.mancebolabs.sushiclash.ui.components.ItamaeNavItem
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushiclash.ui.theme.LocalFloatingNavBarHeight
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 sealed class SushiDestination(
     val route: String,
@@ -55,18 +65,79 @@ sealed class SushiDestination(
     data object History : SushiDestination("history")
 
     data object Settings : SushiDestination("settings")
+
+    data object Onboarding : SushiDestination("onboarding/{source}") {
+        const val SOURCE_ARG = "source"
+
+        fun route(source: OnboardingSource): String = "onboarding/${source.name}"
+    }
 }
+
+private val mainTabRoutes = setOf(
+    SushiDestination.Counter.route,
+    SushiDestination.Wheel.route,
+    SushiDestination.History.route,
+    SushiDestination.Settings.route,
+)
 
 @Composable
 fun SushiCounterApp(
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val onboardingRepository = remember { AppContainer.onboardingRepository(context) }
+    var hasCompletedOnboarding by remember { mutableStateOf<Boolean?>(null) }
+
+    LaunchedEffect(onboardingRepository) {
+        onboardingRepository.hasCompletedOnboarding.collect { completed ->
+            hasCompletedOnboarding = completed
+        }
+    }
+
+    when (hasCompletedOnboarding) {
+        null -> {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        else -> {
+            val startDestination = if (hasCompletedOnboarding == false) {
+                SushiDestination.Onboarding.route(OnboardingSource.FIRST_LAUNCH)
+            } else {
+                SushiDestination.Counter.route
+            }
+            key(hasCompletedOnboarding) {
+                SushiCounterNavHost(
+                    modifier = modifier,
+                    startDestination = startDestination,
+                    onboardingRepository = onboardingRepository,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SushiCounterNavHost(
+    startDestination: String,
+    onboardingRepository: OnboardingRepository,
+    modifier: Modifier = Modifier,
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: SushiDestination.Counter.route
+    val currentRoute = navBackStackEntry?.destination?.route
     val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
     var floatingNavBarHeight by remember { mutableStateOf(ItamaeSpacing.floatingNavBarDefaultHeight) }
     val rouletteNavState = remember { RandomRouletteNavState() }
+
+    // Onboarding is a dedicated route; bottom navigation is limited to the four main tabs.
+    val showBottomNavigation = currentRoute in mainTabRoutes
 
     val navItems = listOf(
         ItamaeNavItem(
@@ -99,15 +170,46 @@ fun SushiCounterApp(
         CompositionLocalProvider(LocalFloatingNavBarHeight provides floatingNavBarHeight) {
             NavHost(
                 navController = navController,
-                startDestination = SushiDestination.Counter.route,
+                startDestination = startDestination,
                 modifier = Modifier.fillMaxSize(),
             ) {
+                composable(
+                    route = SushiDestination.Onboarding.route,
+                    arguments = listOf(
+                        navArgument(SushiDestination.Onboarding.SOURCE_ARG) {
+                            type = NavType.StringType
+                        },
+                    ),
+                ) { backStackEntry ->
+                    val sourceName = backStackEntry.arguments?.getString(SushiDestination.Onboarding.SOURCE_ARG)
+                    val source = OnboardingSource.entries.firstOrNull { it.name == sourceName }
+                        ?: OnboardingSource.FIRST_LAUNCH
+
+                    OnboardingScreen(
+                        steps = defaultOnboardingSteps(),
+                        onSkip = {
+                            navController.exitOnboarding(
+                                source = source,
+                                onboardingRepository = onboardingRepository,
+                                scope = scope,
+                            )
+                        },
+                        onFinish = {
+                            navController.exitOnboarding(
+                                source = source,
+                                onboardingRepository = onboardingRepository,
+                                scope = scope,
+                            )
+                        },
+                    )
+                }
                 composable(SushiDestination.Counter.route) {
                     val context = LocalContext.current
                     val viewModel: CounterViewModel = viewModel(
                         factory = CounterViewModel.factory(
                             AppContainer.gameRepository(context),
                             AppContainer.historyRepository(context),
+                            AppContainer.onboardingRepository(context),
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -196,30 +298,55 @@ fun SushiCounterApp(
                         onClearHistoryRequested = viewModel::onClearHistoryRequested,
                         onClearHistoryConfirmed = viewModel::onClearHistoryConfirmed,
                         onClearHistoryDismissed = viewModel::onClearHistoryDismissed,
+                        onViewTutorialRequested = {
+                            navController.navigate(
+                                SushiDestination.Onboarding.route(OnboardingSource.SETTINGS),
+                            )
+                        },
                     )
                 }
             }
         }
 
-        ItamaeFloatingNavBar(
-            items = navItems,
-            selectedRoute = currentRoute,
-            onItemSelected = { route ->
-                navController.navigate(route) {
-                    popUpTo(navController.graph.findStartDestination().id) {
-                        saveState = true
+        if (showBottomNavigation) {
+            ItamaeFloatingNavBar(
+                items = navItems,
+                selectedRoute = currentRoute ?: SushiDestination.Counter.route,
+                onItemSelected = { route ->
+                    navController.navigate(route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
                     }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = ItamaeSpacing.navBottomMargin)
-                .onSizeChanged { size ->
-                    floatingNavBarHeight = with(density) { size.height.toDp() }
                 },
-        )
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = ItamaeSpacing.navBottomMargin)
+                    .onSizeChanged { size ->
+                        floatingNavBarHeight = with(density) { size.height.toDp() }
+                    },
+            )
+        }
+    }
+}
+
+private fun androidx.navigation.NavHostController.exitOnboarding(
+    source: OnboardingSource,
+    onboardingRepository: OnboardingRepository,
+    scope: CoroutineScope,
+) {
+    when (source) {
+        OnboardingSource.FIRST_LAUNCH -> {
+            // App shell rebuilds with Counter as start once onboarding is persisted.
+            scope.launch {
+                onboardingRepository.setOnboardingCompleted()
+            }
+        }
+        OnboardingSource.SETTINGS -> {
+            popBackStack()
+        }
     }
 }

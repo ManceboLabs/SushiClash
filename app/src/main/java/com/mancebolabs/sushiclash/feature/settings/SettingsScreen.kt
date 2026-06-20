@@ -50,6 +50,7 @@ fun SettingsScreen(
     onClearHistoryRequested: () -> Unit,
     onClearHistoryConfirmed: () -> Unit,
     onClearHistoryDismissed: () -> Unit,
+    onViewTutorialRequested: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -101,6 +102,22 @@ fun SettingsScreen(
                 selected = uiState.themeMode == AppThemeMode.DARK,
                 icon = Icons.Outlined.DarkMode,
                 onClick = { onThemeModeSelected(AppThemeMode.DARK) },
+            )
+        }
+
+        ItamaeCard {
+            Text(
+                text = stringResource(R.string.settings_help_section),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            Spacer(modifier = Modifier.height(ItamaeSpacing.md))
+
+            ItamaeGhostButton(
+                text = stringResource(R.string.settings_view_tutorial),
+                onClick = onViewTutorialRequested,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
 
@@ -196,6 +213,7 @@ private fun SettingsLightPreview() {
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
+            onViewTutorialRequested = {},
         )
     }
 }
@@ -210,6 +228,7 @@ private fun SettingsDarkPreview() {
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
+            onViewTutorialRequested = {},
         )
     }
 }
@@ -240,6 +259,7 @@ private fun SettingsClearHistoryDialogPreview() {
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
+            onViewTutorialRequested = {},
         )
     }
 }

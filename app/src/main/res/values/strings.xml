@@ -17,10 +17,30 @@
     <string name="settings_clear_history_confirm">Borrar</string>
     <string name="settings_theme_light">Modo claro</string>
     <string name="settings_theme_dark">Modo oscuro</string>
+    <string name="settings_help_section">Ayuda</string>
+    <string name="settings_view_tutorial">Ver tutorial</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Saltar</string>
+    <string name="onboarding_previous">Anterior</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_finish">Empezar</string>
+    <string name="onboarding_step_welcome_title">Bienvenido a Sushi Clash</string>
+    <string name="onboarding_step_welcome_description">Cuenta sushi en solitario o compite con tus amigos en la mesa.</string>
+    <string name="onboarding_step_solo_title">Modo Solo</string>
+    <string name="onboarding_step_solo_description">Toca el sushi para contar cada pieza que comes.</string>
+    <string name="onboarding_step_group_title">Modo Grupo</string>
+    <string name="onboarding_step_group_description">Añade hasta 6 jugadores y coloca el móvil en el centro para que todos puedan pulsar.</string>
+    <string name="onboarding_step_random_roulette_title">Ruleta aleatoria</string>
+    <string name="onboarding_step_random_roulette_description">Se activará automáticamente la ruleta al alcanzar ciertos puntos. Esta cantidad podrá ser elegida o aleatoria.</string>
+    <string name="onboarding_step_history_title">Histórico</string>
+    <string name="onboarding_step_history_description">Guarda tus partidas y consulta tus mejores resultados.</string>
+    <string name="onboarding_step_roulette_title">Ruleta de decisión</string>
+    <string name="onboarding_step_roulette_description">Activa la ruleta para ver quien elige el sushi.</string>
 
     <!-- Counter screen -->
     <string name="counter_screen_title">@string/app_name</string>
-    <string name="counter_sushi_eaten">Sushis Humillados</string>
+    <string name="counter_sushi_eaten">Sushi Devorados</string>
     <string name="counter_reset">Reiniciar</string>
     <string name="counter_reset_title">¿Reiniciar contador?</string>
     <string name="counter_player_reset_message">¿Quieres reiniciar el contador de sushi de %1$s?</string>

@@ -19,6 +19,7 @@ Unit tests live under `app/src/test/java/com/mancebolabs/sushiclash/`:
 - `history/` — ranking logic and history ViewModel
 - `roulette/` — random trigger logic and auto-spin navigation state
 - `settings/` — theme persistence and settings actions
+- `onboarding/` — first-launch onboarding startup integration
 - `wheel/` — wheel ViewModel and auto-spin rules
 - `testutil/` — fakes, dispatcher rule, shared fixtures
 
@@ -30,9 +31,11 @@ Roulette target generation and wheel spin selection use `RandomProvider`. Tests 
 
 The counter screen uses three startup states:
 
-1. **Loading** — persisted state not yet read (prevents UI flicker)
+1. **Loading** — persisted state not yet read (prevents UI flicker). Also used while first-launch onboarding is shown by the app shell.
 2. **NoActiveGame** — no active match; setup opens only after "Empezar partida"
 3. **ActiveGame** — counters and gameplay controls are shown
+
+First-launch onboarding is handled as a dedicated `onboarding/FIRST_LAUNCH` navigation route before tabs render. Manual replay from Settings navigates to `onboarding/SETTINGS` and returns with `popBackStack()`. The bottom navigation bar is hidden on all onboarding routes.
 
 Finishing a game clears persisted active state immediately. A `FinishedGameSnapshot` is kept in memory only until the user saves or discards it.
 
