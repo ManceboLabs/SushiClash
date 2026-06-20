@@ -2,7 +2,12 @@ package com.mancebolabs.sushicounter.data.repository
 
 import com.mancebolabs.sushicounter.data.datastore.AppPreferencesDataStore
 import com.mancebolabs.sushicounter.domain.model.GameMode
+import com.mancebolabs.sushicounter.domain.model.GameSetupConfig
+import com.mancebolabs.sushicounter.domain.model.GameState
+import com.mancebolabs.sushicounter.domain.model.IncrementResult
 import com.mancebolabs.sushicounter.domain.model.Player
+import com.mancebolabs.sushicounter.domain.model.RandomRouletteLogic
+import com.mancebolabs.sushicounter.domain.model.RandomRouletteTriggerType
 import com.mancebolabs.sushicounter.domain.repository.GameRepository
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
@@ -12,50 +17,93 @@ class GameRepositoryImpl(
     private val dataStore: AppPreferencesDataStore,
 ) : GameRepository {
 
-    override val gameState: Flow<com.mancebolabs.sushicounter.domain.model.GameState> = dataStore.gameState
+    override val gameState: Flow<GameState> = dataStore.gameState
 
-    override suspend fun completeSetup(
-        gameMode: GameMode,
-        playerNames: List<String>,
-    ) {
-        val players = when (gameMode) {
+    override suspend fun completeSetup(config: GameSetupConfig) {
+        val fixedThreshold = config.randomRouletteFixedThreshold.coerceIn(
+            GameState.MIN_RANDOM_ROULETTE_THRESHOLD,
+            GameState.MAX_RANDOM_ROULETTE_THRESHOLD,
+        )
+        val players = when (config.gameMode) {
             GameMode.SOLO -> listOf(
-                Player(
+                createPlayer(
                     id = AppPreferencesDataStore.SOLO_PLAYER_ID,
                     name = "",
-                    sushiCount = 0,
+                    config = config,
                 ),
             )
-            GameMode.GROUP -> playerNames.map { name ->
-                Player(
+            GameMode.GROUP -> config.playerNames.map { name ->
+                createPlayer(
                     id = UUID.randomUUID().toString(),
                     name = name.trim(),
-                    sushiCount = 0,
+                    config = config,
                 )
             }
         }
 
         dataStore.saveGameState(
             hasCompletedSetup = true,
-            gameMode = gameMode,
+            gameMode = config.gameMode,
             players = players,
+            randomRouletteEnabled = config.randomRouletteEnabled,
+            randomRouletteTriggerType = config.randomRouletteTriggerType,
+            randomRouletteFixedThreshold = fixedThreshold,
         )
 
-        if (gameMode == GameMode.GROUP) {
+        dataStore.setParticipants(emptyList())
+        if (config.gameMode == GameMode.GROUP) {
             dataStore.setParticipants(players.map { it.name })
         }
     }
 
-    override suspend fun incrementPlayerCount(playerId: String) {
+    override suspend fun incrementPlayerCount(playerId: String): IncrementResult {
         val currentState = dataStore.gameState.first()
+        var newCount = 0
+        var shouldTrigger = false
+
         val updatedPlayers = currentState.players.map { player ->
-            if (player.id == playerId) {
-                player.copy(sushiCount = player.sushiCount + 1)
-            } else {
-                player
+            if (player.id != playerId) {
+                return@map player
             }
+
+            newCount = player.sushiCount + 1
+            var updatedPlayer = player.copy(sushiCount = newCount)
+
+            if (currentState.randomRouletteEnabled) {
+                when (currentState.randomRouletteTriggerType) {
+                    RandomRouletteTriggerType.FIXED -> {
+                        val threshold = currentState.randomRouletteFixedThreshold.coerceIn(
+                            GameState.MIN_RANDOM_ROULETTE_THRESHOLD,
+                            GameState.MAX_RANDOM_ROULETTE_THRESHOLD,
+                        )
+                        shouldTrigger = RandomRouletteLogic.shouldTriggerFixed(newCount, threshold)
+                    }
+                    RandomRouletteTriggerType.RANDOM -> {
+                        val target = player.nextRandomRouletteTarget
+                            ?: RandomRouletteLogic.generateInitialTarget()
+                        shouldTrigger = RandomRouletteLogic.shouldTriggerRandom(newCount, target)
+                        updatedPlayer = if (shouldTrigger) {
+                            updatedPlayer.copy(
+                                lastRandomRouletteTrigger = newCount,
+                                nextRandomRouletteTarget = RandomRouletteLogic.generateNextTargetAfterTrigger(
+                                    lastTrigger = newCount,
+                                ),
+                            )
+                        } else {
+                            updatedPlayer.copy(nextRandomRouletteTarget = target)
+                        }
+                    }
+                }
+            }
+
+            updatedPlayer
         }
+
         dataStore.setPlayers(updatedPlayers)
+        return IncrementResult(
+            newCount = newCount,
+            shouldTriggerRoulette = shouldTrigger,
+        )
     }
 
     override suspend fun resetSoloCount() {
@@ -63,7 +111,10 @@ class GameRepositoryImpl(
         if (currentState.gameMode != GameMode.SOLO) return
 
         val updatedPlayers = currentState.players.map { player ->
-            player.copy(sushiCount = 0)
+            resetRandomRoulettePlayer(
+                player = player.copy(sushiCount = 0),
+                state = currentState,
+            )
         }
         dataStore.setPlayers(updatedPlayers)
     }
@@ -74,11 +125,52 @@ class GameRepositoryImpl(
 
         val updatedPlayers = currentState.players.map { player ->
             if (player.id == playerId) {
-                player.copy(sushiCount = 0)
+                resetRandomRoulettePlayer(
+                    player = player.copy(sushiCount = 0),
+                    state = currentState,
+                )
             } else {
                 player
             }
         }
         dataStore.setPlayers(updatedPlayers)
+    }
+
+    private fun createPlayer(
+        id: String,
+        name: String,
+        config: GameSetupConfig,
+    ): Player {
+        val randomEnabled = config.randomRouletteEnabled &&
+            config.randomRouletteTriggerType == RandomRouletteTriggerType.RANDOM
+
+        return Player(
+            id = id,
+            name = name,
+            sushiCount = 0,
+            lastRandomRouletteTrigger = 0,
+            nextRandomRouletteTarget = if (randomEnabled) {
+                RandomRouletteLogic.generateInitialTarget()
+            } else {
+                null
+            },
+        )
+    }
+
+    private fun resetRandomRoulettePlayer(
+        player: Player,
+        state: GameState,
+    ): Player {
+        val randomEnabled = state.randomRouletteEnabled &&
+            state.randomRouletteTriggerType == RandomRouletteTriggerType.RANDOM
+
+        return player.copy(
+            lastRandomRouletteTrigger = 0,
+            nextRandomRouletteTarget = if (randomEnabled) {
+                RandomRouletteLogic.generateInitialTarget()
+            } else {
+                null
+            },
+        )
     }
 }

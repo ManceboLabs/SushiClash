@@ -33,6 +33,23 @@
     <string name="setup_start">Empezar</string>
     <string name="setup_player_name_hint">Introduce un nombre</string>
     <string name="setup_min_players_hint">Añade mínimo 2 jugadores para continuar</string>
+    <string name="setup_random_roulette_title">Modo ruleta aleatoria</string>
+    <string name="setup_random_roulette_description">Activa una ruleta automáticamente cada cierto número de sushi.</string>
+    <string name="setup_roulette_threshold_label">Activar ruleta cada</string>
+    <string name="setup_roulette_threshold_value">%1$d sushi</string>
+    <string name="setup_roulette_frequency_title">Frecuencia de ruleta</string>
+    <string name="setup_roulette_trigger_fixed">Número fijo</string>
+    <string name="setup_roulette_trigger_random">Número aleatorio</string>
+    <string name="setup_roulette_random_helper">La app elegirá aleatoriamente cuándo activar la ruleta entre 1 y 10 sushi.</string>
+    <string name="setup_decrease_threshold">Reducir umbral</string>
+    <string name="setup_increase_threshold">Aumentar umbral</string>
+
+    <!-- Random roulette -->
+    <string name="roulette_trigger_title">Ruleta activada</string>
+    <string name="roulette_trigger_solo_message">Has alcanzado %1$d sushi. Vamos a girar la ruleta.</string>
+    <string name="roulette_trigger_group_message">%1$s ha alcanzado %2$d sushi. Vamos a girar la ruleta.</string>
+    <string name="roulette_insufficient_participants_title">Faltan participantes</string>
+    <string name="roulette_insufficient_participants_message">Añade al menos 2 participantes para usar la ruleta.</string>
 
     <!-- Wheel screen -->
     <string name="wheel_screen_title">Sushi Roulette</string>

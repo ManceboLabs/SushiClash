@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.mancebolabs.sushicounter.R
+import com.mancebolabs.sushicounter.domain.model.GameSetupConfig
 import com.mancebolabs.sushicounter.domain.model.GameMode
 import com.mancebolabs.sushicounter.ui.components.ConfirmationDialog
 import com.mancebolabs.sushicounter.ui.components.ItamaeGhostButton
@@ -40,7 +41,9 @@ fun CounterScreen(
     onPlayerResetDismissed: () -> Unit,
     onResetSoloCountConfirmed: () -> Unit,
     onRestartRequested: () -> Unit,
-    onSetupConfirmed: (GameMode, List<String>) -> Unit,
+    onSetupConfirmed: (GameSetupConfig) -> Unit,
+    onRouletteTriggerAccepted: () -> Unit,
+    onRouletteTriggerDismissed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState.startupState) {
@@ -57,6 +60,8 @@ fun CounterScreen(
                 onPlayerResetDismissed = onPlayerResetDismissed,
                 onResetSoloCountConfirmed = onResetSoloCountConfirmed,
                 onRestartRequested = onRestartRequested,
+                onRouletteTriggerAccepted = onRouletteTriggerAccepted,
+                onRouletteTriggerDismissed = onRouletteTriggerDismissed,
                 modifier = modifier,
             )
             GameSetupDialog(onConfirm = onSetupConfirmed)
@@ -71,6 +76,8 @@ fun CounterScreen(
                 onPlayerResetDismissed = onPlayerResetDismissed,
                 onResetSoloCountConfirmed = onResetSoloCountConfirmed,
                 onRestartRequested = onRestartRequested,
+                onRouletteTriggerAccepted = onRouletteTriggerAccepted,
+                onRouletteTriggerDismissed = onRouletteTriggerDismissed,
                 modifier = modifier,
             )
         }
@@ -98,9 +105,34 @@ private fun CounterMainContent(
     onPlayerResetDismissed: () -> Unit,
     onResetSoloCountConfirmed: () -> Unit,
     onRestartRequested: () -> Unit,
+    onRouletteTriggerAccepted: () -> Unit,
+    onRouletteTriggerDismissed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showResetDialog by remember { mutableStateOf(false) }
+
+    uiState.rouletteTriggerEvent?.let { event ->
+        val message = when (event) {
+            is RouletteTriggerEvent.Solo -> {
+                stringResource(R.string.roulette_trigger_solo_message, event.count)
+            }
+            is RouletteTriggerEvent.Group -> {
+                stringResource(
+                    R.string.roulette_trigger_group_message,
+                    event.playerName,
+                    event.count,
+                )
+            }
+        }
+        ConfirmationDialog(
+            title = stringResource(R.string.roulette_trigger_title),
+            message = message,
+            confirmLabel = stringResource(R.string.wheel_ok),
+            dismissLabel = stringResource(R.string.counter_cancel),
+            onConfirm = onRouletteTriggerAccepted,
+            onDismiss = onRouletteTriggerDismissed,
+        )
+    }
 
     if (showResetDialog) {
         ConfirmationDialog(

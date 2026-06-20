@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushicounter.R
+import com.mancebolabs.sushicounter.ui.components.ConfirmationDialog
 import com.mancebolabs.sushicounter.ui.components.ItamaeCard
 import com.mancebolabs.sushicounter.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushicounter.ui.components.ItamaeScreenTitle
@@ -45,12 +46,24 @@ fun WheelScreen(
     onRemoveParticipant: (String) -> Unit,
     onSpin: () -> Unit,
     onWinnerDialogDismissed: () -> Unit,
+    onInsufficientParticipantsDismissed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     uiState.selectedWinner?.let { winner ->
         WinnerDialog(
             winnerName = winner,
             onDismiss = onWinnerDialogDismissed,
+        )
+    }
+
+    if (uiState.showInsufficientParticipantsWarning) {
+        ConfirmationDialog(
+            title = stringResource(R.string.roulette_insufficient_participants_title),
+            message = stringResource(R.string.roulette_insufficient_participants_message),
+            confirmLabel = stringResource(R.string.wheel_ok),
+            dismissLabel = stringResource(R.string.counter_cancel),
+            onConfirm = onInsufficientParticipantsDismissed,
+            onDismiss = onInsufficientParticipantsDismissed,
         )
     }
 

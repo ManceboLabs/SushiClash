@@ -10,4 +10,6 @@ interface ParticipantsRepository {
     suspend fun addParticipant(name: String)
 
     suspend fun removeParticipant(name: String)
+
+    suspend fun clearParticipants()
 }

@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.mancebolabs.sushicounter.domain.model.GameMode
+import com.mancebolabs.sushicounter.domain.model.GameSetupConfig
 import com.mancebolabs.sushicounter.domain.model.GameState
 import com.mancebolabs.sushicounter.domain.model.Player
+import com.mancebolabs.sushicounter.domain.model.IncrementResult
 import com.mancebolabs.sushicounter.domain.repository.GameRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,10 +22,22 @@ data class PlayerResetRequest(
     val playerName: String,
 )
 
+sealed interface RouletteTriggerEvent {
+    data class Solo(
+        val count: Int,
+    ) : RouletteTriggerEvent
+
+    data class Group(
+        val playerName: String,
+        val count: Int,
+    ) : RouletteTriggerEvent
+}
+
 data class CounterUiState(
     val gameState: GameState = GameState(),
     val startupState: AppStartupState = AppStartupState.Loading,
     val playerResetRequest: PlayerResetRequest? = null,
+    val rouletteTriggerEvent: RouletteTriggerEvent? = null,
 ) {
     val gameMode: GameMode?
         get() = gameState.gameMode
@@ -41,6 +55,7 @@ class CounterViewModel(
 
     private val startupState = MutableStateFlow<AppStartupState>(AppStartupState.Loading)
     private val playerResetRequest = MutableStateFlow<PlayerResetRequest?>(null)
+    private val rouletteTriggerEvent = MutableStateFlow<RouletteTriggerEvent?>(null)
 
     init {
         viewModelScope.launch {
@@ -57,11 +72,13 @@ class CounterViewModel(
         gameRepository.gameState,
         startupState,
         playerResetRequest,
-    ) { gameState, startup, resetRequest ->
+        rouletteTriggerEvent,
+    ) { gameState, startup, resetRequest, rouletteEvent ->
         CounterUiState(
             gameState = gameState,
             startupState = startup,
             playerResetRequest = resetRequest,
+            rouletteTriggerEvent = rouletteEvent,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -71,7 +88,13 @@ class CounterViewModel(
 
     fun onPlayerSushiTapped(playerId: String) {
         viewModelScope.launch {
-            gameRepository.incrementPlayerCount(playerId)
+            val state = gameRepository.gameState.first()
+            val result = gameRepository.incrementPlayerCount(playerId)
+            emitRouletteTriggerIfNeeded(
+                gameState = state,
+                playerId = playerId,
+                result = result,
+            )
         }
     }
 
@@ -97,8 +120,14 @@ class CounterViewModel(
 
     fun onSoloSushiTapped() {
         viewModelScope.launch {
-            val playerId = uiState.value.players.firstOrNull()?.id ?: return@launch
-            gameRepository.incrementPlayerCount(playerId)
+            val state = gameRepository.gameState.first()
+            val playerId = state.players.firstOrNull()?.id ?: return@launch
+            val result = gameRepository.incrementPlayerCount(playerId)
+            emitRouletteTriggerIfNeeded(
+                gameState = state,
+                playerId = playerId,
+                result = result,
+            )
         }
     }
 
@@ -112,16 +141,38 @@ class CounterViewModel(
         startupState.value = AppStartupState.SetupRequired
     }
 
-    fun onSetupConfirmed(
-        gameMode: GameMode,
-        playerNames: List<String>,
-    ) {
+    fun onSetupConfirmed(config: GameSetupConfig) {
         viewModelScope.launch {
-            gameRepository.completeSetup(
-                gameMode = gameMode,
-                playerNames = playerNames,
-            )
+            gameRepository.completeSetup(config)
             startupState.value = AppStartupState.Ready
+        }
+    }
+
+    fun onRouletteTriggerDismissed() {
+        rouletteTriggerEvent.value = null
+    }
+
+    fun onRouletteTriggerConfirmed() {
+        rouletteTriggerEvent.value = null
+    }
+
+    private fun emitRouletteTriggerIfNeeded(
+        gameState: GameState,
+        playerId: String,
+        result: IncrementResult,
+    ) {
+        if (!result.shouldTriggerRoulette) return
+
+        rouletteTriggerEvent.value = when (gameState.gameMode) {
+            GameMode.SOLO -> RouletteTriggerEvent.Solo(count = result.newCount)
+            GameMode.GROUP -> {
+                val playerName = gameState.players.find { it.id == playerId }?.name ?: return
+                RouletteTriggerEvent.Group(
+                    playerName = playerName,
+                    count = result.newCount,
+                )
+            }
+            null -> null
         }
     }
 

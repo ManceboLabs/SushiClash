@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +61,7 @@ fun SushiCounterApp(
     val currentRoute = navBackStackEntry?.destination?.route ?: SushiDestination.Counter.route
     val density = LocalDensity.current
     var floatingNavBarHeight by remember { mutableStateOf(ItamaeSpacing.floatingNavBarDefaultHeight) }
+    val rouletteNavState = remember { RandomRouletteNavState() }
 
     val navItems = listOf(
         ItamaeNavItem(
@@ -109,6 +111,18 @@ fun SushiCounterApp(
                         onResetSoloCountConfirmed = viewModel::onResetSoloCountConfirmed,
                         onRestartRequested = viewModel::onRestartRequested,
                         onSetupConfirmed = viewModel::onSetupConfirmed,
+                        onRouletteTriggerAccepted = {
+                            viewModel.onRouletteTriggerConfirmed()
+                            rouletteNavState.requestAutoSpin()
+                            navController.navigate(SushiDestination.Wheel.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onRouletteTriggerDismissed = viewModel::onRouletteTriggerDismissed,
                     )
                 }
                 composable(SushiDestination.Wheel.route) {
@@ -120,6 +134,13 @@ fun SushiCounterApp(
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+                    LaunchedEffect(rouletteNavState.pendingAutoSpin) {
+                        if (rouletteNavState.pendingAutoSpin) {
+                            rouletteNavState.consumeAutoSpin()
+                            viewModel.onAutoSpinRequested()
+                        }
+                    }
+
                     WheelScreen(
                         uiState = uiState,
                         onInputChanged = viewModel::onInputChanged,
@@ -127,6 +148,7 @@ fun SushiCounterApp(
                         onRemoveParticipant = viewModel::onRemoveParticipant,
                         onSpin = viewModel::onSpin,
                         onWinnerDialogDismissed = viewModel::onWinnerDialogDismissed,
+                        onInsufficientParticipantsDismissed = viewModel::onInsufficientParticipantsDismissed,
                     )
                 }
                 composable(SushiDestination.Settings.route) {

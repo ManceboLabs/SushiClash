@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -18,6 +19,7 @@ data class WheelUiState(
     val wheelRotation: Float = 0f,
     val isSpinning: Boolean = false,
     val selectedWinner: String? = null,
+    val showInsufficientParticipantsWarning: Boolean = false,
 ) {
     val canSpin: Boolean
         get() = participants.size >= 2 && !isSpinning
@@ -31,6 +33,7 @@ class WheelViewModel(
     private val wheelRotation = MutableStateFlow(0f)
     private val isSpinning = MutableStateFlow(false)
     private val selectedWinner = MutableStateFlow<String?>(null)
+    private val showInsufficientParticipantsWarning = MutableStateFlow(false)
 
     init {
         viewModelScope.launch {
@@ -39,19 +42,24 @@ class WheelViewModel(
     }
 
     val uiState: StateFlow<WheelUiState> = combine(
-        participantsRepository.participants,
-        inputName,
-        wheelRotation,
-        isSpinning,
-        selectedWinner,
-    ) { participants, name, rotation, spinning, winner ->
-        WheelUiState(
-            participants = participants,
-            inputName = name,
-            wheelRotation = rotation,
-            isSpinning = spinning,
-            selectedWinner = winner,
-        )
+        combine(
+            participantsRepository.participants,
+            inputName,
+            wheelRotation,
+            isSpinning,
+            selectedWinner,
+        ) { participants, name, rotation, spinning, winner ->
+            WheelUiState(
+                participants = participants,
+                inputName = name,
+                wheelRotation = rotation,
+                isSpinning = spinning,
+                selectedWinner = winner,
+            )
+        },
+        showInsufficientParticipantsWarning,
+    ) { state, insufficientParticipants ->
+        state.copy(showInsufficientParticipantsWarning = insufficientParticipants)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -106,6 +114,23 @@ class WheelViewModel(
 
     fun onWinnerDialogDismissed() {
         selectedWinner.value = null
+    }
+
+    fun onInsufficientParticipantsDismissed() {
+        showInsufficientParticipantsWarning.value = false
+    }
+
+    fun onAutoSpinRequested() {
+        viewModelScope.launch {
+            participantsRepository.ensureGroupParticipantsSeeded()
+            val participants = participantsRepository.participants.first()
+
+            if (participants.size >= 2) {
+                onSpin()
+            } else {
+                showInsufficientParticipantsWarning.value = true
+            }
+        }
     }
 
     companion object {

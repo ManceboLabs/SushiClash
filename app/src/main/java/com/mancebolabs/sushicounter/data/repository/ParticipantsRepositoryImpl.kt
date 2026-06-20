@@ -41,4 +41,8 @@ class ParticipantsRepositoryImpl(
         val currentParticipants = dataStore.participants.first()
         dataStore.setParticipants(currentParticipants.filterNot { it == name })
     }
+
+    override suspend fun clearParticipants() {
+        dataStore.setParticipants(emptyList())
+    }
 }
