@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.first
 
 class GameRepositoryImpl(
     private val dataStore: AppPreferencesDataStore,
+    private val randomRouletteLogic: RandomRouletteLogic = RandomRouletteLogic.Default,
 ) : GameRepository {
 
     override val gameState: Flow<GameState> = dataStore.gameState
@@ -27,6 +28,7 @@ class GameRepositoryImpl(
             return null
         }
 
+        // Snapshot is taken before clearing persistence so the user can still choose to save it.
         val snapshot = FinishedGameSnapshot(
             gameMode = currentState.gameMode,
             soloCount = if (currentState.gameMode == GameMode.SOLO) {
@@ -109,16 +111,16 @@ class GameRepositoryImpl(
                             GameState.MIN_RANDOM_ROULETTE_THRESHOLD,
                             GameState.MAX_RANDOM_ROULETTE_THRESHOLD,
                         )
-                        shouldTrigger = RandomRouletteLogic.shouldTriggerFixed(newCount, threshold)
+                        shouldTrigger = randomRouletteLogic.shouldTriggerFixed(newCount, threshold)
                     }
                     RandomRouletteTriggerType.RANDOM -> {
                         val target = player.nextRandomRouletteTarget
-                            ?: RandomRouletteLogic.generateInitialTarget()
-                        shouldTrigger = RandomRouletteLogic.shouldTriggerRandom(newCount, target)
+                            ?: randomRouletteLogic.generateInitialTarget()
+                        shouldTrigger = randomRouletteLogic.shouldTriggerRandom(newCount, target)
                         updatedPlayer = if (shouldTrigger) {
                             updatedPlayer.copy(
                                 lastRandomRouletteTrigger = newCount,
-                                nextRandomRouletteTarget = RandomRouletteLogic.generateNextTargetAfterTrigger(
+                                nextRandomRouletteTarget = randomRouletteLogic.generateNextTargetAfterTrigger(
                                     lastTrigger = newCount,
                                 ),
                             )
@@ -183,7 +185,7 @@ class GameRepositoryImpl(
             sushiCount = 0,
             lastRandomRouletteTrigger = 0,
             nextRandomRouletteTarget = if (randomEnabled) {
-                RandomRouletteLogic.generateInitialTarget()
+                randomRouletteLogic.generateInitialTarget()
             } else {
                 null
             },
@@ -200,7 +202,7 @@ class GameRepositoryImpl(
         return player.copy(
             lastRandomRouletteTrigger = 0,
             nextRandomRouletteTarget = if (randomEnabled) {
-                RandomRouletteLogic.generateInitialTarget()
+                randomRouletteLogic.generateInitialTarget()
             } else {
                 null
             },

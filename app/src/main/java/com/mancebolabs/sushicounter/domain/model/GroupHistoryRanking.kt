@@ -1,6 +1,9 @@
 package com.mancebolabs.sushicounter.domain.model
 
 object GroupHistoryRanking {
+    /**
+     * Combines scores from every saved group game, grouped by player name.
+     */
     fun aggregate(entries: List<GroupGameHistoryEntry>): List<GroupPlayerRanking> {
         val scoresByPlayer = linkedMapOf<String, MutableList<Int>>()
         entries.forEach { entry ->

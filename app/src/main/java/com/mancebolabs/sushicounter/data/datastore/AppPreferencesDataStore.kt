@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mancebolabs.sushicounter.domain.model.AppThemeMode
 import com.mancebolabs.sushicounter.domain.model.GameMode
+import com.mancebolabs.sushicounter.domain.model.GameSetupRules
 import com.mancebolabs.sushicounter.domain.model.GameState
 import com.mancebolabs.sushicounter.domain.model.GroupGameHistoryEntry
 import com.mancebolabs.sushicounter.domain.model.Player
@@ -29,6 +30,7 @@ class AppPreferencesDataStore(
     private val context: Context,
 ) {
     val gameState: Flow<GameState> = context.dataStore.data.map { preferences ->
+        // Prefer has_active_game; fall back to legacy has_completed_setup for migration.
         val hasActiveGame = preferences[HAS_ACTIVE_GAME_KEY]
             ?: preferences[HAS_COMPLETED_SETUP_KEY]
             ?: false
@@ -228,8 +230,8 @@ class AppPreferencesDataStore(
         private val SOLO_HISTORY_KEY = stringPreferencesKey("solo_history")
         private val GROUP_HISTORY_KEY = stringPreferencesKey("group_history")
         const val SOLO_PLAYER_ID = "solo_player"
-        const val MAX_GROUP_PLAYERS = 6
-        const val MIN_GROUP_PLAYERS = 2
+        const val MAX_GROUP_PLAYERS = GameSetupRules.MAX_GROUP_PLAYERS
+        const val MIN_GROUP_PLAYERS = GameSetupRules.MIN_GROUP_PLAYERS
     }
 
     private fun encodeSoloHistory(entries: List<SoloGameHistoryEntry>): String {

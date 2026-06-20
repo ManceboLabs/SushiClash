@@ -3,8 +3,9 @@ package com.mancebolabs.sushicounter.feature.wheel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.mancebolabs.sushicounter.domain.model.RandomProvider
+import com.mancebolabs.sushicounter.domain.model.DefaultRandomProvider
 import com.mancebolabs.sushicounter.domain.repository.ParticipantsRepository
-import kotlin.random.Random
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,7 @@ data class WheelUiState(
 
 class WheelViewModel(
     private val participantsRepository: ParticipantsRepository,
+    private val randomProvider: RandomProvider = DefaultRandomProvider(),
 ) : ViewModel() {
 
     private val inputName = MutableStateFlow("")
@@ -94,14 +96,14 @@ class WheelViewModel(
             isSpinning.value = true
             selectedWinner.value = null
 
-            val winnerIndex = Random.nextInt(participants.size)
+            val winnerIndex = randomProvider.nextInt(0, participants.size)
             val winner = participants[winnerIndex]
             val segmentAngle = 360f / participants.size
             val winnerCenterAngle = winnerIndex * segmentAngle + segmentAngle / 2f - 90f
             val currentRotation = wheelRotation.value
             val normalizedCurrent = ((currentRotation % 360f) + 360f) % 360f
             val targetOffset = ((-90f - winnerCenterAngle) - normalizedCurrent + 360f) % 360f
-            val extraSpins = Random.nextInt(MIN_EXTRA_SPINS, MAX_EXTRA_SPINS + 1)
+            val extraSpins = randomProvider.nextInt(MIN_EXTRA_SPINS, MAX_EXTRA_SPINS + 1)
             val targetRotation = currentRotation + extraSpins * 360f + targetOffset
 
             wheelRotation.value = targetRotation
@@ -138,11 +140,14 @@ class WheelViewModel(
         private const val MAX_EXTRA_SPINS = 6
         const val SPIN_DURATION_MS = 3_500L
 
-        fun factory(participantsRepository: ParticipantsRepository): ViewModelProvider.Factory {
+        fun factory(
+            participantsRepository: ParticipantsRepository,
+            randomProvider: RandomProvider = DefaultRandomProvider(),
+        ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return WheelViewModel(participantsRepository) as T
+                    return WheelViewModel(participantsRepository, randomProvider) as T
                 }
             }
         }

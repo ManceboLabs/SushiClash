@@ -65,6 +65,7 @@ class CounterViewModel(
     private val showSetupDialog = MutableStateFlow(false)
 
     init {
+        // Resolve startup state once from persistence to prevent setup-popup flicker on launch.
         viewModelScope.launch {
             val loadedState = gameRepository.gameState.first()
             startupState.value = if (loadedState.hasActiveGame) {
@@ -174,6 +175,7 @@ class CounterViewModel(
 
     fun onFinishGameRequested() {
         viewModelScope.launch {
+            // Active game is cleared in the repository before the save dialog is shown.
             val snapshot = gameRepository.finishActiveGame() ?: return@launch
             pendingFinishedGame = snapshot
             startupState.value = AppStartupState.NoActiveGame

@@ -41,6 +41,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.mancebolabs.sushicounter.R
 import com.mancebolabs.sushicounter.data.datastore.AppPreferencesDataStore
+import com.mancebolabs.sushicounter.domain.model.GameSetupRules
 import com.mancebolabs.sushicounter.domain.model.GameMode
 import com.mancebolabs.sushicounter.domain.model.GameSetupConfig
 import com.mancebolabs.sushicounter.domain.model.GameState
@@ -66,11 +67,7 @@ fun GameSetupDialog(
     }
     val scrollState = rememberScrollState()
 
-    val canConfirm = when (selectedMode) {
-        GameMode.SOLO -> true
-        GameMode.GROUP -> groupPlayers.size >= AppPreferencesDataStore.MIN_GROUP_PLAYERS
-        null -> false
-    }
+    val canConfirm = GameSetupRules.canConfirmSetup(selectedMode, groupPlayers.size)
 
     Dialog(
         onDismissRequest = {},
@@ -138,7 +135,7 @@ fun GameSetupDialog(
                                     val trimmedName = inputName.trim()
                                     if (
                                         trimmedName.isNotEmpty() &&
-                                        groupPlayers.size < AppPreferencesDataStore.MAX_GROUP_PLAYERS &&
+                                        groupPlayers.size < GameSetupRules.MAX_GROUP_PLAYERS &&
                                         groupPlayers.none { it.equals(trimmedName, ignoreCase = true) }
                                     ) {
                                         groupPlayers = groupPlayers + trimmedName
@@ -146,11 +143,11 @@ fun GameSetupDialog(
                                     }
                                 },
                                 enabled = inputName.isNotBlank() &&
-                                    groupPlayers.size < AppPreferencesDataStore.MAX_GROUP_PLAYERS,
+                                    groupPlayers.size < GameSetupRules.MAX_GROUP_PLAYERS,
                             )
                         }
 
-                        if (groupPlayers.size < AppPreferencesDataStore.MIN_GROUP_PLAYERS) {
+                        if (groupPlayers.size < GameSetupRules.MIN_GROUP_PLAYERS) {
                             Text(
                                 text = stringResource(R.string.setup_min_players_hint),
                                 style = MaterialTheme.typography.bodyMedium,

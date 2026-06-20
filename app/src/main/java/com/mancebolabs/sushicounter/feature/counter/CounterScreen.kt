@@ -69,6 +69,7 @@ fun CounterScreen(
             StartupLoadingScreen(modifier = modifier)
         }
         AppStartupState.NoActiveGame -> {
+            // Setup is intentionally user-driven; first launch shows "Empezar partida" instead.
             NoActiveGameContent(
                 onStartGameRequested = onStartGameRequested,
                 modifier = modifier,

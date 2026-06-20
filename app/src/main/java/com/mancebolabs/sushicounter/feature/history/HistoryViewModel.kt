@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.mancebolabs.sushicounter.domain.model.GroupHistoryRanking
 import com.mancebolabs.sushicounter.domain.model.GroupPlayerRanking
 import com.mancebolabs.sushicounter.domain.model.SoloGameHistoryEntry
+import com.mancebolabs.sushicounter.domain.model.SoloHistoryRanking
 import com.mancebolabs.sushicounter.domain.repository.HistoryRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +42,11 @@ class HistoryViewModel(
     private val selectedSection = kotlinx.coroutines.flow.MutableStateFlow(HistorySection.SOLO)
 
     val uiState: StateFlow<HistoryUiState> = combine(
-        historyRepository.soloHistory.map { entries -> sortSoloEntries(entries) },
+        historyRepository.soloHistory.map { entries ->
+            SoloHistoryRanking.sort(entries).mapIndexed { index, entry ->
+                SoloHistoryItem(position = index + 1, entry = entry)
+            }
+        },
         historyRepository.groupHistory.map { entries -> GroupHistoryRanking.aggregate(entries) },
         selectedSection,
     ) { soloItems, groupRankings, section ->
@@ -60,17 +65,6 @@ class HistoryViewModel(
 
     fun onSectionSelected(section: HistorySection) {
         selectedSection.value = section
-    }
-
-    private fun sortSoloEntries(entries: List<SoloGameHistoryEntry>): List<SoloHistoryItem> {
-        return entries
-            .sortedWith(
-                compareByDescending<SoloGameHistoryEntry> { it.totalSushi }
-                    .thenByDescending { it.date },
-            )
-            .mapIndexed { index, entry ->
-                SoloHistoryItem(position = index + 1, entry = entry)
-            }
     }
 
     companion object {
