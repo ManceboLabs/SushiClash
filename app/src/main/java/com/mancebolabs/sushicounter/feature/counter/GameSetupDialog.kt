@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -48,6 +49,7 @@ import com.mancebolabs.sushicounter.domain.model.GameState
 import com.mancebolabs.sushicounter.domain.model.RandomRouletteTriggerType
 import com.mancebolabs.sushicounter.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushicounter.ui.components.ItamaeTextField
+import com.mancebolabs.sushicounter.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushicounter.ui.theme.ItamaeShapes
 import com.mancebolabs.sushicounter.ui.theme.ItamaeSpacing
 
@@ -463,5 +465,13 @@ private fun SetupPlayerRow(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Preview(name = "Game setup dialog", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun GameSetupDialogPreview() {
+    ItamaePreviewTheme {
+        GameSetupDialog(onConfirm = {})
     }
 }

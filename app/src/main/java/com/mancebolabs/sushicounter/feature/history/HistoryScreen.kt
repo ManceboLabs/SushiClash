@@ -25,10 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushicounter.R
+import com.mancebolabs.sushicounter.domain.model.GroupPlayerRanking
+import com.mancebolabs.sushicounter.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushicounter.ui.components.ItamaeCard
 import com.mancebolabs.sushicounter.ui.components.ItamaeScreenTitle
+import com.mancebolabs.sushicounter.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushicounter.ui.theme.ItamaeShapes
 import com.mancebolabs.sushicounter.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushicounter.ui.theme.itamaeScreenTopInsets
@@ -290,6 +294,80 @@ private fun HistoryEmptyState(
             text = message,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private val previewSoloHistory = HistoryUiState(
+    selectedSection = HistorySection.SOLO,
+    soloItems = listOf(
+        SoloHistoryItem(
+            position = 1,
+            entry = SoloGameHistoryEntry(
+                id = "solo-1",
+                date = 1_718_000_000_000L,
+                totalSushi = 42,
+                randomRouletteEnabled = true,
+                randomRouletteMode = "FIXED",
+            ),
+        ),
+    ),
+)
+
+private val previewGroupHistory = HistoryUiState(
+    selectedSection = HistorySection.GROUP,
+    groupItems = listOf(
+        GroupHistoryItem(
+            position = 1,
+            ranking = GroupPlayerRanking(
+                playerName = "Javier",
+                bestScore = 38,
+                totalSushi = 120,
+                gamesPlayed = 5,
+            ),
+        ),
+    ),
+)
+
+@Preview(name = "History solo – Light", showBackground = true)
+@Composable
+private fun HistorySoloLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        HistoryScreen(uiState = previewSoloHistory, onSectionSelected = {})
+    }
+}
+
+@Preview(name = "History solo – Dark", showBackground = true)
+@Composable
+private fun HistorySoloDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        HistoryScreen(uiState = previewSoloHistory, onSectionSelected = {})
+    }
+}
+
+@Preview(name = "History group – Light", showBackground = true)
+@Composable
+private fun HistoryGroupLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        HistoryScreen(uiState = previewGroupHistory, onSectionSelected = {})
+    }
+}
+
+@Preview(name = "History group – Dark", showBackground = true)
+@Composable
+private fun HistoryGroupDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        HistoryScreen(uiState = previewGroupHistory, onSectionSelected = {})
+    }
+}
+
+@Preview(name = "History solo empty", showBackground = true)
+@Composable
+private fun HistorySoloEmptyPreview() {
+    ItamaePreviewTheme {
+        HistoryScreen(
+            uiState = HistoryUiState(selectedSection = HistorySection.SOLO),
+            onSectionSelected = {},
         )
     }
 }

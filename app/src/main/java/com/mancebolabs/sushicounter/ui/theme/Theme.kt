@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
@@ -94,4 +95,17 @@ fun SushiCounterTheme(
         shapes = ItamaeShapes,
         content = content,
     )
+}
+
+/** Applies app theme and floating-nav insets for Compose Previews. */
+@Composable
+fun ItamaePreviewTheme(
+    darkTheme: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    CompositionLocalProvider(
+        LocalFloatingNavBarHeight provides ItamaeSpacing.floatingNavBarDefaultHeight,
+    ) {
+        SushiCounterTheme(darkTheme = darkTheme, content = content)
+    }
 }

@@ -20,9 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import com.mancebolabs.sushicounter.R
-import com.mancebolabs.sushicounter.domain.model.GameSetupConfig
+import com.mancebolabs.sushicounter.data.datastore.AppPreferencesDataStore
 import com.mancebolabs.sushicounter.domain.model.GameMode
+import com.mancebolabs.sushicounter.domain.model.GameSetupConfig
+import com.mancebolabs.sushicounter.domain.model.GameState
+import com.mancebolabs.sushicounter.domain.model.Player
 import com.mancebolabs.sushicounter.ui.components.ConfirmationDialog
 import com.mancebolabs.sushicounter.ui.components.FinishGameDialog
 import com.mancebolabs.sushicounter.ui.components.ItamaeCard
@@ -30,6 +34,7 @@ import com.mancebolabs.sushicounter.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushicounter.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushicounter.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushicounter.ui.components.SushiClickerButton
+import com.mancebolabs.sushicounter.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushicounter.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushicounter.ui.theme.itamaeScreenBottomInsets
 import com.mancebolabs.sushicounter.ui.theme.itamaeScreenTopInsets
@@ -311,3 +316,155 @@ private fun ActiveGameContent(
         )
     }
 }
+
+// region Previews
+
+@Composable
+private fun PreviewCounterScreen(uiState: CounterUiState) {
+    CounterScreen(
+        uiState = uiState,
+        onStartGameRequested = {},
+        onSoloSushiTapped = {},
+        onPlayerSushiTapped = {},
+        onPlayerResetRequested = {},
+        onPlayerResetConfirmed = {},
+        onPlayerResetDismissed = {},
+        onResetSoloCountConfirmed = {},
+        onFinishGameRequested = {},
+        onFinishGameCancelled = {},
+        onFinishGameWithoutSaving = {},
+        onFinishGameWithSaving = {},
+        onSetupConfirmed = {},
+        onRouletteTriggerAccepted = {},
+        onRouletteTriggerDismissed = {},
+    )
+}
+
+private fun previewSoloGameState(count: Int): GameState {
+    return GameState(
+        hasActiveGame = true,
+        gameMode = GameMode.SOLO,
+        players = listOf(
+            Player(
+                id = AppPreferencesDataStore.SOLO_PLAYER_ID,
+                name = "",
+                sushiCount = count,
+            ),
+        ),
+    )
+}
+
+private fun previewGroupGameState(playerCount: Int): GameState {
+    val names = listOf("Ana", "Luis", "Marta", "Javier", "Bea", "Carlos")
+    return GameState(
+        hasActiveGame = true,
+        gameMode = GameMode.GROUP,
+        players = names.take(playerCount).mapIndexed { index, name ->
+            Player(
+                id = "player-$index",
+                name = name,
+                sushiCount = (index + 1) * 3,
+            )
+        },
+    )
+}
+
+@Preview(name = "No active game – Light", showBackground = true)
+@Composable
+private fun NoActiveGameLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(startupState = AppStartupState.NoActiveGame),
+        )
+    }
+}
+
+@Preview(name = "No active game – Dark", showBackground = true)
+@Composable
+private fun NoActiveGameDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(startupState = AppStartupState.NoActiveGame),
+        )
+    }
+}
+
+@Preview(name = "Solo counter – Light", showBackground = true)
+@Composable
+private fun SoloCounterLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.ActiveGame,
+                gameState = previewSoloGameState(count = 18),
+            ),
+        )
+    }
+}
+
+@Preview(name = "Solo counter – Dark", showBackground = true)
+@Composable
+private fun SoloCounterDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.ActiveGame,
+                gameState = previewSoloGameState(count = 18),
+            ),
+        )
+    }
+}
+
+@Preview(name = "Group counter – Light", showBackground = true, heightDp = 780)
+@Composable
+private fun GroupCounterLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.ActiveGame,
+                gameState = previewGroupGameState(playerCount = 4),
+            ),
+        )
+    }
+}
+
+@Preview(name = "Group counter – Dark", showBackground = true, heightDp = 780)
+@Composable
+private fun GroupCounterDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.ActiveGame,
+                gameState = previewGroupGameState(playerCount = 4),
+            ),
+        )
+    }
+}
+
+@Preview(name = "Setup popup", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun SetupPopupPreview() {
+    ItamaePreviewTheme {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.NoActiveGame,
+                showSetupDialog = true,
+            ),
+        )
+    }
+}
+
+@Preview(name = "Finish game dialog", showBackground = true)
+@Composable
+private fun FinishGameDialogPreview() {
+    ItamaePreviewTheme {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.NoActiveGame,
+                showFinishGameDialog = true,
+            ),
+        )
+    }
+}
+
+// endregion

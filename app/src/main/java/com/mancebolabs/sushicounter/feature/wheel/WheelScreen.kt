@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushicounter.R
 import com.mancebolabs.sushicounter.ui.components.ConfirmationDialog
@@ -31,6 +32,7 @@ import com.mancebolabs.sushicounter.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushicounter.ui.components.ItamaeTextField
 import com.mancebolabs.sushicounter.ui.components.RouletteWheel
 import com.mancebolabs.sushicounter.ui.components.WinnerDialog
+import com.mancebolabs.sushicounter.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushicounter.ui.theme.ItamaeShapes
 import com.mancebolabs.sushicounter.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushicounter.ui.theme.itamaeScreenTopInsets
@@ -210,5 +212,79 @@ private fun ParticipantRow(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+private val previewWheelParticipants = listOf("Ana", "Luis", "Marta", "Javier")
+
+@Preview(name = "Wheel empty – Light", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun WheelEmptyLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        WheelScreen(
+            uiState = WheelUiState(),
+            onInputChanged = {},
+            onAddParticipant = {},
+            onRemoveParticipant = {},
+            onSpin = {},
+            onWinnerDialogDismissed = {},
+            onInsufficientParticipantsDismissed = {},
+        )
+    }
+}
+
+@Preview(name = "Wheel with participants – Light", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun WheelWithParticipantsLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        WheelScreen(
+            uiState = WheelUiState(
+                participants = previewWheelParticipants,
+                inputName = "Bea",
+            ),
+            onInputChanged = {},
+            onAddParticipant = {},
+            onRemoveParticipant = {},
+            onSpin = {},
+            onWinnerDialogDismissed = {},
+            onInsufficientParticipantsDismissed = {},
+        )
+    }
+}
+
+@Preview(name = "Wheel with participants – Dark", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun WheelWithParticipantsDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        WheelScreen(
+            uiState = WheelUiState(
+                participants = previewWheelParticipants,
+            ),
+            onInputChanged = {},
+            onAddParticipant = {},
+            onRemoveParticipant = {},
+            onSpin = {},
+            onWinnerDialogDismissed = {},
+            onInsufficientParticipantsDismissed = {},
+        )
+    }
+}
+
+@Preview(name = "Wheel winner dialog", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun WheelWinnerDialogPreview() {
+    ItamaePreviewTheme {
+        WheelScreen(
+            uiState = WheelUiState(
+                participants = previewWheelParticipants,
+                selectedWinner = "Marta",
+            ),
+            onInputChanged = {},
+            onAddParticipant = {},
+            onRemoveParticipant = {},
+            onSpin = {},
+            onWinnerDialogDismissed = {},
+            onInsufficientParticipantsDismissed = {},
+        )
     }
 }

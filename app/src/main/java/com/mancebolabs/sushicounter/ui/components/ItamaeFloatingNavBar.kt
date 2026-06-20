@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -28,7 +32,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mancebolabs.sushicounter.R
+import com.mancebolabs.sushicounter.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushicounter.ui.theme.ItamaeShapes
 import com.mancebolabs.sushicounter.ui.theme.itamaeFloatingNavBarShadow
 import com.mancebolabs.sushicounter.ui.theme.itamaeWasabiAccent
@@ -183,5 +190,52 @@ private fun ItamaeFloatingNavBarItem(
                 )
             }
         }
+    }
+}
+
+private val previewNavItems = listOf(
+    ItamaeNavItem(
+        route = "counter",
+        contentDescription = "Contador",
+        iconRes = R.drawable.ic_sushi,
+    ),
+    ItamaeNavItem(
+        route = "wheel",
+        contentDescription = "Ruleta",
+        icon = Icons.Default.Casino,
+    ),
+    ItamaeNavItem(
+        route = "history",
+        contentDescription = "Histórico",
+        icon = Icons.Default.EmojiEvents,
+    ),
+    ItamaeNavItem(
+        route = "settings",
+        contentDescription = "Ajustes",
+        icon = Icons.Default.Settings,
+    ),
+)
+
+@Preview(name = "Floating nav bar – Counter selected", showBackground = true)
+@Composable
+private fun FloatingNavBarCounterSelectedPreview() {
+    ItamaePreviewTheme {
+        ItamaeFloatingNavBar(
+            items = previewNavItems,
+            selectedRoute = "counter",
+            onItemSelected = {},
+        )
+    }
+}
+
+@Preview(name = "Floating nav bar – Wheel selected", showBackground = true)
+@Composable
+private fun FloatingNavBarWheelSelectedPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        ItamaeFloatingNavBar(
+            items = previewNavItems,
+            selectedRoute = "wheel",
+            onItemSelected = {},
+        )
     }
 }

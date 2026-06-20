@@ -35,3 +35,11 @@ The counter screen uses three startup states:
 3. **ActiveGame** — counters and gameplay controls are shown
 
 Finishing a game clears persisted active state immediately. A `FinishedGameSnapshot` is kept in memory only until the user saves or discards it.
+
+## Compose Previews
+
+- Keep `@Preview` functions at the bottom of the same file as the Composable they showcase.
+- Do not create separate preview-only files (for example `*Preview.kt` or `PreviewData.kt`) unless shared preview infrastructure is genuinely reused across many screens.
+- Preview functions should be `private` when possible.
+- Use `ItamaePreviewTheme` from `ui/theme/Theme.kt` for theme and floating-nav insets; do not wire real ViewModels, DataStore, or navigation controllers in previews.
+- Keep preview sample data local to the file unless it is reused heavily by many previews.

@@ -29,13 +29,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushicounter.R
 import com.mancebolabs.sushicounter.domain.model.AppThemeMode
 import com.mancebolabs.sushicounter.ui.components.ConfirmationDialog
 import com.mancebolabs.sushicounter.ui.components.ItamaeCard
 import com.mancebolabs.sushicounter.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushicounter.ui.components.ItamaeScreenTitle
-import androidx.compose.ui.unit.dp
+import com.mancebolabs.sushicounter.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushicounter.ui.theme.ItamaeShapes
 import com.mancebolabs.sushicounter.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushicounter.ui.theme.itamaeScreenTopInsets
@@ -180,6 +182,64 @@ private fun ThemeOptionCard(
         RadioButton(
             selected = selected,
             onClick = null,
+        )
+    }
+}
+
+@Preview(name = "Settings – Light", showBackground = true)
+@Composable
+private fun SettingsLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        SettingsScreen(
+            uiState = SettingsUiState(themeMode = AppThemeMode.LIGHT),
+            onThemeModeSelected = {},
+            onClearHistoryRequested = {},
+            onClearHistoryConfirmed = {},
+            onClearHistoryDismissed = {},
+        )
+    }
+}
+
+@Preview(name = "Settings – Dark", showBackground = true)
+@Composable
+private fun SettingsDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        SettingsScreen(
+            uiState = SettingsUiState(themeMode = AppThemeMode.DARK),
+            onThemeModeSelected = {},
+            onClearHistoryRequested = {},
+            onClearHistoryConfirmed = {},
+            onClearHistoryDismissed = {},
+        )
+    }
+}
+
+@Preview(name = "Theme option selected", showBackground = true)
+@Composable
+private fun ThemeOptionCardPreview() {
+    ItamaePreviewTheme {
+        ThemeOptionCard(
+            title = "Modo claro",
+            selected = true,
+            icon = Icons.Outlined.LightMode,
+            onClick = {},
+        )
+    }
+}
+
+@Preview(name = "Clear history dialog", showBackground = true)
+@Composable
+private fun SettingsClearHistoryDialogPreview() {
+    ItamaePreviewTheme {
+        SettingsScreen(
+            uiState = SettingsUiState(
+                themeMode = AppThemeMode.LIGHT,
+                showClearHistoryDialog = true,
+            ),
+            onThemeModeSelected = {},
+            onClearHistoryRequested = {},
+            onClearHistoryConfirmed = {},
+            onClearHistoryDismissed = {},
         )
     }
 }

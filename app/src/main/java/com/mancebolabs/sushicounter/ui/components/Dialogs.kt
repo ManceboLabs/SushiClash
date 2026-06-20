@@ -7,8 +7,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.DialogProperties
 import com.mancebolabs.sushicounter.R
+import com.mancebolabs.sushicounter.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushicounter.ui.theme.ItamaeShapes
 
 @Composable
@@ -150,4 +152,42 @@ fun WinnerDialog(
             }
         },
     )
+}
+
+@Preview(name = "Finish game dialog", showBackground = true)
+@Composable
+private fun FinishGameDialogPreview() {
+    ItamaePreviewTheme {
+        FinishGameDialog(
+            onDismiss = {},
+            onSkipSave = {},
+            onSave = {},
+        )
+    }
+}
+
+@Preview(name = "Confirmation dialog", showBackground = true)
+@Composable
+private fun ConfirmationDialogPreview() {
+    ItamaePreviewTheme {
+        ConfirmationDialog(
+            title = "Ruleta activada",
+            message = "Has alcanzado 5 sushi. Vamos a girar la ruleta.",
+            confirmLabel = "OK",
+            dismissLabel = "Cancelar",
+            onConfirm = {},
+            onDismiss = {},
+        )
+    }
+}
+
+@Preview(name = "Winner dialog", showBackground = true)
+@Composable
+private fun WinnerDialogPreview() {
+    ItamaePreviewTheme {
+        WinnerDialog(
+            winnerName = "Marta",
+            onDismiss = {},
+        )
+    }
 }

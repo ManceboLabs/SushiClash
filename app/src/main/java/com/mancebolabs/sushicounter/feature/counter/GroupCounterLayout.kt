@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushicounter.domain.model.Player
 import com.mancebolabs.sushicounter.ui.components.SushiClickerButton
+import com.mancebolabs.sushicounter.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushicounter.ui.theme.ItamaeSpacing
 
 private val GroupTextBlockHeight = 116.dp
@@ -163,6 +165,52 @@ private fun GroupPlayerCell(
             compact = true,
             buttonSize = buttonSize,
             imageSize = imageSize,
+        )
+    }
+}
+
+private fun previewGroupPlayers(count: Int): List<Player> {
+    val names = listOf("Ana", "Luis", "Marta", "Javier", "Bea", "Carlos")
+    return names.take(count).mapIndexed { index, name ->
+        Player(id = "player-$index", name = name, sushiCount = (index + 1) * 3)
+    }
+}
+
+@Preview(name = "Group 5 players – Small", showBackground = true, widthDp = 360, heightDp = 520)
+@Composable
+private fun GroupFivePlayersSmallPreview() {
+    ItamaePreviewTheme {
+        GroupCounterLayout(
+            players = previewGroupPlayers(5),
+            onPlayerTapped = {},
+            onPlayerResetRequested = {},
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Preview(name = "Group 6 players – Small", showBackground = true, widthDp = 360, heightDp = 520)
+@Composable
+private fun GroupSixPlayersSmallPreview() {
+    ItamaePreviewTheme {
+        GroupCounterLayout(
+            players = previewGroupPlayers(6),
+            onPlayerTapped = {},
+            onPlayerResetRequested = {},
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Preview(name = "Group 6 players – Wide", showBackground = true, widthDp = 780, heightDp = 360)
+@Composable
+private fun GroupSixPlayersWidePreview() {
+    ItamaePreviewTheme {
+        GroupCounterLayout(
+            players = previewGroupPlayers(6),
+            onPlayerTapped = {},
+            onPlayerResetRequested = {},
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }

@@ -40,9 +40,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushicounter.R
+import com.mancebolabs.sushicounter.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushicounter.ui.theme.ItamaePrimaryContainer
 import com.mancebolabs.sushicounter.ui.theme.ItamaeShapes
 import com.mancebolabs.sushicounter.ui.theme.itamaeInteractionShadow
@@ -349,4 +351,28 @@ private fun FloatingPlusOne(
             .offset(y = verticalOffset)
             .graphicsLayer { this.alpha = alpha },
     )
+}
+
+@Preview(name = "Solo sushi button", showBackground = true)
+@Composable
+private fun SushiClickerButtonSoloPreview() {
+    ItamaePreviewTheme {
+        SushiClickerButton(onClick = {})
+    }
+}
+
+@Preview(name = "Compact group button", showBackground = true)
+@Composable
+private fun SushiClickerButtonCompactPreview() {
+    ItamaePreviewTheme {
+        SushiClickerButton(
+            onClick = {},
+            onLongClick = {},
+            playerName = "Ana",
+            count = 12,
+            compact = true,
+            buttonSize = 120.dp,
+            imageSize = 80.dp,
+        )
+    }
 }
