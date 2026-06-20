@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -33,6 +34,8 @@ import com.mancebolabs.sushicounter.R
 import com.mancebolabs.sushicounter.di.AppContainer
 import com.mancebolabs.sushicounter.feature.counter.CounterScreen
 import com.mancebolabs.sushicounter.feature.counter.CounterViewModel
+import com.mancebolabs.sushicounter.feature.history.HistoryScreen
+import com.mancebolabs.sushicounter.feature.history.HistoryViewModel
 import com.mancebolabs.sushicounter.feature.settings.SettingsScreen
 import com.mancebolabs.sushicounter.feature.settings.SettingsViewModel
 import com.mancebolabs.sushicounter.feature.wheel.WheelScreen
@@ -48,6 +51,8 @@ sealed class SushiDestination(
     data object Counter : SushiDestination("counter")
 
     data object Wheel : SushiDestination("wheel")
+
+    data object History : SushiDestination("history")
 
     data object Settings : SushiDestination("settings")
 }
@@ -75,6 +80,11 @@ fun SushiCounterApp(
             icon = Icons.Default.Casino,
         ),
         ItamaeNavItem(
+            route = SushiDestination.History.route,
+            contentDescription = stringResource(R.string.nav_history),
+            icon = Icons.Default.EmojiEvents,
+        ),
+        ItamaeNavItem(
             route = SushiDestination.Settings.route,
             contentDescription = stringResource(R.string.nav_settings),
             icon = Icons.Default.Settings,
@@ -97,6 +107,7 @@ fun SushiCounterApp(
                     val viewModel: CounterViewModel = viewModel(
                         factory = CounterViewModel.factory(
                             AppContainer.gameRepository(context),
+                            AppContainer.historyRepository(context),
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -109,7 +120,11 @@ fun SushiCounterApp(
                         onPlayerResetConfirmed = viewModel::onPlayerResetConfirmed,
                         onPlayerResetDismissed = viewModel::onPlayerResetDismissed,
                         onResetSoloCountConfirmed = viewModel::onResetSoloCountConfirmed,
-                        onRestartRequested = viewModel::onRestartRequested,
+                        onStartGameRequested = viewModel::onStartGameRequested,
+                        onFinishGameRequested = viewModel::onFinishGameRequested,
+                        onFinishGameCancelled = viewModel::onFinishGameCancelled,
+                        onFinishGameWithoutSaving = viewModel::onFinishGameWithoutSaving,
+                        onFinishGameWithSaving = viewModel::onFinishGameWithSaving,
                         onSetupConfirmed = viewModel::onSetupConfirmed,
                         onRouletteTriggerAccepted = {
                             viewModel.onRouletteTriggerConfirmed()
@@ -151,11 +166,26 @@ fun SushiCounterApp(
                         onInsufficientParticipantsDismissed = viewModel::onInsufficientParticipantsDismissed,
                     )
                 }
+                composable(SushiDestination.History.route) {
+                    val context = LocalContext.current
+                    val viewModel: HistoryViewModel = viewModel(
+                        factory = HistoryViewModel.factory(
+                            AppContainer.historyRepository(context),
+                        ),
+                    )
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+                    HistoryScreen(
+                        uiState = uiState,
+                        onSectionSelected = viewModel::onSectionSelected,
+                    )
+                }
                 composable(SushiDestination.Settings.route) {
                     val context = LocalContext.current
                     val viewModel: SettingsViewModel = viewModel(
                         factory = SettingsViewModel.factory(
                             AppContainer.themeRepository(context),
+                            AppContainer.historyRepository(context),
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -163,6 +193,9 @@ fun SushiCounterApp(
                     SettingsScreen(
                         uiState = uiState,
                         onThemeModeSelected = viewModel::onThemeModeSelected,
+                        onClearHistoryRequested = viewModel::onClearHistoryRequested,
+                        onClearHistoryConfirmed = viewModel::onClearHistoryConfirmed,
+                        onClearHistoryDismissed = viewModel::onClearHistoryDismissed,
                     )
                 }
             }

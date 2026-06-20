@@ -1,11 +1,13 @@
 package com.mancebolabs.sushicounter.data.repository
 
 import com.mancebolabs.sushicounter.data.datastore.AppPreferencesDataStore
+import com.mancebolabs.sushicounter.domain.model.FinishedGameSnapshot
 import com.mancebolabs.sushicounter.domain.model.GameMode
 import com.mancebolabs.sushicounter.domain.model.GameSetupConfig
 import com.mancebolabs.sushicounter.domain.model.GameState
 import com.mancebolabs.sushicounter.domain.model.IncrementResult
 import com.mancebolabs.sushicounter.domain.model.Player
+import com.mancebolabs.sushicounter.domain.model.PlayerScore
 import com.mancebolabs.sushicounter.domain.model.RandomRouletteLogic
 import com.mancebolabs.sushicounter.domain.model.RandomRouletteTriggerType
 import com.mancebolabs.sushicounter.domain.repository.GameRepository
@@ -18,6 +20,35 @@ class GameRepositoryImpl(
 ) : GameRepository {
 
     override val gameState: Flow<GameState> = dataStore.gameState
+
+    override suspend fun finishActiveGame(): FinishedGameSnapshot? {
+        val currentState = dataStore.gameState.first()
+        if (!currentState.hasActiveGame || currentState.gameMode == null) {
+            return null
+        }
+
+        val snapshot = FinishedGameSnapshot(
+            gameMode = currentState.gameMode,
+            soloCount = if (currentState.gameMode == GameMode.SOLO) {
+                currentState.soloCount
+            } else {
+                null
+            },
+            playerScores = currentState.players.map { player ->
+                PlayerScore(
+                    playerName = player.name,
+                    sushiCount = player.sushiCount,
+                )
+            },
+            randomRouletteEnabled = currentState.randomRouletteEnabled,
+            randomRouletteTriggerType = currentState.randomRouletteTriggerType,
+            randomRouletteFixedThreshold = currentState.randomRouletteFixedThreshold,
+            finishedAt = System.currentTimeMillis(),
+        )
+
+        dataStore.clearActiveGame()
+        return snapshot
+    }
 
     override suspend fun completeSetup(config: GameSetupConfig) {
         val fixedThreshold = config.randomRouletteFixedThreshold.coerceIn(
@@ -42,7 +73,6 @@ class GameRepositoryImpl(
         }
 
         dataStore.saveGameState(
-            hasCompletedSetup = true,
             gameMode = config.gameMode,
             players = players,
             randomRouletteEnabled = config.randomRouletteEnabled,
@@ -58,6 +88,9 @@ class GameRepositoryImpl(
 
     override suspend fun incrementPlayerCount(playerId: String): IncrementResult {
         val currentState = dataStore.gameState.first()
+        if (!currentState.hasActiveGame) {
+            return IncrementResult(newCount = 0, shouldTriggerRoulette = false)
+        }
         var newCount = 0
         var shouldTrigger = false
 
@@ -108,7 +141,7 @@ class GameRepositoryImpl(
 
     override suspend fun resetSoloCount() {
         val currentState = dataStore.gameState.first()
-        if (currentState.gameMode != GameMode.SOLO) return
+        if (!currentState.hasActiveGame || currentState.gameMode != GameMode.SOLO) return
 
         val updatedPlayers = currentState.players.map { player ->
             resetRandomRoulettePlayer(
@@ -121,7 +154,7 @@ class GameRepositoryImpl(
 
     override suspend fun resetPlayerCount(playerId: String) {
         val currentState = dataStore.gameState.first()
-        if (currentState.gameMode != GameMode.GROUP) return
+        if (!currentState.hasActiveGame || currentState.gameMode != GameMode.GROUP) return
 
         val updatedPlayers = currentState.players.map { player ->
             if (player.id == playerId) {

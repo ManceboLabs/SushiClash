@@ -3,7 +3,7 @@ package com.mancebolabs.sushicounter.feature.counter
 sealed interface AppStartupState {
     data object Loading : AppStartupState
 
-    data object SetupRequired : AppStartupState
+    data object NoActiveGame : AppStartupState
 
-    data object Ready : AppStartupState
+    data object ActiveGame : AppStartupState
 }

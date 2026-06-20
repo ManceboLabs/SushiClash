@@ -4,11 +4,17 @@
     <!-- Bottom navigation -->
     <string name="nav_counter">Contador</string>
     <string name="nav_wheel">Ruleta</string>
+    <string name="nav_history">Histórico</string>
     <string name="nav_settings">Ajustes</string>
 
     <!-- Settings screen -->
     <string name="settings_screen_title">Ajustes</string>
     <string name="settings_appearance_section">Apariencia</string>
+    <string name="settings_history_section">Histórico</string>
+    <string name="settings_clear_history">Borrar histórico</string>
+    <string name="settings_clear_history_title">¿Borrar histórico?</string>
+    <string name="settings_clear_history_message">Se eliminarán todas las partidas guardadas en solitario y en grupo. Esta acción no se puede deshacer.</string>
+    <string name="settings_clear_history_confirm">Borrar</string>
     <string name="settings_theme_light">Modo claro</string>
     <string name="settings_theme_dark">Modo oscuro</string>
 
@@ -22,7 +28,29 @@
     <string name="counter_cancel">Cancelar</string>
     <string name="counter_sushi_content_description">Sushi</string>
     <string name="counter_plus_one">+1</string>
-    <string name="counter_restart">Volver a empezar</string>
+    <string name="counter_finish_game">Finalizar partida</string>
+    <string name="counter_no_active_game_title">No hay partida activa</string>
+    <string name="counter_no_active_game_subtitle">Empieza una nueva partida para comenzar a contar sushi.</string>
+    <string name="counter_start_game">Empezar partida</string>
+
+    <!-- Finish game -->
+    <string name="finish_game_title">Finalizar partida</string>
+    <string name="finish_game_message">¿Quieres guardar esta partida en el histórico?</string>
+    <string name="finish_game_save">Guardar</string>
+    <string name="finish_game_skip_save">No guardar</string>
+
+    <!-- History screen -->
+    <string name="history_screen_title">Histórico</string>
+    <string name="history_section_solo">Solo</string>
+    <string name="history_section_group">Grupo</string>
+    <string name="history_solo_empty">Aún no hay partidas en solitario guardadas.</string>
+    <string name="history_group_empty">Aún no hay partidas en grupo guardadas.</string>
+    <string name="history_rank_position">#%1$d</string>
+    <string name="history_solo_sushi_count">%1$d sushi</string>
+    <string name="history_random_roulette_chip">Ruleta aleatoria</string>
+    <string name="history_group_best_score">Mejor: %1$d sushi</string>
+    <string name="history_group_total_score">Total: %1$d sushi</string>
+    <string name="history_group_games_played">Partidas: %1$d</string>
 
     <!-- Setup -->
     <string name="setup_title">Elige el modo de juego</string>

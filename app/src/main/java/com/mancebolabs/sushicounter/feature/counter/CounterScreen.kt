@@ -24,7 +24,10 @@ import com.mancebolabs.sushicounter.R
 import com.mancebolabs.sushicounter.domain.model.GameSetupConfig
 import com.mancebolabs.sushicounter.domain.model.GameMode
 import com.mancebolabs.sushicounter.ui.components.ConfirmationDialog
+import com.mancebolabs.sushicounter.ui.components.FinishGameDialog
+import com.mancebolabs.sushicounter.ui.components.ItamaeCard
 import com.mancebolabs.sushicounter.ui.components.ItamaeGhostButton
+import com.mancebolabs.sushicounter.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushicounter.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushicounter.ui.components.SushiClickerButton
 import com.mancebolabs.sushicounter.ui.theme.ItamaeSpacing
@@ -34,24 +37,45 @@ import com.mancebolabs.sushicounter.ui.theme.itamaeScreenTopInsets
 @Composable
 fun CounterScreen(
     uiState: CounterUiState,
+    onStartGameRequested: () -> Unit,
     onSoloSushiTapped: () -> Unit,
     onPlayerSushiTapped: (String) -> Unit,
     onPlayerResetRequested: (String) -> Unit,
     onPlayerResetConfirmed: () -> Unit,
     onPlayerResetDismissed: () -> Unit,
     onResetSoloCountConfirmed: () -> Unit,
-    onRestartRequested: () -> Unit,
+    onFinishGameRequested: () -> Unit,
+    onFinishGameCancelled: () -> Unit,
+    onFinishGameWithoutSaving: () -> Unit,
+    onFinishGameWithSaving: () -> Unit,
     onSetupConfirmed: (GameSetupConfig) -> Unit,
     onRouletteTriggerAccepted: () -> Unit,
     onRouletteTriggerDismissed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    FinishGameDialogs(
+        showFinishGameDialog = uiState.showFinishGameDialog,
+        onFinishGameCancelled = onFinishGameCancelled,
+        onFinishGameWithoutSaving = onFinishGameWithoutSaving,
+        onFinishGameWithSaving = onFinishGameWithSaving,
+    )
+
+    if (uiState.showSetupDialog) {
+        GameSetupDialog(onConfirm = onSetupConfirmed)
+    }
+
     when (uiState.startupState) {
         AppStartupState.Loading -> {
             StartupLoadingScreen(modifier = modifier)
         }
-        AppStartupState.SetupRequired -> {
-            CounterMainContent(
+        AppStartupState.NoActiveGame -> {
+            NoActiveGameContent(
+                onStartGameRequested = onStartGameRequested,
+                modifier = modifier,
+            )
+        }
+        AppStartupState.ActiveGame -> {
+            ActiveGameContent(
                 uiState = uiState,
                 onSoloSushiTapped = onSoloSushiTapped,
                 onPlayerSushiTapped = onPlayerSushiTapped,
@@ -59,28 +83,28 @@ fun CounterScreen(
                 onPlayerResetConfirmed = onPlayerResetConfirmed,
                 onPlayerResetDismissed = onPlayerResetDismissed,
                 onResetSoloCountConfirmed = onResetSoloCountConfirmed,
-                onRestartRequested = onRestartRequested,
-                onRouletteTriggerAccepted = onRouletteTriggerAccepted,
-                onRouletteTriggerDismissed = onRouletteTriggerDismissed,
-                modifier = modifier,
-            )
-            GameSetupDialog(onConfirm = onSetupConfirmed)
-        }
-        AppStartupState.Ready -> {
-            CounterMainContent(
-                uiState = uiState,
-                onSoloSushiTapped = onSoloSushiTapped,
-                onPlayerSushiTapped = onPlayerSushiTapped,
-                onPlayerResetRequested = onPlayerResetRequested,
-                onPlayerResetConfirmed = onPlayerResetConfirmed,
-                onPlayerResetDismissed = onPlayerResetDismissed,
-                onResetSoloCountConfirmed = onResetSoloCountConfirmed,
-                onRestartRequested = onRestartRequested,
+                onFinishGameRequested = onFinishGameRequested,
                 onRouletteTriggerAccepted = onRouletteTriggerAccepted,
                 onRouletteTriggerDismissed = onRouletteTriggerDismissed,
                 modifier = modifier,
             )
         }
+    }
+}
+
+@Composable
+private fun FinishGameDialogs(
+    showFinishGameDialog: Boolean,
+    onFinishGameCancelled: () -> Unit,
+    onFinishGameWithoutSaving: () -> Unit,
+    onFinishGameWithSaving: () -> Unit,
+) {
+    if (showFinishGameDialog) {
+        FinishGameDialog(
+            onDismiss = onFinishGameCancelled,
+            onSkipSave = onFinishGameWithoutSaving,
+            onSave = onFinishGameWithSaving,
+        )
     }
 }
 
@@ -96,7 +120,61 @@ private fun StartupLoadingScreen(
 }
 
 @Composable
-private fun CounterMainContent(
+private fun NoActiveGameContent(
+    onStartGameRequested: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .itamaeScreenTopInsets()
+            .itamaeScreenBottomInsets(scrollable = false)
+            .padding(horizontal = ItamaeSpacing.marginMobile),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        ItamaeScreenTitle(title = stringResource(R.string.counter_screen_title))
+
+        Spacer(modifier = Modifier.height(ItamaeSpacing.md))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            ItamaeCard {
+                Text(
+                    text = stringResource(R.string.counter_no_active_game_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
+
+                Text(
+                    text = stringResource(R.string.counter_no_active_game_subtitle),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        ItamaePrimaryButton(
+            text = stringResource(R.string.counter_start_game),
+            onClick = onStartGameRequested,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun ActiveGameContent(
     uiState: CounterUiState,
     onSoloSushiTapped: () -> Unit,
     onPlayerSushiTapped: (String) -> Unit,
@@ -104,7 +182,7 @@ private fun CounterMainContent(
     onPlayerResetConfirmed: () -> Unit,
     onPlayerResetDismissed: () -> Unit,
     onResetSoloCountConfirmed: () -> Unit,
-    onRestartRequested: () -> Unit,
+    onFinishGameRequested: () -> Unit,
     onRouletteTriggerAccepted: () -> Unit,
     onRouletteTriggerDismissed: () -> Unit,
     modifier: Modifier = Modifier,
@@ -226,8 +304,8 @@ private fun CounterMainContent(
         }
 
         ItamaeGhostButton(
-            text = stringResource(R.string.counter_restart),
-            onClick = onRestartRequested,
+            text = stringResource(R.string.counter_finish_game),
+            onClick = onFinishGameRequested,
             modifier = Modifier.fillMaxWidth(),
         )
     }

@@ -1,5 +1,6 @@
 package com.mancebolabs.sushicounter.ui.components
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -9,6 +10,61 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.DialogProperties
 import com.mancebolabs.sushicounter.R
 import com.mancebolabs.sushicounter.ui.theme.ItamaeShapes
+
+@Composable
+fun FinishGameDialog(
+    onDismiss: () -> Unit,
+    onSkipSave: () -> Unit,
+    onSave: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = ItamaeShapes.large,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        title = {
+            Text(
+                text = stringResource(R.string.finish_game_title),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(R.string.finish_game_message),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onSave) {
+                Text(
+                    text = stringResource(R.string.finish_game_save),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onDismiss) {
+                    Text(
+                        text = stringResource(R.string.counter_cancel),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TextButton(onClick = onSkipSave) {
+                    Text(
+                        text = stringResource(R.string.finish_game_skip_save),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
+        properties = DialogProperties(),
+    )
+}
 
 @Composable
 fun ConfirmationDialog(

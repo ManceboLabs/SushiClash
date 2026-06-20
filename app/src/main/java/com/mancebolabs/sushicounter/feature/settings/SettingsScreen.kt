@@ -31,7 +31,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import com.mancebolabs.sushicounter.R
 import com.mancebolabs.sushicounter.domain.model.AppThemeMode
+import com.mancebolabs.sushicounter.ui.components.ConfirmationDialog
 import com.mancebolabs.sushicounter.ui.components.ItamaeCard
+import com.mancebolabs.sushicounter.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushicounter.ui.components.ItamaeScreenTitle
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushicounter.ui.theme.ItamaeShapes
@@ -43,10 +45,24 @@ import com.mancebolabs.sushicounter.ui.theme.rememberItamaeBottomContentPadding
 fun SettingsScreen(
     uiState: SettingsUiState,
     onThemeModeSelected: (AppThemeMode) -> Unit,
+    onClearHistoryRequested: () -> Unit,
+    onClearHistoryConfirmed: () -> Unit,
+    onClearHistoryDismissed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
     val bottomContentPadding = rememberItamaeBottomContentPadding(scrollable = true)
+
+    if (uiState.showClearHistoryDialog) {
+        ConfirmationDialog(
+            title = stringResource(R.string.settings_clear_history_title),
+            message = stringResource(R.string.settings_clear_history_message),
+            confirmLabel = stringResource(R.string.settings_clear_history_confirm),
+            dismissLabel = stringResource(R.string.counter_cancel),
+            onConfirm = onClearHistoryConfirmed,
+            onDismiss = onClearHistoryDismissed,
+        )
+    }
 
     Column(
         modifier = modifier
@@ -83,6 +99,22 @@ fun SettingsScreen(
                 selected = uiState.themeMode == AppThemeMode.DARK,
                 icon = Icons.Outlined.DarkMode,
                 onClick = { onThemeModeSelected(AppThemeMode.DARK) },
+            )
+        }
+
+        ItamaeCard {
+            Text(
+                text = stringResource(R.string.settings_history_section),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            Spacer(modifier = Modifier.height(ItamaeSpacing.md))
+
+            ItamaeGhostButton(
+                text = stringResource(R.string.settings_clear_history),
+                onClick = onClearHistoryRequested,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

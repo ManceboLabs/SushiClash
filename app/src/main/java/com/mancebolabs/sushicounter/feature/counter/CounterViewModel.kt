@@ -3,12 +3,14 @@ package com.mancebolabs.sushicounter.feature.counter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.mancebolabs.sushicounter.domain.model.FinishedGameSnapshot
 import com.mancebolabs.sushicounter.domain.model.GameMode
 import com.mancebolabs.sushicounter.domain.model.GameSetupConfig
 import com.mancebolabs.sushicounter.domain.model.GameState
-import com.mancebolabs.sushicounter.domain.model.Player
 import com.mancebolabs.sushicounter.domain.model.IncrementResult
+import com.mancebolabs.sushicounter.domain.model.Player
 import com.mancebolabs.sushicounter.domain.repository.GameRepository
+import com.mancebolabs.sushicounter.domain.repository.HistoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +40,8 @@ data class CounterUiState(
     val startupState: AppStartupState = AppStartupState.Loading,
     val playerResetRequest: PlayerResetRequest? = null,
     val rouletteTriggerEvent: RouletteTriggerEvent? = null,
+    val showFinishGameDialog: Boolean = false,
+    val showSetupDialog: Boolean = false,
 ) {
     val gameMode: GameMode?
         get() = gameState.gameMode
@@ -51,34 +55,59 @@ data class CounterUiState(
 
 class CounterViewModel(
     private val gameRepository: GameRepository,
+    private val historyRepository: HistoryRepository,
 ) : ViewModel() {
 
     private val startupState = MutableStateFlow<AppStartupState>(AppStartupState.Loading)
     private val playerResetRequest = MutableStateFlow<PlayerResetRequest?>(null)
     private val rouletteTriggerEvent = MutableStateFlow<RouletteTriggerEvent?>(null)
+    private val showFinishGameDialog = MutableStateFlow(false)
+    private val showSetupDialog = MutableStateFlow(false)
 
     init {
         viewModelScope.launch {
             val loadedState = gameRepository.gameState.first()
-            startupState.value = if (loadedState.hasCompletedSetup) {
-                AppStartupState.Ready
+            startupState.value = if (loadedState.hasActiveGame) {
+                AppStartupState.ActiveGame
             } else {
-                AppStartupState.SetupRequired
+                AppStartupState.NoActiveGame
             }
         }
     }
 
+    private data class CounterScreenState(
+        val startupState: AppStartupState,
+        val playerResetRequest: PlayerResetRequest?,
+        val rouletteTriggerEvent: RouletteTriggerEvent?,
+        val showFinishGameDialog: Boolean,
+        val showSetupDialog: Boolean,
+    )
+
     val uiState: StateFlow<CounterUiState> = combine(
         gameRepository.gameState,
-        startupState,
-        playerResetRequest,
-        rouletteTriggerEvent,
-    ) { gameState, startup, resetRequest, rouletteEvent ->
+        combine(
+            startupState,
+            playerResetRequest,
+            rouletteTriggerEvent,
+            showFinishGameDialog,
+            showSetupDialog,
+        ) { startup, resetRequest, rouletteEvent, finishDialog, setupDialog ->
+            CounterScreenState(
+                startupState = startup,
+                playerResetRequest = resetRequest,
+                rouletteTriggerEvent = rouletteEvent,
+                showFinishGameDialog = finishDialog,
+                showSetupDialog = setupDialog,
+            )
+        },
+    ) { gameState, screenState ->
         CounterUiState(
             gameState = gameState,
-            startupState = startup,
-            playerResetRequest = resetRequest,
-            rouletteTriggerEvent = rouletteEvent,
+            startupState = screenState.startupState,
+            playerResetRequest = screenState.playerResetRequest,
+            rouletteTriggerEvent = screenState.rouletteTriggerEvent,
+            showFinishGameDialog = screenState.showFinishGameDialog,
+            showSetupDialog = screenState.showSetupDialog,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -86,7 +115,12 @@ class CounterViewModel(
         initialValue = CounterUiState(),
     )
 
+    fun onStartGameRequested() {
+        showSetupDialog.value = true
+    }
+
     fun onPlayerSushiTapped(playerId: String) {
+        if (startupState.value != AppStartupState.ActiveGame) return
         viewModelScope.launch {
             val state = gameRepository.gameState.first()
             val result = gameRepository.incrementPlayerCount(playerId)
@@ -119,6 +153,7 @@ class CounterViewModel(
     }
 
     fun onSoloSushiTapped() {
+        if (startupState.value != AppStartupState.ActiveGame) return
         viewModelScope.launch {
             val state = gameRepository.gameState.first()
             val playerId = state.players.firstOrNull()?.id ?: return@launch
@@ -137,14 +172,39 @@ class CounterViewModel(
         }
     }
 
-    fun onRestartRequested() {
-        startupState.value = AppStartupState.SetupRequired
+    fun onFinishGameRequested() {
+        viewModelScope.launch {
+            val snapshot = gameRepository.finishActiveGame() ?: return@launch
+            pendingFinishedGame = snapshot
+            startupState.value = AppStartupState.NoActiveGame
+            showFinishGameDialog.value = true
+        }
+    }
+
+    fun onFinishGameCancelled() {
+        showFinishGameDialog.value = false
+        pendingFinishedGame = null
+    }
+
+    fun onFinishGameWithoutSaving() {
+        showFinishGameDialog.value = false
+        pendingFinishedGame = null
+    }
+
+    fun onFinishGameWithSaving() {
+        viewModelScope.launch {
+            val snapshot = pendingFinishedGame ?: return@launch
+            historyRepository.saveFinishedGame(snapshot)
+            showFinishGameDialog.value = false
+            pendingFinishedGame = null
+        }
     }
 
     fun onSetupConfirmed(config: GameSetupConfig) {
         viewModelScope.launch {
             gameRepository.completeSetup(config)
-            startupState.value = AppStartupState.Ready
+            showSetupDialog.value = false
+            startupState.value = AppStartupState.ActiveGame
         }
     }
 
@@ -155,6 +215,8 @@ class CounterViewModel(
     fun onRouletteTriggerConfirmed() {
         rouletteTriggerEvent.value = null
     }
+
+    private var pendingFinishedGame: FinishedGameSnapshot? = null
 
     private fun emitRouletteTriggerIfNeeded(
         gameState: GameState,
@@ -177,11 +239,14 @@ class CounterViewModel(
     }
 
     companion object {
-        fun factory(gameRepository: GameRepository): ViewModelProvider.Factory {
+        fun factory(
+            gameRepository: GameRepository,
+            historyRepository: HistoryRepository,
+        ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return CounterViewModel(gameRepository) as T
+                    return CounterViewModel(gameRepository, historyRepository) as T
                 }
             }
         }

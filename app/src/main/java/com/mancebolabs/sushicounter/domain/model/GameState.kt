@@ -1,7 +1,7 @@
 package com.mancebolabs.sushicounter.domain.model
 
 data class GameState(
-    val hasCompletedSetup: Boolean = false,
+    val hasActiveGame: Boolean = false,
     val gameMode: GameMode? = null,
     val players: List<Player> = emptyList(),
     val randomRouletteEnabled: Boolean = false,

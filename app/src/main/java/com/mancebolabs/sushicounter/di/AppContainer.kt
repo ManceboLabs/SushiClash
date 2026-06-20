@@ -3,9 +3,11 @@ package com.mancebolabs.sushicounter.di
 import android.content.Context
 import com.mancebolabs.sushicounter.data.datastore.AppPreferencesDataStore
 import com.mancebolabs.sushicounter.data.repository.GameRepositoryImpl
+import com.mancebolabs.sushicounter.data.repository.HistoryRepositoryImpl
 import com.mancebolabs.sushicounter.data.repository.ParticipantsRepositoryImpl
 import com.mancebolabs.sushicounter.data.repository.ThemeRepositoryImpl
 import com.mancebolabs.sushicounter.domain.repository.GameRepository
+import com.mancebolabs.sushicounter.domain.repository.HistoryRepository
 import com.mancebolabs.sushicounter.domain.repository.ParticipantsRepository
 import com.mancebolabs.sushicounter.domain.repository.ThemeRepository
 
@@ -16,6 +18,10 @@ object AppContainer {
 
     fun gameRepository(context: Context): GameRepository {
         return GameRepositoryImpl(dataStore(context))
+    }
+
+    fun historyRepository(context: Context): HistoryRepository {
+        return HistoryRepositoryImpl(dataStore(context))
     }
 
     fun participantsRepository(context: Context): ParticipantsRepository {

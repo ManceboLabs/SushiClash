@@ -16,7 +16,7 @@ class ParticipantsRepositoryImpl(
 
     override suspend fun ensureGroupParticipantsSeeded() {
         val gameState = gameRepository.gameState.first()
-        if (gameState.gameMode != GameMode.GROUP) return
+        if (!gameState.hasActiveGame || gameState.gameMode != GameMode.GROUP) return
 
         val playerNames = gameState.players.map { it.name }
         if (playerNames.size < AppPreferencesDataStore.MIN_GROUP_PLAYERS) return
