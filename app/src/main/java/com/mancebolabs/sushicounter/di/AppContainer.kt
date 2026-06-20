@@ -4,8 +4,10 @@ import android.content.Context
 import com.mancebolabs.sushicounter.data.datastore.AppPreferencesDataStore
 import com.mancebolabs.sushicounter.data.repository.GameRepositoryImpl
 import com.mancebolabs.sushicounter.data.repository.ParticipantsRepositoryImpl
+import com.mancebolabs.sushicounter.data.repository.ThemeRepositoryImpl
 import com.mancebolabs.sushicounter.domain.repository.GameRepository
 import com.mancebolabs.sushicounter.domain.repository.ParticipantsRepository
+import com.mancebolabs.sushicounter.domain.repository.ThemeRepository
 
 object AppContainer {
     private fun dataStore(context: Context): AppPreferencesDataStore {
@@ -20,5 +22,9 @@ object AppContainer {
         val store = dataStore(context)
         val gameRepository = GameRepositoryImpl(store)
         return ParticipantsRepositoryImpl(store, gameRepository)
+    }
+
+    fun themeRepository(context: Context): ThemeRepository {
+        return ThemeRepositoryImpl(dataStore(context))
     }
 }

@@ -5,7 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mancebolabs.sushicounter.di.AppContainer
+import com.mancebolabs.sushicounter.domain.model.AppThemeMode
 import com.mancebolabs.sushicounter.navigation.SushiCounterApp
 import com.mancebolabs.sushicounter.ui.theme.SushiCounterTheme
 
@@ -14,7 +19,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            SushiCounterTheme {
+            val context = LocalContext.current
+            val themeRepository = AppContainer.themeRepository(context)
+            val themeMode by themeRepository.themeMode.collectAsStateWithLifecycle(
+                initialValue = AppThemeMode.LIGHT,
+            )
+
+            SushiCounterTheme(
+                darkTheme = themeMode == AppThemeMode.DARK,
+            ) {
                 SushiCounterApp(modifier = Modifier.fillMaxSize())
             }
         }

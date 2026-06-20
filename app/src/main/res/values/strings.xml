@@ -4,6 +4,13 @@
     <!-- Bottom navigation -->
     <string name="nav_counter">Contador</string>
     <string name="nav_wheel">Ruleta</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- Settings screen -->
+    <string name="settings_screen_title">Ajustes</string>
+    <string name="settings_appearance_section">Apariencia</string>
+    <string name="settings_theme_light">Modo claro</string>
+    <string name="settings_theme_dark">Modo oscuro</string>
 
     <!-- Counter screen -->
     <string name="counter_screen_title">@string/app_name</string>

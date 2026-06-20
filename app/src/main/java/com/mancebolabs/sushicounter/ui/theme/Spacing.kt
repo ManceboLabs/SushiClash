@@ -12,5 +12,5 @@ object ItamaeSpacing {
     val marginMobile = 20.dp
     val navBottomMargin = 24.dp
     val navSidePadding = 16.dp
-    val floatingNavBarDefaultHeight = 64.dp
+    val floatingNavBarDefaultHeight = 80.dp
 }

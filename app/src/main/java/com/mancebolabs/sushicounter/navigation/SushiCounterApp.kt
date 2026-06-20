@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Casino
-import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,6 +32,8 @@ import com.mancebolabs.sushicounter.R
 import com.mancebolabs.sushicounter.di.AppContainer
 import com.mancebolabs.sushicounter.feature.counter.CounterScreen
 import com.mancebolabs.sushicounter.feature.counter.CounterViewModel
+import com.mancebolabs.sushicounter.feature.settings.SettingsScreen
+import com.mancebolabs.sushicounter.feature.settings.SettingsViewModel
 import com.mancebolabs.sushicounter.feature.wheel.WheelScreen
 import com.mancebolabs.sushicounter.feature.wheel.WheelViewModel
 import com.mancebolabs.sushicounter.ui.components.ItamaeFloatingNavBar
@@ -44,6 +47,8 @@ sealed class SushiDestination(
     data object Counter : SushiDestination("counter")
 
     data object Wheel : SushiDestination("wheel")
+
+    data object Settings : SushiDestination("settings")
 }
 
 @Composable
@@ -59,13 +64,18 @@ fun SushiCounterApp(
     val navItems = listOf(
         ItamaeNavItem(
             route = SushiDestination.Counter.route,
-            label = stringResource(R.string.nav_counter),
-            icon = Icons.Default.Restaurant,
+            contentDescription = stringResource(R.string.nav_counter),
+            iconRes = R.drawable.ic_sushi,
         ),
         ItamaeNavItem(
             route = SushiDestination.Wheel.route,
-            label = stringResource(R.string.nav_wheel),
+            contentDescription = stringResource(R.string.nav_wheel),
             icon = Icons.Default.Casino,
+        ),
+        ItamaeNavItem(
+            route = SushiDestination.Settings.route,
+            contentDescription = stringResource(R.string.nav_settings),
+            icon = Icons.Default.Settings,
         ),
     )
 
@@ -81,7 +91,7 @@ fun SushiCounterApp(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 composable(SushiDestination.Counter.route) {
-                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val context = LocalContext.current
                     val viewModel: CounterViewModel = viewModel(
                         factory = CounterViewModel.factory(
                             AppContainer.gameRepository(context),
@@ -102,7 +112,7 @@ fun SushiCounterApp(
                     )
                 }
                 composable(SushiDestination.Wheel.route) {
-                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val context = LocalContext.current
                     val viewModel: WheelViewModel = viewModel(
                         factory = WheelViewModel.factory(
                             AppContainer.participantsRepository(context),
@@ -117,6 +127,20 @@ fun SushiCounterApp(
                         onRemoveParticipant = viewModel::onRemoveParticipant,
                         onSpin = viewModel::onSpin,
                         onWinnerDialogDismissed = viewModel::onWinnerDialogDismissed,
+                    )
+                }
+                composable(SushiDestination.Settings.route) {
+                    val context = LocalContext.current
+                    val viewModel: SettingsViewModel = viewModel(
+                        factory = SettingsViewModel.factory(
+                            AppContainer.themeRepository(context),
+                        ),
+                    )
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+                    SettingsScreen(
+                        uiState = uiState,
+                        onThemeModeSelected = viewModel::onThemeModeSelected,
                     )
                 }
             }

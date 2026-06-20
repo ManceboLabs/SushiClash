@@ -7,8 +7,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+
+@Composable
+fun itamaeWasabiAccent(alpha: Float = 0.85f): Color {
+    val colorScheme = MaterialTheme.colorScheme
+    val wasabi = if (colorScheme.background.luminance() > 0.5f) {
+        colorScheme.secondaryContainer
+    } else {
+        colorScheme.secondary
+    }
+    return wasabi.copy(alpha = alpha)
+}
+
+@Composable
+fun Modifier.itamaeFloatingNavBarShadow(
+    elevation: Dp = 4.dp,
+    shape: Shape = ItamaeShapes.extraLarge,
+): Modifier = shadow(
+    elevation = elevation,
+    shape = shape,
+    spotColor = itamaeWasabiAccent(alpha = 0.22f),
+    ambientColor = itamaeWasabiAccent(alpha = 0.12f),
+)
 
 @Composable
 fun Modifier.itamaeCardShadow(

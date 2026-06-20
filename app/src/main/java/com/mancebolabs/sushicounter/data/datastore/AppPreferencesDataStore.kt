@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.mancebolabs.sushicounter.domain.model.AppThemeMode
 import com.mancebolabs.sushicounter.domain.model.GameMode
 import com.mancebolabs.sushicounter.domain.model.GameState
 import com.mancebolabs.sushicounter.domain.model.Player
@@ -39,6 +40,18 @@ class AppPreferencesDataStore(
 
     val participants: Flow<List<String>> = context.dataStore.data.map { preferences ->
         decodeParticipants(preferences[PARTICIPANTS_KEY].orEmpty())
+    }
+
+    val themeMode: Flow<AppThemeMode> = context.dataStore.data.map { preferences ->
+        preferences[THEME_MODE_KEY]?.let { storedTheme ->
+            runCatching { AppThemeMode.valueOf(storedTheme) }.getOrNull()
+        } ?: AppThemeMode.LIGHT
+    }
+
+    suspend fun setThemeMode(themeMode: AppThemeMode) {
+        context.dataStore.edit { preferences ->
+            preferences[THEME_MODE_KEY] = themeMode.name
+        }
     }
 
     suspend fun saveGameState(
@@ -121,6 +134,7 @@ class AppPreferencesDataStore(
         private val GAME_MODE_KEY = stringPreferencesKey("game_mode")
         private val PLAYERS_KEY = stringPreferencesKey("players")
         private val PARTICIPANTS_KEY = stringPreferencesKey("participants")
+        private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
         const val SOLO_PLAYER_ID = "solo_player"
         const val MAX_GROUP_PLAYERS = 6
         const val MIN_GROUP_PLAYERS = 2
