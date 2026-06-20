@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.mancebolabs.sushicounter"
+    namespace = "com.mancebolabs.sushiclash"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.mancebolabs.sushicounter"
+        applicationId = "com.mancebolabs.sushiclash"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

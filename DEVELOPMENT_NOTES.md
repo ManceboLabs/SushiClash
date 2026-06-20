@@ -12,7 +12,7 @@ Every future feature, bugfix or refactor must include the necessary tests and up
 
 ## Test layout
 
-Unit tests live under `app/src/test/java/com/mancebolabs/sushicounter/`:
+Unit tests live under `app/src/test/java/com/mancebolabs/sushiclash/`:
 
 - `counter/` — counter screen ViewModel and gameplay flow
 - `game/` — setup rules and repository behavior
