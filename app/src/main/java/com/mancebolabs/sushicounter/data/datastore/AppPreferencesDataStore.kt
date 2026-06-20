@@ -1,0 +1,128 @@
+package com.mancebolabs.sushicounter.data.datastore
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import com.mancebolabs.sushicounter.domain.model.GameMode
+import com.mancebolabs.sushicounter.domain.model.GameState
+import com.mancebolabs.sushicounter.domain.model.Player
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import org.json.JSONArray
+import org.json.JSONObject
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "sushi_counter_preferences",
+)
+
+class AppPreferencesDataStore(
+    private val context: Context,
+) {
+    val gameState: Flow<GameState> = context.dataStore.data.map { preferences ->
+        val hasCompletedSetup = preferences[HAS_COMPLETED_SETUP_KEY] ?: false
+        val gameMode = preferences[GAME_MODE_KEY]?.let { storedMode ->
+            runCatching { GameMode.valueOf(storedMode) }.getOrNull()
+        }
+        val players = decodePlayers(preferences[PLAYERS_KEY].orEmpty())
+
+        GameState(
+            hasCompletedSetup = hasCompletedSetup,
+            gameMode = gameMode,
+            players = players,
+        )
+    }
+
+    val participants: Flow<List<String>> = context.dataStore.data.map { preferences ->
+        decodeParticipants(preferences[PARTICIPANTS_KEY].orEmpty())
+    }
+
+    suspend fun saveGameState(
+        hasCompletedSetup: Boolean,
+        gameMode: GameMode,
+        players: List<Player>,
+    ) {
+        context.dataStore.edit { preferences ->
+            preferences[HAS_COMPLETED_SETUP_KEY] = hasCompletedSetup
+            preferences[GAME_MODE_KEY] = gameMode.name
+            preferences[PLAYERS_KEY] = encodePlayers(players)
+        }
+    }
+
+    suspend fun setPlayers(players: List<Player>) {
+        context.dataStore.edit { preferences ->
+            preferences[PLAYERS_KEY] = encodePlayers(players)
+        }
+    }
+
+    suspend fun setParticipants(names: List<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[PARTICIPANTS_KEY] = encodeParticipants(names)
+        }
+    }
+
+    private fun encodePlayers(players: List<Player>): String {
+        val jsonArray = JSONArray()
+        players.forEach { player ->
+            jsonArray.put(
+                JSONObject().apply {
+                    put("id", player.id)
+                    put("name", player.name)
+                    put("sushiCount", player.sushiCount)
+                },
+            )
+        }
+        return jsonArray.toString()
+    }
+
+    private fun decodePlayers(raw: String): List<Player> {
+        if (raw.isBlank()) return emptyList()
+        return runCatching {
+            val jsonArray = JSONArray(raw)
+            buildList {
+                for (index in 0 until jsonArray.length()) {
+                    val item = jsonArray.getJSONObject(index)
+                    add(
+                        Player(
+                            id = item.getString("id"),
+                            name = item.getString("name"),
+                            sushiCount = item.optInt("sushiCount", 0),
+                        ),
+                    )
+                }
+            }
+        }.getOrDefault(emptyList())
+    }
+
+    private fun encodeParticipants(names: List<String>): String {
+        val jsonArray = JSONArray()
+        names.forEach { name -> jsonArray.put(name) }
+        return jsonArray.toString()
+    }
+
+    private fun decodeParticipants(raw: String): List<String> {
+        if (raw.isBlank()) return emptyList()
+        return runCatching {
+            val jsonArray = JSONArray(raw)
+            buildList {
+                for (index in 0 until jsonArray.length()) {
+                    add(jsonArray.getString(index))
+                }
+            }
+        }.getOrDefault(emptyList())
+    }
+
+    companion object {
+        private val HAS_COMPLETED_SETUP_KEY = booleanPreferencesKey("has_completed_setup")
+        private val GAME_MODE_KEY = stringPreferencesKey("game_mode")
+        private val PLAYERS_KEY = stringPreferencesKey("players")
+        private val PARTICIPANTS_KEY = stringPreferencesKey("participants")
+        const val SOLO_PLAYER_ID = "solo_player"
+        const val MAX_GROUP_PLAYERS = 6
+        const val MIN_GROUP_PLAYERS = 2
+    }
+}

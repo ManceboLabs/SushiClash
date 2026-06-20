@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">Sushi Clash</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_counter">Contador</string>
+    <string name="nav_wheel">Ruleta</string>
+
+    <!-- Counter screen -->
+    <string name="counter_screen_title">@string/app_name</string>
+    <string name="counter_sushi_eaten">Sushis Humillados</string>
+    <string name="counter_reset">Reiniciar</string>
+    <string name="counter_reset_title">¿Reiniciar contador?</string>
+    <string name="counter_player_reset_message">¿Quieres reiniciar el contador de sushi de %1$s?</string>
+    <string name="counter_reset_confirm">Reiniciar</string>
+    <string name="counter_cancel">Cancelar</string>
+    <string name="counter_sushi_content_description">Sushi</string>
+    <string name="counter_plus_one">+1</string>
+    <string name="counter_restart">Volver a empezar</string>
+
+    <!-- Setup -->
+    <string name="setup_title">Elige el modo de juego</string>
+    <string name="setup_solo_title">Solo</string>
+    <string name="setup_solo_description">Un jugador, un contador de sushi</string>
+    <string name="setup_group_title">Grupo</string>
+    <string name="setup_group_description">Hasta 6 jugadores alrededor de la mesa</string>
+    <string name="setup_start">Empezar</string>
+    <string name="setup_player_name_hint">Introduce un nombre</string>
+    <string name="setup_min_players_hint">Añade mínimo 2 jugadores para continuar</string>
+
+    <!-- Wheel screen -->
+    <string name="wheel_screen_title">Sushi Roulette</string>
+    <string name="wheel_name_hint">Introduce un nombre</string>
+    <string name="wheel_add">Añadir</string>
+    <string name="wheel_spin">Girar</string>
+    <string name="wheel_participants_title">Participantes</string>
+    <string name="wheel_delete_content_description">Eliminar %1$s</string>
+    <string name="wheel_selected_title">Elige el sushi:</string>
+    <string name="wheel_ok">OK</string>
+    <string name="wheel_min_participants_hint">Añade mínimo 2 personas para girar la ruleta</string>
+    <string name="wheel_empty_wheel_hint">Añade más participantes para girar la ruleta</string>
+</resources>
