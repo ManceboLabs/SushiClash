@@ -61,12 +61,13 @@ class FakeGameRepository(
     private val _gameState = MutableStateFlow(initialState)
     override val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
-    var finishActiveGameCallCount = 0
+    var createFinishedGameSnapshotCallCount = 0
+    var clearActiveGameCallCount = 0
     var lastFinishedSnapshot: FinishedGameSnapshot? = null
     var lastSetupConfig: GameSetupConfig? = null
 
-    override suspend fun finishActiveGame(): FinishedGameSnapshot? {
-        finishActiveGameCallCount++
+    override suspend fun createFinishedGameSnapshot(): FinishedGameSnapshot? {
+        createFinishedGameSnapshotCallCount++
         val current = _gameState.value
         if (!current.hasActiveGame || current.gameMode == null) {
             return null
@@ -86,8 +87,12 @@ class FakeGameRepository(
             finishedAt = 1_700_000_000_000L,
         )
         lastFinishedSnapshot = snapshot
-        _gameState.value = GameState(hasActiveGame = false)
         return snapshot
+    }
+
+    override suspend fun clearActiveGame() {
+        clearActiveGameCallCount++
+        _gameState.value = GameState(hasActiveGame = false)
     }
 
     override suspend fun completeSetup(config: GameSetupConfig) {

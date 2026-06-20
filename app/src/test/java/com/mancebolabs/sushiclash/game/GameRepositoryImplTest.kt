@@ -162,26 +162,34 @@ class GameRepositoryImplTest {
     }
 
     @Test
-    fun givenActiveGame_whenFinishing_thenClearsActiveGameAndReturnsSnapshot() = runTest {
+    fun givenActiveGame_whenCreatingSnapshot_thenReturnsSnapshotWithoutClearing() = runTest {
         gameStateFlow.value = TestGameStates.soloActive(count = 12)
-        coEvery { dataStore.clearActiveGame() } just Runs
 
-        val snapshot = repository.finishActiveGame()
+        val snapshot = repository.createFinishedGameSnapshot()
 
         assertNotNull(snapshot)
         assertEquals(GameMode.SOLO, snapshot?.gameMode)
         assertEquals(12, snapshot?.soloCount)
-        coVerify { dataStore.clearActiveGame() }
+        coVerify(exactly = 0) { dataStore.clearActiveGame() }
     }
 
     @Test
-    fun givenNoActiveGame_whenFinishing_thenReturnsNull() = runTest {
+    fun givenNoActiveGame_whenCreatingSnapshot_thenReturnsNull() = runTest {
         gameStateFlow.value = GameState(hasActiveGame = false)
 
-        val snapshot = repository.finishActiveGame()
+        val snapshot = repository.createFinishedGameSnapshot()
 
         assertNull(snapshot)
         coVerify(exactly = 0) { dataStore.clearActiveGame() }
+    }
+
+    @Test
+    fun givenActiveGame_whenClearingActiveGame_thenPersistenceIsCleared() = runTest {
+        coEvery { dataStore.clearActiveGame() } just Runs
+
+        repository.clearActiveGame()
+
+        coVerify(exactly = 1) { dataStore.clearActiveGame() }
     }
 }
 

@@ -22,14 +22,14 @@ class GameRepositoryImpl(
 
     override val gameState: Flow<GameState> = dataStore.gameState
 
-    override suspend fun finishActiveGame(): FinishedGameSnapshot? {
+    override suspend fun createFinishedGameSnapshot(): FinishedGameSnapshot? {
         val currentState = dataStore.gameState.first()
         if (!currentState.hasActiveGame || currentState.gameMode == null) {
             return null
         }
 
-        // Snapshot is taken before clearing persistence so the user can still choose to save it.
-        val snapshot = FinishedGameSnapshot(
+        // Snapshot is built from the still-active game; persistence is cleared only after confirm.
+        return FinishedGameSnapshot(
             gameMode = currentState.gameMode,
             soloCount = if (currentState.gameMode == GameMode.SOLO) {
                 currentState.soloCount
@@ -47,9 +47,10 @@ class GameRepositoryImpl(
             randomRouletteFixedThreshold = currentState.randomRouletteFixedThreshold,
             finishedAt = System.currentTimeMillis(),
         )
+    }
 
+    override suspend fun clearActiveGame() {
         dataStore.clearActiveGame()
-        return snapshot
     }
 
     override suspend fun completeSetup(config: GameSetupConfig) {

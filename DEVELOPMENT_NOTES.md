@@ -37,7 +37,7 @@ The counter screen uses three startup states:
 
 First-launch onboarding is handled as a dedicated `onboarding/FIRST_LAUNCH` navigation route before tabs render. Manual replay from Settings navigates to `onboarding/SETTINGS` and returns with `popBackStack()`. The bottom navigation bar is hidden on all onboarding routes.
 
-Finishing a game clears persisted active state immediately. A `FinishedGameSnapshot` is kept in memory only until the user saves or discards it.
+Finishing a game opens a confirmation dialog first. The active game stays in persistence until the user chooses Guardar or No guardar, so Cancel and unexpected app closure do not lose in-progress counters. The finish dialog itself is not restored on relaunch.
 
 ## Compose Previews
 

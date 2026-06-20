@@ -3,7 +3,6 @@ package com.mancebolabs.sushiclash.feature.counter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
@@ -185,31 +184,30 @@ class CounterViewModel(
     }
 
     fun onFinishGameRequested() {
-        viewModelScope.launch {
-            // Active game is cleared in the repository before the save dialog is shown.
-            val snapshot = gameRepository.finishActiveGame() ?: return@launch
-            pendingFinishedGame = snapshot
-            startupState.value = AppStartupState.NoActiveGame
-            showFinishGameDialog.value = true
-        }
+        if (startupState.value != AppStartupState.ActiveGame) return
+        // Only open the dialog; the active game stays in persistence so Cancel and process death are safe.
+        showFinishGameDialog.value = true
     }
 
     fun onFinishGameCancelled() {
         showFinishGameDialog.value = false
-        pendingFinishedGame = null
     }
 
     fun onFinishGameWithoutSaving() {
-        showFinishGameDialog.value = false
-        pendingFinishedGame = null
+        viewModelScope.launch {
+            gameRepository.clearActiveGame()
+            showFinishGameDialog.value = false
+            startupState.value = AppStartupState.NoActiveGame
+        }
     }
 
     fun onFinishGameWithSaving() {
         viewModelScope.launch {
-            val snapshot = pendingFinishedGame ?: return@launch
+            val snapshot = gameRepository.createFinishedGameSnapshot() ?: return@launch
             historyRepository.saveFinishedGame(snapshot)
+            gameRepository.clearActiveGame()
             showFinishGameDialog.value = false
-            pendingFinishedGame = null
+            startupState.value = AppStartupState.NoActiveGame
         }
     }
 
@@ -228,8 +226,6 @@ class CounterViewModel(
     fun onRouletteTriggerConfirmed() {
         rouletteTriggerEvent.value = null
     }
-
-    private var pendingFinishedGame: FinishedGameSnapshot? = null
 
     private fun emitRouletteTriggerIfNeeded(
         gameState: GameState,
