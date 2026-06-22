@@ -284,6 +284,13 @@ private fun SushiCounterNavHost(
                 }
                 composable(SushiDestination.Settings.route) {
                     val context = LocalContext.current
+                    val appVersion = remember(context) {
+                        runCatching {
+                            context.packageManager
+                                .getPackageInfo(context.packageName, 0)
+                                .versionName
+                        }.getOrNull().orEmpty()
+                    }
                     val viewModel: SettingsViewModel = viewModel(
                         factory = SettingsViewModel.factory(
                             AppContainer.themeRepository(context),
@@ -299,10 +306,13 @@ private fun SushiCounterNavHost(
                         onClearHistoryConfirmed = viewModel::onClearHistoryConfirmed,
                         onClearHistoryDismissed = viewModel::onClearHistoryDismissed,
                         onViewTutorialRequested = {
+                            // Navigate to onboarding without mutating app state; completion
+                            // and first-launch flags remain unchanged until the user finishes.
                             navController.navigate(
                                 SushiDestination.Onboarding.route(OnboardingSource.SETTINGS),
                             )
                         },
+                        appVersion = appVersion,
                     )
                 }
             }

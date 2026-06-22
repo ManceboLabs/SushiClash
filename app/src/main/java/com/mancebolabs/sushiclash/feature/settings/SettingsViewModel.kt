@@ -56,6 +56,8 @@ class SettingsViewModel(
 
     fun onClearHistoryConfirmed() {
         viewModelScope.launch {
+            // Only persisted history lists are cleared. Active game, theme, and onboarding
+            // completion live in separate preferences and are intentionally untouched here.
             historyRepository.clearHistory()
             showClearHistoryDialog.value = false
         }

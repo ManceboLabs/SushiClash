@@ -12,13 +12,18 @@
     <string name="settings_appearance_section">Apariencia</string>
     <string name="settings_history_section">Histórico</string>
     <string name="settings_clear_history">Borrar histórico</string>
-    <string name="settings_clear_history_title">¿Borrar histórico?</string>
-    <string name="settings_clear_history_message">Se eliminarán todas las partidas guardadas en solitario y en grupo. Esta acción no se puede deshacer.</string>
+    <string name="settings_clear_history_title">Borrar histórico</string>
+    <string name="settings_clear_history_message">¿Seguro que quieres eliminar todas las partidas guardadas? Esta acción no se puede deshacer.</string>
     <string name="settings_clear_history_confirm">Borrar</string>
+    <string name="settings_clear_history_description">Elimina todas las partidas guardadas del histórico.</string>
     <string name="settings_theme_light">Modo claro</string>
     <string name="settings_theme_dark">Modo oscuro</string>
     <string name="settings_help_section">Ayuda</string>
     <string name="settings_view_tutorial">Ver tutorial</string>
+    <string name="settings_view_tutorial_description">Vuelve a ver la guía inicial de Sushi Clash.</string>
+    <string name="settings_about_section">Acerca de</string>
+    <string name="settings_about_version">Versión %1$s</string>
+    <string name="settings_about_branding">Mancebo Labs</string>
 
     <!-- Onboarding -->
     <string name="onboarding_skip">Saltar</string>

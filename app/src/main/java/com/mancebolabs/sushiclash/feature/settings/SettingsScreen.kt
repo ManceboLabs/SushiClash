@@ -16,12 +16,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -35,7 +41,6 @@ import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.ui.components.ConfirmationDialog
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
-import com.mancebolabs.sushiclash.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
@@ -51,6 +56,7 @@ fun SettingsScreen(
     onClearHistoryConfirmed: () -> Unit,
     onClearHistoryDismissed: () -> Unit,
     onViewTutorialRequested: () -> Unit,
+    appVersion: String = "",
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -75,19 +81,14 @@ fun SettingsScreen(
             .verticalScroll(scrollState)
             .padding(horizontal = ItamaeSpacing.marginMobile)
             .padding(bottom = bottomContentPadding),
-        verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.lg),
     ) {
         ItamaeScreenTitle(title = stringResource(R.string.settings_screen_title))
 
-        ItamaeCard {
-            Text(
-                text = stringResource(R.string.settings_appearance_section),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            Spacer(modifier = Modifier.height(ItamaeSpacing.md))
-
+        SettingsSectionCard(
+            title = stringResource(R.string.settings_appearance_section),
+            icon = Icons.Outlined.Palette,
+        ) {
             ThemeOptionCard(
                 title = stringResource(R.string.settings_theme_light),
                 selected = uiState.themeMode == AppThemeMode.LIGHT,
@@ -105,35 +106,191 @@ fun SettingsScreen(
             )
         }
 
-        ItamaeCard {
-            Text(
-                text = stringResource(R.string.settings_help_section),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            Spacer(modifier = Modifier.height(ItamaeSpacing.md))
-
-            ItamaeGhostButton(
-                text = stringResource(R.string.settings_view_tutorial),
+        SettingsSectionCard(
+            title = stringResource(R.string.settings_help_section),
+            icon = Icons.AutoMirrored.Outlined.HelpOutline,
+        ) {
+            SettingsActionRow(
+                icon = Icons.AutoMirrored.Outlined.HelpOutline,
+                title = stringResource(R.string.settings_view_tutorial),
+                description = stringResource(R.string.settings_view_tutorial_description),
+                trailing = SettingsTrailing.Chevron,
                 onClick = onViewTutorialRequested,
-                modifier = Modifier.fillMaxWidth(),
             )
         }
 
+        SettingsSectionCard(
+            title = stringResource(R.string.settings_history_section),
+            icon = Icons.Outlined.DeleteOutline,
+        ) {
+            SettingsActionRow(
+                icon = Icons.Outlined.DeleteOutline,
+                title = stringResource(R.string.settings_clear_history),
+                description = stringResource(R.string.settings_clear_history_description),
+                trailing = SettingsTrailing.DestructiveButton(
+                    label = stringResource(R.string.settings_clear_history),
+                ),
+                destructive = true,
+                onClick = onClearHistoryRequested,
+            )
+        }
+
+        SettingsSectionCard(
+            title = stringResource(R.string.settings_about_section),
+            icon = Icons.Outlined.Info,
+        ) {
+            SettingsAboutContent(appVersion = appVersion)
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionCard(
+    title: String,
+    icon: ImageVector,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.sm),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
         ItamaeCard {
+            content()
+        }
+    }
+}
+
+private sealed interface SettingsTrailing {
+    data object Chevron : SettingsTrailing
+
+    data class DestructiveButton(val label: String) : SettingsTrailing
+}
+
+@Composable
+private fun SettingsActionRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    trailing: SettingsTrailing,
+    onClick: () -> Unit,
+    destructive: Boolean = false,
+) {
+    val iconTint = if (destructive) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+    val titleColor = if (destructive) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    val rowClickable = trailing is SettingsTrailing.Chevron
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (rowClickable) {
+                    Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClick,
+                    )
+                } else {
+                    Modifier
+                },
+            )
+            .padding(vertical = ItamaeSpacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(ItamaeSpacing.md),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(ItamaeSpacing.lg),
+            tint = iconTint,
+        )
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.xs),
+        ) {
             Text(
-                text = stringResource(R.string.settings_history_section),
-                style = MaterialTheme.typography.titleMedium,
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = titleColor,
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        when (trailing) {
+            SettingsTrailing.Chevron -> {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(ItamaeSpacing.lg),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            is SettingsTrailing.DestructiveButton -> {
+                TextButton(onClick = onClick) {
+                    Text(
+                        text = trailing.label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsAboutContent(appVersion: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = ItamaeSpacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(ItamaeSpacing.md),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Info,
+            contentDescription = null,
+            modifier = Modifier.size(ItamaeSpacing.lg),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.xs),
+        ) {
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-
-            Spacer(modifier = Modifier.height(ItamaeSpacing.md))
-
-            ItamaeGhostButton(
-                text = stringResource(R.string.settings_clear_history),
-                onClick = onClearHistoryRequested,
-                modifier = Modifier.fillMaxWidth(),
+            if (appVersion.isNotBlank()) {
+                Text(
+                    text = stringResource(R.string.settings_about_version, appVersion),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                text = stringResource(R.string.settings_about_branding),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -214,6 +371,7 @@ private fun SettingsLightPreview() {
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
             onViewTutorialRequested = {},
+            appVersion = "1.0",
         )
     }
 }
@@ -229,19 +387,7 @@ private fun SettingsDarkPreview() {
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
             onViewTutorialRequested = {},
-        )
-    }
-}
-
-@Preview(name = "Theme option selected", showBackground = true)
-@Composable
-private fun ThemeOptionCardPreview() {
-    ItamaePreviewTheme {
-        ThemeOptionCard(
-            title = "Modo claro",
-            selected = true,
-            icon = Icons.Outlined.LightMode,
-            onClick = {},
+            appVersion = "1.0",
         )
     }
 }
@@ -260,6 +406,7 @@ private fun SettingsClearHistoryDialogPreview() {
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
             onViewTutorialRequested = {},
+            appVersion = "1.0",
         )
     }
 }
