@@ -51,6 +51,12 @@ val ItamaeDarkSurfaceContainerHigh = Color(0xFF383838)
 val ItamaeDarkOnSurface = Color(0xFFF1F1F1)
 val ItamaeDarkOnSurfaceVariant = Color(0xFFDEC0B6)
 
+/** Elevated sushi-button surface in dark mode; kept separate from screen background for contrast. */
+val ItamaeSushiButtonDarkContainer = Color(0xFF45423C)
+val ItamaeSushiButtonDarkContainerPressed = Color(0xFF3A3834)
+val ItamaeSushiButtonDarkImageBackdrop = Color(0xFF56524C)
+val ItamaeSushiButtonDarkImageOutline = Color(0x1FFFFFFF)
+
 val ItamaeWheelSegmentColors = listOf(
     ItamaePrimaryContainer,
     ItamaeSecondaryContainer,

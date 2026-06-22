@@ -33,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
@@ -45,10 +44,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
-import com.mancebolabs.sushiclash.ui.theme.ItamaePrimaryContainer
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.itamaeInteractionShadow
 import com.mancebolabs.sushiclash.ui.theme.itamaePressedShadow
+import com.mancebolabs.sushiclash.ui.theme.sushiButtonBorder
+import com.mancebolabs.sushiclash.ui.theme.sushiButtonContainerColor
+import com.mancebolabs.sushiclash.ui.theme.sushiButtonImageBackdropColor
+import com.mancebolabs.sushiclash.ui.theme.sushiButtonImageOutlineColor
+import com.mancebolabs.sushiclash.ui.theme.sushiButtonShadow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -79,8 +82,8 @@ fun SushiClickerButton(
 
     val shadowElevation by animateDpAsState(
         targetValue = when {
-            isPressed -> 1.dp
-            isDarkTheme -> 6.dp
+            isPressed -> 2.dp
+            isDarkTheme -> 8.dp
             else -> 3.dp
         },
         animationSpec = tween(durationMillis = PRESS_ANIMATION_MS, easing = FastOutSlowInEasing),
@@ -92,39 +95,25 @@ fun SushiClickerButton(
         easing = FastOutSlowInEasing,
     )
 
-    val containerColor = when {
-        isPressed && isDarkTheme -> MaterialTheme.colorScheme.surfaceContainerHighest
-        isPressed -> MaterialTheme.colorScheme.surfaceContainerHigh
-        isDarkTheme -> MaterialTheme.colorScheme.surfaceContainerHigh
-        else -> MaterialTheme.colorScheme.surfaceContainerLowest
-    }
+    val containerColor = sushiButtonContainerColor(isPressed = isPressed)
 
     val shadowModifier = when {
         isPressed -> Modifier.itamaePressedShadow(
             elevation = shadowElevation,
             shape = ItamaeShapes.large,
         )
-        isDarkTheme -> Modifier.shadow(
-            elevation = shadowElevation,
-            shape = ItamaeShapes.large,
-            spotColor = ItamaePrimaryContainer.copy(alpha = 0.28f),
-            ambientColor = ItamaePrimaryContainer.copy(alpha = 0.14f),
-        )
+        isDarkTheme -> Modifier.sushiButtonShadow(elevation = shadowElevation)
         else -> Modifier.itamaeInteractionShadow(
             elevation = shadowElevation,
             shape = ItamaeShapes.large,
         )
     }
 
-    val borderModifier = if (isDarkTheme) {
-        Modifier.border(
-            width = 1.5.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
-            shape = ItamaeShapes.large,
-        )
-    } else {
-        Modifier
-    }
+    val borderModifier = Modifier.sushiButtonBorder(isPressed = isPressed)
+
+    val imageBackdropColor = sushiButtonImageBackdropColor()
+    val imageOutlineColor = sushiButtonImageOutlineColor()
+    val imageBackdropPadding = if (isDarkTheme) 10.dp else 0.dp
 
     val nameAreaHeight = if (compact && !playerName.isNullOrBlank()) 28.dp else 0.dp
     val compactContentHeight = if (compact) {
@@ -259,6 +248,19 @@ fun SushiClickerButton(
                         },
                     contentAlignment = Alignment.Center,
                 ) {
+                    if (isDarkTheme) {
+                        Box(
+                            modifier = Modifier
+                                .size(imageSize + imageBackdropPadding * 2)
+                                .clip(ItamaeShapes.large)
+                                .background(imageBackdropColor)
+                                .border(
+                                    width = 1.dp,
+                                    color = imageOutlineColor,
+                                    shape = ItamaeShapes.large,
+                                ),
+                        )
+                    }
                     Image(
                         painter = painterResource(R.drawable.ic_sushi),
                         contentDescription = stringResource(R.string.counter_sushi_content_description),
@@ -353,18 +355,42 @@ private fun FloatingPlusOne(
     )
 }
 
-@Preview(name = "Solo sushi button", showBackground = true)
+@Preview(name = "Solo sushi button – Light", showBackground = true)
 @Composable
-private fun SushiClickerButtonSoloPreview() {
-    ItamaePreviewTheme {
+private fun SushiClickerButtonSoloLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
         SushiClickerButton(onClick = {})
     }
 }
 
-@Preview(name = "Compact group button", showBackground = true)
+@Preview(name = "Solo sushi button – Dark", showBackground = true)
 @Composable
-private fun SushiClickerButtonCompactPreview() {
-    ItamaePreviewTheme {
+private fun SushiClickerButtonSoloDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        SushiClickerButton(onClick = {})
+    }
+}
+
+@Preview(name = "Compact group button – Light", showBackground = true)
+@Composable
+private fun SushiClickerButtonCompactLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        SushiClickerButton(
+            onClick = {},
+            onLongClick = {},
+            playerName = "Ana",
+            count = 12,
+            compact = true,
+            buttonSize = 120.dp,
+            imageSize = 80.dp,
+        )
+    }
+}
+
+@Preview(name = "Compact group button – Dark", showBackground = true)
+@Composable
+private fun SushiClickerButtonCompactDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
         SushiClickerButton(
             onClick = {},
             onLongClick = {},
