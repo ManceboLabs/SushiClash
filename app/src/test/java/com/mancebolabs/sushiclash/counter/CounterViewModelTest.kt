@@ -1,6 +1,7 @@
 package com.mancebolabs.sushiclash.counter
 
 import com.mancebolabs.sushiclash.domain.model.GameMode
+import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.Player
@@ -8,12 +9,14 @@ import com.mancebolabs.sushiclash.feature.counter.AppStartupState
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
 import com.mancebolabs.sushiclash.feature.counter.RouletteTriggerEvent
 import com.mancebolabs.sushiclash.testutil.FakeGameRepository
-import com.mancebolabs.sushiclash.testutil.FakeHistoryRepository
 import com.mancebolabs.sushiclash.testutil.FakeOnboardingRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
 import com.mancebolabs.sushiclash.testutil.TestGameStates
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -43,7 +46,6 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 3))
         val viewModel = CounterViewModel(
             gameRepository,
-            FakeHistoryRepository(),
             FakeOnboardingRepository(completed = true),
         )
         advanceUntilIdle()
@@ -55,16 +57,15 @@ class CounterViewModelTest {
     }
 
     @Test
-    fun givenInvalidPersistedGameOnLaunch_whenInitialized_thenRecoversWithoutTouchingOtherRepositories() = runTest {
+    fun givenInvalidPersistedGameOnLaunch_whenInitialized_thenRecoversWithoutTouchingOnboarding() = runTest {
         val invalidState = GameState(
             hasActiveGame = true,
             gameMode = GameMode.GROUP,
             players = emptyList(),
         )
         val gameRepository = FakeGameRepository(invalidState)
-        val historyRepository = FakeHistoryRepository()
         val onboardingRepository = FakeOnboardingRepository(completed = true)
-        val viewModel = CounterViewModel(gameRepository, historyRepository, onboardingRepository)
+        val viewModel = CounterViewModel(gameRepository, onboardingRepository)
 
         advanceUntilIdle()
 
@@ -72,8 +73,6 @@ class CounterViewModelTest {
         assertFalse(viewModel.uiState.value.gameState.hasActiveGame)
         assertEquals(1, gameRepository.restoreGameStateCallCount)
         assertEquals(1, gameRepository.clearActiveGameCallCount)
-        assertTrue(historyRepository.savedSnapshots.isEmpty())
-        assertEquals(0, historyRepository.clearHistoryCallCount)
         assertEquals(0, onboardingRepository.setOnboardingCompletedCallCount)
     }
 
@@ -92,7 +91,7 @@ class CounterViewModelTest {
     @Test
     fun givenSetupConfirmed_whenStartingSoloGame_thenActivatesGameAndHidesSetup() = runTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onSetupConfirmed(
@@ -109,7 +108,7 @@ class CounterViewModelTest {
     @Test
     fun givenActiveSoloGame_whenSushiTapped_thenCounterIncrements() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 2))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -121,7 +120,7 @@ class CounterViewModelTest {
     @Test
     fun givenNoActiveGame_whenSushiTapped_thenCounterDoesNotIncrement() = runTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -137,7 +136,7 @@ class CounterViewModelTest {
             Player(id = "p2", name = "Luis", sushiCount = 2),
         )
         val gameRepository = FakeGameRepository(TestGameStates.groupActive(players))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onPlayerResetRequested("p1")
@@ -154,7 +153,7 @@ class CounterViewModelTest {
     @Test
     fun givenActiveGame_whenFinishRequested_thenKeepsActiveGameAndShowsDialogOnly() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -165,15 +164,14 @@ class CounterViewModelTest {
         assertTrue(state.showFinishGameDialog)
         assertTrue(state.gameState.hasActiveGame)
         assertEquals(9, state.soloCount)
-        assertEquals(0, gameRepository.createFinishedGameSnapshotCallCount)
+        assertEquals(0, gameRepository.finishGameWithSavingCallCount)
         assertEquals(0, gameRepository.clearActiveGameCallCount)
     }
 
     @Test
     fun givenFinishDialog_whenSaving_thenPersistsHistoryClearsGameAndClosesDialog() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val historyRepository = FakeHistoryRepository()
-        val viewModel = CounterViewModel(gameRepository, historyRepository, FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -181,20 +179,134 @@ class CounterViewModelTest {
         viewModel.onFinishGameWithSaving()
         advanceUntilIdle()
 
-        assertEquals(1, gameRepository.createFinishedGameSnapshotCallCount)
+        assertEquals(1, gameRepository.finishGameWithSavingCallCount)
         assertEquals(1, gameRepository.clearActiveGameCallCount)
-        assertEquals(1, historyRepository.savedSnapshots.size)
-        assertEquals(9, historyRepository.savedSnapshots.first().soloCount)
         assertFalse(viewModel.uiState.value.showFinishGameDialog)
         assertEquals(AppStartupState.NoActiveGame, viewModel.uiState.value.startupState)
         assertFalse(viewModel.uiState.value.gameState.hasActiveGame)
+        assertFalse(viewModel.uiState.value.isFinishGameSaving)
+        assertFalse(viewModel.uiState.value.finishGameSaveError)
+    }
+
+    @Test
+    fun givenFinishDialog_whenSavingReturnsNoActiveGame_thenClosesDialog() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
+            finishGameWithSavingResults += FinishGameResult.NoActiveGame
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onFinishGameRequested()
+        gameRepository.setGameState(GameState(hasActiveGame = false))
+
+        viewModel.onFinishGameWithSaving()
+        advanceUntilIdle()
+
+        assertEquals(1, gameRepository.finishGameWithSavingCallCount)
+        assertFalse(viewModel.uiState.value.showFinishGameDialog)
+        assertEquals(AppStartupState.NoActiveGame, viewModel.uiState.value.startupState)
+        assertFalse(viewModel.uiState.value.isFinishGameSaving)
+        assertFalse(viewModel.uiState.value.finishGameSaveError)
+    }
+
+    @Test
+    fun givenFinishDialog_whenSavingIsRequestedConcurrently_thenRepositoryIsInvokedOnce() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
+        val finishGate = CompletableDeferred<Unit>()
+        gameRepository.finishGameWithSavingGate = finishGate
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onFinishGameRequested()
+
+        viewModel.onFinishGameWithSaving()
+        viewModel.onFinishGameWithSaving()
+        runCurrent()
+
+        assertEquals(1, gameRepository.finishGameWithSavingCallCount)
+        assertTrue(viewModel.uiState.value.isFinishGameSaving)
+
+        finishGate.complete(Unit)
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun givenFinishDialog_whenSavingFails_thenKeepsGameAndExposesRecoverableError() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
+            finishGameWithSavingResults += FinishGameResult.Failure(IllegalStateException("test"))
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onFinishGameRequested()
+
+        viewModel.onFinishGameWithSaving()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, gameRepository.finishGameWithSavingCallCount)
+        assertTrue(state.gameState.hasActiveGame)
+        assertEquals(AppStartupState.ActiveGame, state.startupState)
+        assertTrue(state.showFinishGameDialog)
+        assertFalse(state.isFinishGameSaving)
+        assertTrue(state.finishGameSaveError)
+    }
+
+    @Test
+    fun givenPreviousSaveFailure_whenRetrySucceeds_thenFinishesExactlyOnceMore() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
+            finishGameWithSavingResults += FinishGameResult.Failure(IllegalStateException("test"))
+            finishGameWithSavingResults += FinishGameResult.Success
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onFinishGameRequested()
+        viewModel.onFinishGameWithSaving()
+        advanceUntilIdle()
+
+        val retryGate = CompletableDeferred<Unit>()
+        gameRepository.finishGameWithSavingGate = retryGate
+        viewModel.onFinishGameWithSaving()
+        runCurrent()
+
+        assertEquals(2, gameRepository.finishGameWithSavingCallCount)
+        assertTrue(viewModel.uiState.value.isFinishGameSaving)
+        assertFalse(viewModel.uiState.value.finishGameSaveError)
+
+        retryGate.complete(Unit)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.showFinishGameDialog)
+        assertEquals(AppStartupState.NoActiveGame, viewModel.uiState.value.startupState)
+        assertFalse(viewModel.uiState.value.finishGameSaveError)
+    }
+
+    @Test
+    fun givenSavingInProgress_whenFinishActionsAreRequested_thenTheyAreIgnored() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
+        val finishGate = CompletableDeferred<Unit>()
+        gameRepository.finishGameWithSavingGate = finishGate
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onFinishGameRequested()
+        viewModel.onFinishGameWithSaving()
+        runCurrent()
+
+        viewModel.onFinishGameCancelled()
+        viewModel.onFinishGameWithoutSaving()
+        viewModel.onFinishGameWithSaving()
+        runCurrent()
+
+        assertEquals(1, gameRepository.finishGameWithSavingCallCount)
+        assertEquals(0, gameRepository.finishGameWithoutSavingCallCount)
+        assertTrue(viewModel.uiState.value.showFinishGameDialog)
+        assertTrue(viewModel.uiState.value.isFinishGameSaving)
+
+        finishGate.complete(Unit)
+        advanceUntilIdle()
     }
 
     @Test
     fun givenFinishDialog_whenNotSaving_thenClearsGameWithoutHistory() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val historyRepository = FakeHistoryRepository()
-        val viewModel = CounterViewModel(gameRepository, historyRepository, FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -202,18 +314,42 @@ class CounterViewModelTest {
         viewModel.onFinishGameWithoutSaving()
         advanceUntilIdle()
 
-        assertEquals(0, gameRepository.createFinishedGameSnapshotCallCount)
+        assertEquals(0, gameRepository.finishGameWithSavingCallCount)
+        assertEquals(1, gameRepository.finishGameWithoutSavingCallCount)
         assertEquals(1, gameRepository.clearActiveGameCallCount)
-        assertTrue(historyRepository.savedSnapshots.isEmpty())
         assertFalse(viewModel.uiState.value.showFinishGameDialog)
         assertEquals(AppStartupState.NoActiveGame, viewModel.uiState.value.startupState)
         assertFalse(viewModel.uiState.value.gameState.hasActiveGame)
+        assertFalse(viewModel.uiState.value.isFinishGameSaving)
+        assertFalse(viewModel.uiState.value.finishGameSaveError)
+    }
+
+    @Test
+    fun givenFinishDialog_whenNotSavingFails_thenKeepsGameAndExposesError() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
+            finishGameWithoutSavingResults += FinishGameResult.Failure(IllegalStateException("test"))
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onFinishGameRequested()
+
+        viewModel.onFinishGameWithoutSaving()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(0, gameRepository.finishGameWithSavingCallCount)
+        assertEquals(1, gameRepository.finishGameWithoutSavingCallCount)
+        assertTrue(state.gameState.hasActiveGame)
+        assertEquals(AppStartupState.ActiveGame, state.startupState)
+        assertTrue(state.showFinishGameDialog)
+        assertFalse(state.isFinishGameSaving)
+        assertTrue(state.finishGameSaveError)
     }
 
     @Test
     fun givenFinishDialog_whenCancelled_thenKeepsActiveGameUnchanged() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -225,14 +361,57 @@ class CounterViewModelTest {
         assertEquals(AppStartupState.ActiveGame, state.startupState)
         assertTrue(state.gameState.hasActiveGame)
         assertEquals(9, state.soloCount)
-        assertEquals(0, gameRepository.createFinishedGameSnapshotCallCount)
+        assertEquals(0, gameRepository.finishGameWithSavingCallCount)
+        assertEquals(0, gameRepository.finishGameWithoutSavingCallCount)
         assertEquals(0, gameRepository.clearActiveGameCallCount)
+        assertFalse(state.finishGameSaveError)
+    }
+
+    @Test
+    fun givenFinishFailure_whenCancelled_thenClosesDialogAndClearsErrorWithoutPersistence() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
+            finishGameWithSavingResults += FinishGameResult.Failure(IllegalStateException("test"))
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onFinishGameRequested()
+        viewModel.onFinishGameWithSaving()
+        advanceUntilIdle()
+        val finishCallsBeforeCancel = gameRepository.finishGameWithSavingCallCount
+
+        viewModel.onFinishGameCancelled()
+
+        assertFalse(viewModel.uiState.value.showFinishGameDialog)
+        assertFalse(viewModel.uiState.value.finishGameSaveError)
+        assertEquals(finishCallsBeforeCancel, gameRepository.finishGameWithSavingCallCount)
+        assertEquals(0, gameRepository.finishGameWithoutSavingCallCount)
+    }
+
+    @Test
+    fun givenFinishDialog_whenSavingIsCancelled_thenRestoresInteractiveState() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
+            finishGameWithSavingThrowable = CancellationException("test")
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onFinishGameRequested()
+
+        viewModel.onFinishGameWithSaving()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, gameRepository.finishGameWithSavingCallCount)
+        assertTrue(state.gameState.hasActiveGame)
+        assertEquals(AppStartupState.ActiveGame, state.startupState)
+        assertTrue(state.showFinishGameDialog)
+        assertFalse(state.isFinishGameSaving)
+        assertFalse(state.finishGameSaveError)
     }
 
     @Test
     fun givenFinishDialogVisible_whenViewModelRecreated_thenActiveGameIsRestoredWithoutDialog() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 7))
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -242,7 +421,7 @@ class CounterViewModelTest {
         assertTrue(viewModel.uiState.value.gameState.hasActiveGame)
 
         // Dialog visibility is in-memory only; closing the app must not clear persisted active state.
-        val restartedViewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
+        val restartedViewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         assertFalse(restartedViewModel.uiState.value.showFinishGameDialog)
@@ -260,7 +439,7 @@ class CounterViewModelTest {
                 fixedThreshold = 5,
             ),
         )
-        val viewModel = CounterViewModel(gameRepository, FakeHistoryRepository(), FakeOnboardingRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -272,7 +451,6 @@ class CounterViewModelTest {
     private fun createViewModel(initialState: GameState): CounterViewModel {
         return CounterViewModel(
             FakeGameRepository(initialState),
-            FakeHistoryRepository(),
             FakeOnboardingRepository(completed = true),
         )
     }

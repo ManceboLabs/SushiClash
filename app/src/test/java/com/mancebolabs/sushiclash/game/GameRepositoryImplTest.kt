@@ -2,12 +2,14 @@ package com.mancebolabs.sushiclash.game
 
 import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
 import com.mancebolabs.sushiclash.data.datastore.DecodedGameState
+import com.mancebolabs.sushiclash.data.datastore.FinishGamePersistenceResult
 import com.mancebolabs.sushiclash.data.repository.GameRepositoryImpl
-import com.mancebolabs.sushiclash.data.repository.HistoryRepositoryImpl
-import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
+import com.mancebolabs.sushiclash.domain.model.CorruptGameHistoryException
+import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
+import com.mancebolabs.sushiclash.domain.model.InvalidActiveGameException
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteLogic
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteTriggerType
@@ -15,28 +17,25 @@ import com.mancebolabs.sushiclash.testutil.FakeRandomProvider
 import com.mancebolabs.sushiclash.testutil.TestGameStates
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.Runs
 import io.mockk.slot
-import kotlinx.coroutines.CompletableDeferred
+import java.io.IOException
+import java.util.concurrent.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -52,58 +51,60 @@ class GameRepositoryImplTest {
         every { dataStore.decodedGameState } returns gameStateFlow.map { gameState ->
             DecodedGameState(gameState)
         }
-        repository = GameRepositoryImpl(dataStore, RandomRouletteLogic(FakeRandomProvider().apply { enqueue(7) }))
+        repository = GameRepositoryImpl(
+            dataStore = dataStore,
+            randomRouletteLogic = RandomRouletteLogic(FakeRandomProvider().apply { enqueue(7) }),
+            sessionIdProvider = { "session-created" },
+            clock = { 1_700_000_000_000L },
+        )
     }
 
     @Test
-    fun givenValidPersistedSoloGame_whenRestoring_thenPreservesActiveStateAndCount() = runTest {
+    fun givenValidPersistedSoloGame_whenRestoring_thenUsesSingleAtomicOperationAndReturnsState() = runTest {
         val persistedState = TestGameStates.soloActive(count = 12)
-        gameStateFlow.value = persistedState
+        coEvery { dataStore.restoreGameState("session-created") } returns persistedState
 
         val restoredState = repository.restoreGameState()
 
         assertEquals(persistedState, restoredState)
         assertTrue(restoredState.hasActiveGame)
         assertEquals(12, restoredState.soloCount)
+        coVerify(exactly = 1) { dataStore.restoreGameState("session-created") }
+        coVerify(exactly = 0) { dataStore.clearActiveGame() }
+    }
+
+    @Test
+    fun givenValidLegacyGame_whenRestoring_thenPersistsAndReturnsGeneratedSessionId() = runTest {
+        val migratedState = TestGameStates.soloActive(sessionId = "session-created", count = 12)
+        coEvery { dataStore.restoreGameState("session-created") } returns migratedState
+
+        val restoredState = repository.restoreGameState()
+
+        assertEquals("session-created", restoredState.sessionId)
+        coVerify(exactly = 1) { dataStore.restoreGameState("session-created") }
         coVerify(exactly = 0) { dataStore.clearActiveGame() }
     }
 
     @Test
     fun givenMalformedPersistedPlayersSignal_whenRestoring_thenClearsAndReturnsInactiveState() = runTest {
-        every { dataStore.decodedGameState } returns flowOf(
-            DecodedGameState(
-                gameState = TestGameStates.soloActive(count = 12),
-                isDecodeValid = false,
-            ),
-        )
-        repository = GameRepositoryImpl(dataStore)
-        coEvery { dataStore.clearActiveGame() } just Runs
+        coEvery { dataStore.restoreGameState("session-created") } returns GameState()
 
         val restoredState = repository.restoreGameState()
 
         assertFalse(restoredState.hasActiveGame)
-        coVerify(exactly = 1) { dataStore.clearActiveGame() }
+        coVerify(exactly = 1) { dataStore.restoreGameState("session-created") }
+        coVerify(exactly = 0) { dataStore.clearActiveGame() }
     }
 
     @Test
     fun givenMissingSemanticData_whenRestoring_thenClearsDespiteValidDecodeSignal() = runTest {
-        every { dataStore.decodedGameState } returns flowOf(
-            DecodedGameState(
-                gameState = GameState(
-                    hasActiveGame = true,
-                    gameMode = null,
-                    players = listOf(Player(AppPreferencesDataStore.SOLO_PLAYER_ID, "")),
-                ),
-                isDecodeValid = true,
-            ),
-        )
-        repository = GameRepositoryImpl(dataStore)
-        coEvery { dataStore.clearActiveGame() } just Runs
+        coEvery { dataStore.restoreGameState("session-created") } returns GameState()
 
         val restoredState = repository.restoreGameState()
 
         assertFalse(restoredState.hasActiveGame)
-        coVerify(exactly = 1) { dataStore.clearActiveGame() }
+        coVerify(exactly = 1) { dataStore.restoreGameState("session-created") }
+        coVerify(exactly = 0) { dataStore.clearActiveGame() }
     }
 
     @Test
@@ -123,44 +124,8 @@ class GameRepositoryImplTest {
     }
 
     @Test
-    fun givenRestoreWaitingOnInvalidState_whenCompletingSetup_thenRestoreCannotClearNewGame() = runTest {
-        val restoreReadStarted = CompletableDeferred<Unit>()
-        val allowRestoreRead = CompletableDeferred<Unit>()
-        every { dataStore.decodedGameState } returns flow {
-            restoreReadStarted.complete(Unit)
-            allowRestoreRead.await()
-            emit(
-                DecodedGameState(
-                    gameState = GameState(hasActiveGame = true),
-                    isDecodeValid = false,
-                ),
-            )
-        }
-        coEvery { dataStore.clearActiveGame() } just Runs
-        coEvery { dataStore.saveGameState(any(), any(), any(), any(), any()) } just Runs
-        coEvery { dataStore.setParticipants(any()) } just Runs
-        repository = GameRepositoryImpl(dataStore)
-
-        val restoreJob = launch { repository.restoreGameState() }
-        restoreReadStarted.await()
-        val setupJob = launch {
-            repository.completeSetup(GameSetupConfig(gameMode = GameMode.SOLO))
-        }
-        yield()
-        allowRestoreRead.complete(Unit)
-        restoreJob.join()
-        setupJob.join()
-
-        coVerifyOrder {
-            dataStore.clearActiveGame()
-            dataStore.saveGameState(any(), any(), any(), any(), any())
-        }
-        coVerify(exactly = 1) { dataStore.clearActiveGame() }
-    }
-
-    @Test
     fun givenSoloSetup_whenCompletingSetup_thenCreatesSoloPlayer() = runTest {
-        coEvery { dataStore.saveGameState(any(), any(), any(), any(), any()) } just Runs
+        coEvery { dataStore.saveGameState(any(), any(), any(), any(), any(), any()) } just Runs
         coEvery { dataStore.setParticipants(any()) } just Runs
 
         repository.completeSetup(
@@ -174,6 +139,7 @@ class GameRepositoryImplTest {
         val playersSlot = slot<List<Player>>()
         coVerify {
             dataStore.saveGameState(
+                sessionId = "session-created",
                 gameMode = GameMode.SOLO,
                 players = capture(playersSlot),
                 randomRouletteEnabled = true,
@@ -188,7 +154,7 @@ class GameRepositoryImplTest {
 
     @Test
     fun givenGroupSetup_whenCompletingSetup_thenCreatesPlayersAndSeedsParticipants() = runTest {
-        coEvery { dataStore.saveGameState(any(), any(), any(), any(), any()) } just Runs
+        coEvery { dataStore.saveGameState(any(), any(), any(), any(), any(), any()) } just Runs
         coEvery { dataStore.setParticipants(any()) } just Runs
 
         repository.completeSetup(
@@ -201,6 +167,7 @@ class GameRepositoryImplTest {
         val playersSlot = slot<List<Player>>()
         coVerify {
             dataStore.saveGameState(
+                sessionId = "session-created",
                 gameMode = GameMode.GROUP,
                 players = capture(playersSlot),
                 randomRouletteEnabled = false,
@@ -360,34 +327,173 @@ class GameRepositoryImplTest {
     }
 
     @Test
-    fun givenActiveGame_whenCreatingSnapshot_thenReturnsSnapshotWithoutClearing() = runTest {
-        gameStateFlow.value = TestGameStates.soloActive(count = 12)
+    fun givenActiveGame_whenFinishingWithSaving_thenUsesSingleAtomicStoreOperation() = runTest {
+        coEvery {
+            dataStore.finishGameWithSaving(
+                legacySessionId = "session-created",
+                finishedAt = 1_700_000_000_000L,
+            )
+        } returns FinishGamePersistenceResult.Saved
 
-        val snapshot = repository.createFinishedGameSnapshot()
+        val result = repository.finishGameWithSaving()
 
-        assertNotNull(snapshot)
-        assertEquals(GameMode.SOLO, snapshot?.gameMode)
-        assertEquals(12, snapshot?.soloCount)
+        assertEquals(FinishGameResult.Success, result)
+        coVerify(exactly = 1) {
+            dataStore.finishGameWithSaving(
+                legacySessionId = "session-created",
+                finishedAt = 1_700_000_000_000L,
+            )
+        }
         coVerify(exactly = 0) { dataStore.clearActiveGame() }
     }
 
     @Test
-    fun givenNoActiveGame_whenCreatingSnapshot_thenReturnsNull() = runTest {
-        gameStateFlow.value = GameState(hasActiveGame = false)
+    fun givenNoActiveGame_whenFinishingWithSaving_thenReturnsNoActiveGame() = runTest {
+        coEvery {
+            dataStore.finishGameWithSaving(any(), any())
+        } returns FinishGamePersistenceResult.NoActiveGame
 
-        val snapshot = repository.createFinishedGameSnapshot()
+        val result = repository.finishGameWithSaving()
 
-        assertNull(snapshot)
+        assertEquals(FinishGameResult.NoActiveGame, result)
+    }
+
+    @Test
+    fun givenInvalidActiveGame_whenFinishingWithSaving_thenReturnsRecoverableFailureWithoutClearing() = runTest {
+        coEvery {
+            dataStore.finishGameWithSaving(any(), any())
+        } returns FinishGamePersistenceResult.InvalidActiveGame
+
+        val result = repository.finishGameWithSaving()
+
+        assertTrue(result is FinishGameResult.Failure)
+        assertTrue((result as FinishGameResult.Failure).cause is InvalidActiveGameException)
         coVerify(exactly = 0) { dataStore.clearActiveGame() }
     }
 
     @Test
-    fun givenActiveGame_whenClearingActiveGame_thenPersistenceIsCleared() = runTest {
+    fun givenPersistenceFailure_whenFinishingWithSaving_thenReturnsFailureWithoutClearing() = runTest {
+        val failure = IOException("disk failure")
+        coEvery { dataStore.finishGameWithSaving(any(), any()) } throws failure
+
+        val result = repository.finishGameWithSaving()
+
+        assertEquals(FinishGameResult.Failure(failure), result)
+        coVerify(exactly = 0) { dataStore.clearActiveGame() }
+    }
+
+    @Test
+    fun givenCorruptTargetHistory_whenFinishingWithSaving_thenReturnsFailureWithoutClearing() = runTest {
+        coEvery {
+            dataStore.finishGameWithSaving(any(), any())
+        } returns FinishGamePersistenceResult.CorruptHistory
+
+        val result = repository.finishGameWithSaving()
+
+        assertTrue(result is FinishGameResult.Failure)
+        assertTrue((result as FinishGameResult.Failure).cause is CorruptGameHistoryException)
+        coVerify(exactly = 0) { dataStore.clearActiveGame() }
+    }
+
+    @Test(expected = CancellationException::class)
+    fun givenCancellation_whenFinishingWithSaving_thenPropagatesCancellation() = runTest {
+        coEvery {
+            dataStore.finishGameWithSaving(any(), any())
+        } throws CancellationException("cancelled")
+
+        repository.finishGameWithSaving()
+    }
+
+    @Test
+    fun givenConcurrentFinishCalls_whenSaving_thenMutexSerializesAtomicOperations() = runTest {
+        var invocationCount = 0
+        var activeCalls = 0
+        var maximumActiveCalls = 0
+        coEvery { dataStore.finishGameWithSaving(any(), any()) } coAnswers {
+            activeCalls++
+            maximumActiveCalls = maxOf(maximumActiveCalls, activeCalls)
+            yield()
+            invocationCount++
+            activeCalls--
+            if (invocationCount == 1) {
+                FinishGamePersistenceResult.Saved
+            } else {
+                FinishGamePersistenceResult.NoActiveGame
+            }
+        }
+
+        val results = coroutineScope {
+            listOf(
+                async { repository.finishGameWithSaving() },
+                async { repository.finishGameWithSaving() },
+            ).awaitAll()
+        }
+
+        assertEquals(1, maximumActiveCalls)
+        assertEquals(1, results.count { it == FinishGameResult.Success })
+        assertEquals(1, results.count { it == FinishGameResult.NoActiveGame })
+    }
+
+    @Test
+    fun givenTwoRepositoryInstances_whenFinishingConcurrently_thenAtomicStoreKeepsOperationIdempotent() = runTest {
+        val atomicStoreMutex = Mutex()
+        var hasActiveGame = true
+        var savedHistoryCount = 0
+        coEvery { dataStore.finishGameWithSaving(any(), any()) } coAnswers {
+            atomicStoreMutex.withLock {
+                yield()
+                if (!hasActiveGame) {
+                    FinishGamePersistenceResult.NoActiveGame
+                } else {
+                    savedHistoryCount++
+                    hasActiveGame = false
+                    FinishGamePersistenceResult.Saved
+                }
+            }
+        }
+        val firstRepository = GameRepositoryImpl(
+            dataStore = dataStore,
+            sessionIdProvider = { "fallback-one" },
+        )
+        val secondRepository = GameRepositoryImpl(
+            dataStore = dataStore,
+            sessionIdProvider = { "fallback-two" },
+        )
+
+        val results = coroutineScope {
+            listOf(
+                async { firstRepository.finishGameWithSaving() },
+                async { secondRepository.finishGameWithSaving() },
+            ).awaitAll()
+        }
+
+        assertEquals(1, savedHistoryCount)
+        assertEquals(1, results.count { it == FinishGameResult.Success })
+        assertEquals(1, results.count { it == FinishGameResult.NoActiveGame })
+        coVerify(exactly = 2) { dataStore.finishGameWithSaving(any(), any()) }
+    }
+
+    @Test
+    fun givenActiveGame_whenFinishingWithoutSaving_thenOnlyClearsActiveGame() = runTest {
+        gameStateFlow.value = TestGameStates.soloActive()
         coEvery { dataStore.clearActiveGame() } just Runs
 
-        repository.clearActiveGame()
+        val result = repository.finishGameWithoutSaving()
 
+        assertEquals(FinishGameResult.Success, result)
         coVerify(exactly = 1) { dataStore.clearActiveGame() }
+        coVerify(exactly = 0) { dataStore.finishGameWithSaving(any(), any()) }
+    }
+
+    @Test
+    fun givenClearFailure_whenFinishingWithoutSaving_thenReturnsFailure() = runTest {
+        gameStateFlow.value = TestGameStates.soloActive()
+        val failure = IOException("disk failure")
+        coEvery { dataStore.clearActiveGame() } throws failure
+
+        val result = repository.finishGameWithoutSaving()
+
+        assertEquals(FinishGameResult.Failure(failure), result)
     }
 
     private fun persistPlayerUpdatesWithCooperativeYield() {
@@ -395,74 +501,6 @@ class GameRepositoryImplTest {
             yield()
             gameStateFlow.value = gameStateFlow.value.copy(
                 players = arg<List<Player>>(0),
-            )
-        }
-    }
-}
-
-class HistoryRepositoryImplTest {
-
-    private val dataStore = mockk<AppPreferencesDataStore>()
-    private lateinit var repository: HistoryRepositoryImpl
-
-    @Before
-    fun setUpHistoryRepository() {
-        every { dataStore.soloHistory } returns flowOf(emptyList())
-        every { dataStore.groupHistory } returns flowOf(emptyList())
-        repository = HistoryRepositoryImpl(dataStore)
-    }
-
-    @Test
-    fun givenSoloSnapshot_whenSaving_thenAppendsSoloHistoryEntry() = runTest {
-        coEvery { dataStore.appendSoloHistoryEntry(any()) } just Runs
-
-        repository.saveFinishedGame(
-            FinishedGameSnapshot(
-                gameMode = GameMode.SOLO,
-                soloCount = 25,
-                playerScores = emptyList(),
-                randomRouletteEnabled = true,
-                randomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
-                randomRouletteFixedThreshold = 5,
-                finishedAt = 1_700_000_000_000L,
-            ),
-        )
-
-        coVerify {
-            dataStore.appendSoloHistoryEntry(
-                match { entry ->
-                    entry.totalSushi == 25 &&
-                        entry.randomRouletteEnabled &&
-                        entry.randomRouletteMode == RandomRouletteTriggerType.FIXED.name
-                },
-            )
-        }
-    }
-
-    @Test
-    fun givenGroupSnapshot_whenSaving_thenAppendsGroupHistoryEntry() = runTest {
-        coEvery { dataStore.appendGroupHistoryEntry(any()) } just Runs
-
-        repository.saveFinishedGame(
-            FinishedGameSnapshot(
-                gameMode = GameMode.GROUP,
-                soloCount = null,
-                playerScores = listOf(
-                    com.mancebolabs.sushiclash.domain.model.PlayerScore("Ana", 10),
-                    com.mancebolabs.sushiclash.domain.model.PlayerScore("Luis", 7),
-                ),
-                randomRouletteEnabled = false,
-                randomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
-                randomRouletteFixedThreshold = 5,
-                finishedAt = 1_700_000_000_000L,
-            ),
-        )
-
-        coVerify {
-            dataStore.appendGroupHistoryEntry(
-                match { entry ->
-                    entry.players.size == 2 && entry.players.first().playerName == "Ana"
-                },
             )
         }
     }

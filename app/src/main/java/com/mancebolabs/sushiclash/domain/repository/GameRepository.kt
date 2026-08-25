@@ -1,6 +1,6 @@
 package com.mancebolabs.sushiclash.domain.repository
 
-import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
+import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
@@ -11,9 +11,9 @@ interface GameRepository {
 
     suspend fun restoreGameState(): GameState
 
-    suspend fun createFinishedGameSnapshot(): FinishedGameSnapshot?
+    suspend fun finishGameWithSaving(): FinishGameResult
 
-    suspend fun clearActiveGame()
+    suspend fun finishGameWithoutSaving(): FinishGameResult
 
     suspend fun completeSetup(config: GameSetupConfig)
 

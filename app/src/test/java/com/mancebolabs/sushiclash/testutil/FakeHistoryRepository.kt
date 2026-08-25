@@ -1,6 +1,5 @@
 package com.mancebolabs.sushiclash.testutil
 
-import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
 import com.mancebolabs.sushiclash.domain.model.GroupGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.repository.HistoryRepository
@@ -15,12 +14,7 @@ class FakeHistoryRepository : HistoryRepository {
     override val soloHistory: Flow<List<SoloGameHistoryEntry>> = _soloHistory.asStateFlow()
     override val groupHistory: Flow<List<GroupGameHistoryEntry>> = _groupHistory.asStateFlow()
 
-    val savedSnapshots = mutableListOf<FinishedGameSnapshot>()
     var clearHistoryCallCount = 0
-
-    override suspend fun saveFinishedGame(snapshot: FinishedGameSnapshot) {
-        savedSnapshots.add(snapshot)
-    }
 
     override suspend fun clearHistory() {
         clearHistoryCallCount++

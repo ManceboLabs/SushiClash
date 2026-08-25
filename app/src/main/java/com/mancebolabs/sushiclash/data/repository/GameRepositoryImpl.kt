@@ -2,18 +2,21 @@ package com.mancebolabs.sushiclash.data.repository
 
 import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
 import com.mancebolabs.sushiclash.data.datastore.DecodedGameState
-import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
+import com.mancebolabs.sushiclash.data.datastore.FinishGamePersistenceResult
+import com.mancebolabs.sushiclash.domain.model.CorruptGameHistoryException
+import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.GameStateValidator
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
+import com.mancebolabs.sushiclash.domain.model.InvalidActiveGameException
 import com.mancebolabs.sushiclash.domain.model.Player
-import com.mancebolabs.sushiclash.domain.model.PlayerScore
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteLogic
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteTriggerType
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -23,9 +26,11 @@ import kotlinx.coroutines.sync.withLock
 class GameRepositoryImpl(
     private val dataStore: AppPreferencesDataStore,
     private val randomRouletteLogic: RandomRouletteLogic = RandomRouletteLogic.Default,
+    private val sessionIdProvider: () -> String = { UUID.randomUUID().toString() },
+    private val clock: () -> Long = System::currentTimeMillis,
 ) : GameRepository {
 
-    // Serialize restoration and mutations so stale recovery cannot overwrite newer game state.
+    // Serialize repository-local operations; DataStore transactions provide cross-instance atomicity.
     private val gameMutationMutex = Mutex()
 
     override val gameState: Flow<GameState> = dataStore.decodedGameState.map { decodedState ->
@@ -34,45 +39,50 @@ class GameRepositoryImpl(
 
     override suspend fun restoreGameState(): GameState {
         return gameMutationMutex.withLock {
-            val decodedState = dataStore.decodedGameState.first()
-            val safeGameState = decodedState.toSafeGameState()
-            if (decodedState.gameState.hasActiveGame && !safeGameState.hasActiveGame) {
-                dataStore.clearActiveGame()
+            dataStore.restoreGameState(migratedSessionId = sessionIdProvider())
+        }
+    }
+
+    override suspend fun finishGameWithSaving(): FinishGameResult {
+        return gameMutationMutex.withLock {
+            try {
+                when (
+                    dataStore.finishGameWithSaving(
+                        legacySessionId = sessionIdProvider(),
+                        finishedAt = clock(),
+                    )
+                ) {
+                    FinishGamePersistenceResult.Saved -> FinishGameResult.Success
+                    FinishGamePersistenceResult.NoActiveGame -> FinishGameResult.NoActiveGame
+                    FinishGamePersistenceResult.InvalidActiveGame -> {
+                        FinishGameResult.Failure(InvalidActiveGameException())
+                    }
+                    FinishGamePersistenceResult.CorruptHistory -> {
+                        FinishGameResult.Failure(CorruptGameHistoryException())
+                    }
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                FinishGameResult.Failure(failure)
             }
-            safeGameState
         }
     }
 
-    override suspend fun createFinishedGameSnapshot(): FinishedGameSnapshot? {
-        val currentState = gameState.first()
-        if (!currentState.hasActiveGame || currentState.gameMode == null) {
-            return null
-        }
-
-        // Snapshot is built from the still-active game; persistence is cleared only after confirm.
-        return FinishedGameSnapshot(
-            gameMode = currentState.gameMode,
-            soloCount = if (currentState.gameMode == GameMode.SOLO) {
-                currentState.soloCount
-            } else {
-                null
-            },
-            playerScores = currentState.players.map { player ->
-                PlayerScore(
-                    playerName = player.name,
-                    sushiCount = player.sushiCount,
-                )
-            },
-            randomRouletteEnabled = currentState.randomRouletteEnabled,
-            randomRouletteTriggerType = currentState.randomRouletteTriggerType,
-            randomRouletteFixedThreshold = currentState.randomRouletteFixedThreshold,
-            finishedAt = System.currentTimeMillis(),
-        )
-    }
-
-    override suspend fun clearActiveGame() {
-        gameMutationMutex.withLock {
-            dataStore.clearActiveGame()
+    override suspend fun finishGameWithoutSaving(): FinishGameResult {
+        return gameMutationMutex.withLock {
+            try {
+                val currentState = gameState.first()
+                if (!currentState.hasActiveGame) {
+                    return@withLock FinishGameResult.NoActiveGame
+                }
+                dataStore.clearActiveGame()
+                FinishGameResult.Success
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                FinishGameResult.Failure(failure)
+            }
         }
     }
 
@@ -100,6 +110,7 @@ class GameRepositoryImpl(
 
         gameMutationMutex.withLock {
             dataStore.saveGameState(
+                sessionId = sessionIdProvider(),
                 gameMode = config.gameMode,
                 players = players,
                 randomRouletteEnabled = config.randomRouletteEnabled,

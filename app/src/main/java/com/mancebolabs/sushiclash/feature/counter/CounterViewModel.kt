@@ -3,14 +3,15 @@ package com.mancebolabs.sushiclash.feature.counter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
-import com.mancebolabs.sushiclash.domain.repository.HistoryRepository
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,8 @@ data class CounterUiState(
     val playerResetRequest: PlayerResetRequest? = null,
     val rouletteTriggerEvent: RouletteTriggerEvent? = null,
     val showFinishGameDialog: Boolean = false,
+    val isFinishGameSaving: Boolean = false,
+    val finishGameSaveError: Boolean = false,
     val showSetupDialog: Boolean = false,
 ) {
     val gameMode: GameMode?
@@ -56,7 +59,6 @@ data class CounterUiState(
 
 class CounterViewModel(
     private val gameRepository: GameRepository,
-    private val historyRepository: HistoryRepository,
     private val onboardingRepository: OnboardingRepository,
 ) : ViewModel() {
 
@@ -64,6 +66,8 @@ class CounterViewModel(
     private val playerResetRequest = MutableStateFlow<PlayerResetRequest?>(null)
     private val rouletteTriggerEvent = MutableStateFlow<RouletteTriggerEvent?>(null)
     private val showFinishGameDialog = MutableStateFlow(false)
+    private val isFinishGameSaving = MutableStateFlow(false)
+    private val finishGameSaveError = MutableStateFlow(false)
     private val showSetupDialog = MutableStateFlow(false)
 
     init {
@@ -90,9 +94,27 @@ class CounterViewModel(
         val startupState: AppStartupState,
         val playerResetRequest: PlayerResetRequest?,
         val rouletteTriggerEvent: RouletteTriggerEvent?,
-        val showFinishGameDialog: Boolean,
+        val finishGame: FinishGameUiState,
         val showSetupDialog: Boolean,
     )
+
+    private data class FinishGameUiState(
+        val showDialog: Boolean,
+        val isSaving: Boolean,
+        val hasError: Boolean,
+    )
+
+    private val finishGameUiState = combine(
+        showFinishGameDialog,
+        isFinishGameSaving,
+        finishGameSaveError,
+    ) { showDialog, isSaving, hasError ->
+        FinishGameUiState(
+            showDialog = showDialog,
+            isSaving = isSaving,
+            hasError = hasError,
+        )
+    }
 
     val uiState: StateFlow<CounterUiState> = combine(
         gameRepository.gameState,
@@ -100,14 +122,14 @@ class CounterViewModel(
             startupState,
             playerResetRequest,
             rouletteTriggerEvent,
-            showFinishGameDialog,
+            finishGameUiState,
             showSetupDialog,
-        ) { startup, resetRequest, rouletteEvent, finishDialog, setupDialog ->
+        ) { startup, resetRequest, rouletteEvent, finishGame, setupDialog ->
             CounterScreenState(
                 startupState = startup,
                 playerResetRequest = resetRequest,
                 rouletteTriggerEvent = rouletteEvent,
-                showFinishGameDialog = finishDialog,
+                finishGame = finishGame,
                 showSetupDialog = setupDialog,
             )
         },
@@ -117,7 +139,9 @@ class CounterViewModel(
             startupState = screenState.startupState,
             playerResetRequest = screenState.playerResetRequest,
             rouletteTriggerEvent = screenState.rouletteTriggerEvent,
-            showFinishGameDialog = screenState.showFinishGameDialog,
+            showFinishGameDialog = screenState.finishGame.showDialog,
+            isFinishGameSaving = screenState.finishGame.isSaving,
+            finishGameSaveError = screenState.finishGame.hasError,
             showSetupDialog = screenState.showSetupDialog,
         )
     }.stateIn(
@@ -186,28 +210,50 @@ class CounterViewModel(
     fun onFinishGameRequested() {
         if (startupState.value != AppStartupState.ActiveGame) return
         // Only open the dialog; the active game stays in persistence so Cancel and process death are safe.
+        finishGameSaveError.value = false
         showFinishGameDialog.value = true
     }
 
     fun onFinishGameCancelled() {
+        if (isFinishGameSaving.value) return
+        finishGameSaveError.value = false
         showFinishGameDialog.value = false
     }
 
     fun onFinishGameWithoutSaving() {
-        viewModelScope.launch {
-            gameRepository.clearActiveGame()
-            showFinishGameDialog.value = false
-            startupState.value = AppStartupState.NoActiveGame
-        }
+        finishGame(gameRepository::finishGameWithoutSaving)
     }
 
     fun onFinishGameWithSaving() {
+        finishGame(gameRepository::finishGameWithSaving)
+    }
+
+    private fun finishGame(operation: suspend () -> FinishGameResult) {
+        // Set the guard before launching so rapid taps cannot enqueue duplicate persistence work.
+        if (!isFinishGameSaving.compareAndSet(expect = false, update = true)) return
+        finishGameSaveError.value = false
+
         viewModelScope.launch {
-            val snapshot = gameRepository.createFinishedGameSnapshot() ?: return@launch
-            historyRepository.saveFinishedGame(snapshot)
-            gameRepository.clearActiveGame()
-            showFinishGameDialog.value = false
-            startupState.value = AppStartupState.NoActiveGame
+            try {
+                when (operation()) {
+                    FinishGameResult.Success,
+                    FinishGameResult.NoActiveGame,
+                    -> {
+                        showFinishGameDialog.value = false
+                        finishGameSaveError.value = false
+                        startupState.value = AppStartupState.NoActiveGame
+                    }
+                    is FinishGameResult.Failure -> {
+                        finishGameSaveError.value = true
+                    }
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                finishGameSaveError.value = true
+            } finally {
+                isFinishGameSaving.value = false
+            }
         }
     }
 
@@ -250,7 +296,6 @@ class CounterViewModel(
     companion object {
         fun factory(
             gameRepository: GameRepository,
-            historyRepository: HistoryRepository,
             onboardingRepository: OnboardingRepository,
         ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
@@ -258,7 +303,6 @@ class CounterViewModel(
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return CounterViewModel(
                         gameRepository,
-                        historyRepository,
                         onboardingRepository,
                     ) as T
                 }

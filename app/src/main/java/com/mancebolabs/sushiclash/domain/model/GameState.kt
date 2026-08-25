@@ -2,6 +2,7 @@ package com.mancebolabs.sushiclash.domain.model
 
 data class GameState(
     val hasActiveGame: Boolean = false,
+    val sessionId: String? = null,
     val gameMode: GameMode? = null,
     val players: List<Player> = emptyList(),
     val randomRouletteEnabled: Boolean = false,

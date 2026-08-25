@@ -60,6 +60,8 @@ fun CounterScreen(
 ) {
     FinishGameDialogs(
         showFinishGameDialog = uiState.showFinishGameDialog,
+        isFinishGameSaving = uiState.isFinishGameSaving,
+        finishGameSaveError = uiState.finishGameSaveError,
         onFinishGameCancelled = onFinishGameCancelled,
         onFinishGameWithoutSaving = onFinishGameWithoutSaving,
         onFinishGameWithSaving = onFinishGameWithSaving,
@@ -101,6 +103,8 @@ fun CounterScreen(
 @Composable
 private fun FinishGameDialogs(
     showFinishGameDialog: Boolean,
+    isFinishGameSaving: Boolean,
+    finishGameSaveError: Boolean,
     onFinishGameCancelled: () -> Unit,
     onFinishGameWithoutSaving: () -> Unit,
     onFinishGameWithSaving: () -> Unit,
@@ -110,6 +114,8 @@ private fun FinishGameDialogs(
             onDismiss = onFinishGameCancelled,
             onSkipSave = onFinishGameWithoutSaving,
             onSave = onFinishGameWithSaving,
+            isSaving = isFinishGameSaving,
+            hasSaveError = finishGameSaveError,
         )
     }
 }

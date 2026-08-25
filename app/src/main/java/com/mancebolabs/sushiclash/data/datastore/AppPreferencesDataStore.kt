@@ -3,6 +3,7 @@ package com.mancebolabs.sushiclash.data.datastore
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -32,17 +33,125 @@ data class DecodedGameState(
     val isDecodeValid: Boolean = true,
 )
 
+enum class FinishGamePersistenceResult {
+    Saved,
+    NoActiveGame,
+    InvalidActiveGame,
+    CorruptHistory,
+}
+
+internal data class DecodedHistory<T>(
+    val entries: List<T>,
+    val isValid: Boolean,
+)
+
+internal fun mapInvalidDecodedGameResult(
+    decodedState: DecodedGameState,
+): FinishGamePersistenceResult? {
+    if (decodedState.isDecodeValid) return null
+    return if (decodedState.gameState.hasActiveGame) {
+        FinishGamePersistenceResult.InvalidActiveGame
+    } else {
+        FinishGamePersistenceResult.NoActiveGame
+    }
+}
+
+internal sealed interface FinishedGameHistoryUpdate {
+    data class Solo(
+        val history: List<SoloGameHistoryEntry>,
+    ) : FinishedGameHistoryUpdate
+
+    data class Group(
+        val history: List<GroupGameHistoryEntry>,
+    ) : FinishedGameHistoryUpdate
+
+    data object NoActiveGame : FinishedGameHistoryUpdate
+
+    data object InvalidActiveGame : FinishedGameHistoryUpdate
+
+    data object CorruptHistory : FinishedGameHistoryUpdate
+}
+
+internal fun buildFinishedGameHistoryUpdate(
+    gameState: GameState,
+    legacySessionId: String,
+    finishedAt: Long,
+    decodeSoloHistory: () -> DecodedHistory<SoloGameHistoryEntry>,
+    decodeGroupHistory: () -> DecodedHistory<GroupGameHistoryEntry>,
+): FinishedGameHistoryUpdate {
+    if (!gameState.hasActiveGame) {
+        return FinishedGameHistoryUpdate.NoActiveGame
+    }
+    if (!GameStateValidator.isValid(gameState)) {
+        return FinishedGameHistoryUpdate.InvalidActiveGame
+    }
+    val sessionId = gameState.sessionId?.takeIf(String::isNotBlank)
+        ?: legacySessionId.takeIf(String::isNotBlank)
+        ?: return FinishedGameHistoryUpdate.InvalidActiveGame
+
+    val rouletteMode = gameState.randomRouletteTriggerType.name
+        .takeIf { gameState.randomRouletteEnabled }
+    return when (gameState.gameMode) {
+        GameMode.SOLO -> {
+            val decodedHistory = decodeSoloHistory()
+            if (!decodedHistory.isValid) return FinishedGameHistoryUpdate.CorruptHistory
+            if (decodedHistory.entries.any { it.id == sessionId }) {
+                return FinishedGameHistoryUpdate.Solo(decodedHistory.entries)
+            }
+            FinishedGameHistoryUpdate.Solo(
+                history = listOf(
+                    SoloGameHistoryEntry(
+                        id = sessionId,
+                        date = finishedAt,
+                        totalSushi = gameState.soloCount,
+                        randomRouletteEnabled = gameState.randomRouletteEnabled,
+                        randomRouletteMode = rouletteMode,
+                    ),
+                ) + decodedHistory.entries,
+            )
+        }
+        GameMode.GROUP -> {
+            val decodedHistory = decodeGroupHistory()
+            if (!decodedHistory.isValid) return FinishedGameHistoryUpdate.CorruptHistory
+            if (decodedHistory.entries.any { it.id == sessionId }) {
+                return FinishedGameHistoryUpdate.Group(decodedHistory.entries)
+            }
+            FinishedGameHistoryUpdate.Group(
+                history = listOf(
+                    GroupGameHistoryEntry(
+                        id = sessionId,
+                        date = finishedAt,
+                        players = gameState.players.map { player ->
+                            PlayerScore(
+                                playerName = player.name,
+                                sushiCount = player.sushiCount,
+                            )
+                        },
+                        randomRouletteEnabled = gameState.randomRouletteEnabled,
+                        randomRouletteMode = rouletteMode,
+                    ),
+                ) + decodedHistory.entries,
+            )
+        }
+        null -> FinishedGameHistoryUpdate.InvalidActiveGame
+    }
+}
+
 class AppPreferencesDataStore(
     private val context: Context,
 ) {
     val decodedGameState: Flow<DecodedGameState> = context.dataStore.data.map { preferences ->
+        decodeGameState(preferences)
+    }
+
+    private fun decodeGameState(preferences: Preferences): DecodedGameState {
         // Prefer has_active_game; fall back to legacy has_completed_setup for migration.
         val hasActiveGame = preferences[HAS_ACTIVE_GAME_KEY]
             ?: preferences[HAS_COMPLETED_SETUP_KEY]
             ?: false
 
         if (!hasActiveGame) {
-            return@map DecodedGameState(GameState(hasActiveGame = false))
+            return DecodedGameState(GameState(hasActiveGame = false))
         }
 
         val storedMode = preferences[GAME_MODE_KEY]
@@ -59,9 +168,10 @@ class AppPreferencesDataStore(
             ?: preferences[RANDOM_ROULETTE_THRESHOLD_KEY]
             ?: GameState.DEFAULT_RANDOM_ROULETTE_THRESHOLD)
 
-        DecodedGameState(
+        return DecodedGameState(
             gameState = GameState(
                 hasActiveGame = true,
+                sessionId = preferences[SESSION_ID_KEY],
                 gameMode = gameMode,
                 players = decodedPlayers.players,
                 randomRouletteEnabled = preferences[RANDOM_ROULETTE_ENABLED_KEY] ?: false,
@@ -86,11 +196,11 @@ class AppPreferencesDataStore(
     }
 
     val soloHistory: Flow<List<SoloGameHistoryEntry>> = context.dataStore.data.map { preferences ->
-        decodeSoloHistory(preferences[SOLO_HISTORY_KEY])
+        decodeSoloHistory(preferences[SOLO_HISTORY_KEY]).entries
     }
 
     val groupHistory: Flow<List<GroupGameHistoryEntry>> = context.dataStore.data.map { preferences ->
-        decodeGroupHistory(preferences[GROUP_HISTORY_KEY])
+        decodeGroupHistory(preferences[GROUP_HISTORY_KEY]).entries
     }
 
     val hasCompletedOnboarding: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -110,6 +220,7 @@ class AppPreferencesDataStore(
     }
 
     suspend fun saveGameState(
+        sessionId: String,
         gameMode: GameMode,
         players: List<Player>,
         randomRouletteEnabled: Boolean,
@@ -119,6 +230,7 @@ class AppPreferencesDataStore(
         context.dataStore.edit { preferences ->
             preferences[HAS_ACTIVE_GAME_KEY] = true
             preferences[HAS_COMPLETED_SETUP_KEY] = true
+            preferences[SESSION_ID_KEY] = sessionId
             preferences[GAME_MODE_KEY] = gameMode.name
             preferences[PLAYERS_KEY] = encodePlayers(players)
             preferences[RANDOM_ROULETTE_ENABLED_KEY] = randomRouletteEnabled
@@ -130,17 +242,105 @@ class AppPreferencesDataStore(
         }
     }
 
+    suspend fun restoreGameState(migratedSessionId: String): GameState {
+        var restoredState = GameState()
+        context.dataStore.edit { preferences ->
+            restoredState = restoreGameState(
+                preferences = preferences,
+                decodedState = decodeGameState(preferences),
+                migratedSessionId = migratedSessionId,
+            )
+        }
+        return restoredState
+    }
+
+    internal fun restoreGameState(
+        preferences: MutablePreferences,
+        decodedState: DecodedGameState,
+        migratedSessionId: String,
+    ): GameState {
+        val safeGameState = if (
+            decodedState.isDecodeValid &&
+            GameStateValidator.isValid(decodedState.gameState)
+        ) {
+            decodedState.gameState
+        } else {
+            GameState()
+        }
+
+        if (decodedState.gameState.hasActiveGame && !safeGameState.hasActiveGame) {
+            clearActiveGameKeys(preferences)
+            return safeGameState
+        }
+        if (safeGameState.hasActiveGame && safeGameState.sessionId.isNullOrBlank()) {
+            preferences[SESSION_ID_KEY] = migratedSessionId
+            return safeGameState.copy(sessionId = migratedSessionId)
+        }
+        return safeGameState
+    }
+
+    suspend fun finishGameWithSaving(
+        legacySessionId: String,
+        finishedAt: Long,
+    ): FinishGamePersistenceResult {
+        var result = FinishGamePersistenceResult.NoActiveGame
+        context.dataStore.edit { preferences ->
+            val decodedState = decodeGameState(preferences)
+            mapInvalidDecodedGameResult(decodedState)?.let { invalidDecodeResult ->
+                result = invalidDecodeResult
+                return@edit
+            }
+            val update = buildFinishedGameHistoryUpdate(
+                gameState = decodedState.gameState,
+                legacySessionId = legacySessionId,
+                finishedAt = finishedAt,
+                decodeSoloHistory = {
+                    decodeSoloHistory(preferences[SOLO_HISTORY_KEY])
+                },
+                decodeGroupHistory = {
+                    decodeGroupHistory(preferences[GROUP_HISTORY_KEY])
+                },
+            )
+
+            when (update) {
+                FinishedGameHistoryUpdate.NoActiveGame -> Unit
+                FinishedGameHistoryUpdate.InvalidActiveGame -> {
+                    result = FinishGamePersistenceResult.InvalidActiveGame
+                }
+                FinishedGameHistoryUpdate.CorruptHistory -> {
+                    result = FinishGamePersistenceResult.CorruptHistory
+                }
+                is FinishedGameHistoryUpdate.Solo -> {
+                    preferences[SOLO_HISTORY_KEY] = encodeSoloHistory(update.history)
+                    clearActiveGameKeys(preferences)
+                    result = FinishGamePersistenceResult.Saved
+                }
+                is FinishedGameHistoryUpdate.Group -> {
+                    preferences[GROUP_HISTORY_KEY] = encodeGroupHistory(update.history)
+                    clearActiveGameKeys(preferences)
+                    result = FinishGamePersistenceResult.Saved
+                }
+            }
+        }
+        return result
+    }
+
     suspend fun clearActiveGame() {
         context.dataStore.edit { preferences ->
-            preferences[HAS_ACTIVE_GAME_KEY] = false
-            preferences[HAS_COMPLETED_SETUP_KEY] = false
-            preferences.remove(GAME_MODE_KEY)
-            preferences[PLAYERS_KEY] = encodePlayers(emptyList())
-            preferences[PARTICIPANTS_KEY] = encodeParticipants(emptyList())
-            preferences[RANDOM_ROULETTE_ENABLED_KEY] = false
-            preferences.remove(RANDOM_ROULETTE_TRIGGER_TYPE_KEY)
-            preferences.remove(RANDOM_ROULETTE_FIXED_THRESHOLD_KEY)
+            clearActiveGameKeys(preferences)
         }
+    }
+
+    internal fun clearActiveGameKeys(preferences: MutablePreferences) {
+        preferences[HAS_ACTIVE_GAME_KEY] = false
+        preferences[HAS_COMPLETED_SETUP_KEY] = false
+        preferences.remove(SESSION_ID_KEY)
+        preferences.remove(GAME_MODE_KEY)
+        preferences[PLAYERS_KEY] = "[]"
+        preferences[PARTICIPANTS_KEY] = "[]"
+        preferences[RANDOM_ROULETTE_ENABLED_KEY] = false
+        preferences.remove(RANDOM_ROULETTE_TRIGGER_TYPE_KEY)
+        preferences.remove(RANDOM_ROULETTE_FIXED_THRESHOLD_KEY)
     }
 
     suspend fun setPlayers(players: List<Player>) {
@@ -152,22 +352,6 @@ class AppPreferencesDataStore(
     suspend fun setParticipants(names: List<String>) {
         context.dataStore.edit { preferences ->
             preferences[PARTICIPANTS_KEY] = encodeParticipants(names)
-        }
-    }
-
-    suspend fun appendSoloHistoryEntry(entry: SoloGameHistoryEntry) {
-        context.dataStore.edit { preferences ->
-            val current = decodeSoloHistory(preferences[SOLO_HISTORY_KEY]).toMutableList()
-            current.add(0, entry)
-            preferences[SOLO_HISTORY_KEY] = encodeSoloHistory(current)
-        }
-    }
-
-    suspend fun appendGroupHistoryEntry(entry: GroupGameHistoryEntry) {
-        context.dataStore.edit { preferences ->
-            val current = decodeGroupHistory(preferences[GROUP_HISTORY_KEY]).toMutableList()
-            current.add(0, entry)
-            preferences[GROUP_HISTORY_KEY] = encodeGroupHistory(current)
         }
     }
 
@@ -259,6 +443,7 @@ class AppPreferencesDataStore(
     companion object {
         private val HAS_ACTIVE_GAME_KEY = booleanPreferencesKey("has_active_game")
         private val HAS_COMPLETED_SETUP_KEY = booleanPreferencesKey("has_completed_setup")
+        private val SESSION_ID_KEY = stringPreferencesKey("game_session_id")
         private val GAME_MODE_KEY = stringPreferencesKey("game_mode")
         private val PLAYERS_KEY = stringPreferencesKey("players")
         private val PARTICIPANTS_KEY = stringPreferencesKey("participants")
@@ -291,11 +476,12 @@ class AppPreferencesDataStore(
         return jsonArray.toString()
     }
 
-    private fun decodeSoloHistory(raw: String?): List<SoloGameHistoryEntry> {
-        if (raw.isNullOrBlank()) return emptyList()
+    private fun decodeSoloHistory(raw: String?): DecodedHistory<SoloGameHistoryEntry> {
+        if (raw == null) return DecodedHistory(entries = emptyList(), isValid = true)
+        if (raw.isBlank()) return DecodedHistory(entries = emptyList(), isValid = false)
         return runCatching {
             val jsonArray = JSONArray(raw)
-            buildList {
+            val entries = buildList {
                 for (index in 0 until jsonArray.length()) {
                     val item = jsonArray.getJSONObject(index)
                     add(
@@ -304,12 +490,19 @@ class AppPreferencesDataStore(
                             date = item.getLong("date"),
                             totalSushi = item.getInt("totalSushi"),
                             randomRouletteEnabled = item.getBoolean("randomRouletteEnabled"),
-                            randomRouletteMode = item.optString("randomRouletteMode").takeIf { it.isNotBlank() },
+                            randomRouletteMode = if (item.isNull("randomRouletteMode")) {
+                                null
+                            } else {
+                                item.getString("randomRouletteMode").takeIf(String::isNotBlank)
+                            },
                         ),
                     )
                 }
             }
-        }.getOrDefault(emptyList())
+            DecodedHistory(entries = entries, isValid = true)
+        }.getOrElse {
+            DecodedHistory(entries = emptyList(), isValid = false)
+        }
     }
 
     private fun encodeGroupHistory(entries: List<GroupGameHistoryEntry>): String {
@@ -337,11 +530,12 @@ class AppPreferencesDataStore(
         return jsonArray.toString()
     }
 
-    private fun decodeGroupHistory(raw: String?): List<GroupGameHistoryEntry> {
-        if (raw.isNullOrBlank()) return emptyList()
+    private fun decodeGroupHistory(raw: String?): DecodedHistory<GroupGameHistoryEntry> {
+        if (raw == null) return DecodedHistory(entries = emptyList(), isValid = true)
+        if (raw.isBlank()) return DecodedHistory(entries = emptyList(), isValid = false)
         return runCatching {
             val jsonArray = JSONArray(raw)
-            buildList {
+            val entries = buildList {
                 for (index in 0 until jsonArray.length()) {
                     val item = jsonArray.getJSONObject(index)
                     val playersArray = item.getJSONArray("players")
@@ -362,11 +556,18 @@ class AppPreferencesDataStore(
                             date = item.getLong("date"),
                             players = players,
                             randomRouletteEnabled = item.optBoolean("randomRouletteEnabled", false),
-                            randomRouletteMode = item.optString("randomRouletteMode").takeIf { it.isNotBlank() },
+                            randomRouletteMode = if (item.isNull("randomRouletteMode")) {
+                                null
+                            } else {
+                                item.getString("randomRouletteMode").takeIf(String::isNotBlank)
+                            },
                         ),
                     )
                 }
             }
-        }.getOrDefault(emptyList())
+            DecodedHistory(entries = entries, isValid = true)
+        }.getOrElse {
+            DecodedHistory(entries = emptyList(), isValid = false)
+        }
     }
 }

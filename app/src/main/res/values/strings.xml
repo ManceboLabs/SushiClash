@@ -63,6 +63,7 @@
     <string name="finish_game_message">¿Quieres guardar esta partida en el histórico?</string>
     <string name="finish_game_save">Guardar</string>
     <string name="finish_game_skip_save">No guardar</string>
+    <string name="finish_game_error">No se ha podido finalizar la partida. Inténtalo de nuevo.</string>
 
     <!-- History screen -->
     <string name="history_screen_title">Histórico</string>

@@ -208,7 +208,6 @@ private fun SushiCounterNavHost(
                     val viewModel: CounterViewModel = viewModel(
                         factory = CounterViewModel.factory(
                             AppContainer.gameRepository(context),
-                            AppContainer.historyRepository(context),
                             AppContainer.onboardingRepository(context),
                         ),
                     )

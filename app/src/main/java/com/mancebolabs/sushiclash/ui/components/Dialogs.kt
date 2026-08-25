@@ -1,26 +1,36 @@
 package com.mancebolabs.sushiclash.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.DialogProperties
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
+import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 
 @Composable
 fun FinishGameDialog(
     onDismiss: () -> Unit,
     onSkipSave: () -> Unit,
     onSave: () -> Unit,
+    isSaving: Boolean,
+    hasSaveError: Boolean,
 ) {
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (!isSaving) onDismiss()
+        },
         shape = ItamaeShapes.large,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         title = {
@@ -31,35 +41,60 @@ fun FinishGameDialog(
             )
         },
         text = {
-            Text(
-                text = stringResource(R.string.finish_game_message),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Column {
+                Text(
+                    text = stringResource(R.string.finish_game_message),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (hasSaveError) {
+                    Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
+                    Text(
+                        text = stringResource(R.string.finish_game_error),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
         },
         confirmButton = {
-            TextButton(onClick = onSave) {
+            TextButton(
+                onClick = onSave,
+                enabled = !isSaving,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ),
+            ) {
                 Text(
                     text = stringResource(R.string.finish_game_save),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         },
         dismissButton = {
             Row {
-                TextButton(onClick = onDismiss) {
+                TextButton(
+                    onClick = onDismiss,
+                    enabled = !isSaving,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) {
                     Text(
                         text = stringResource(R.string.counter_cancel),
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = onSkipSave) {
+                TextButton(
+                    onClick = onSkipSave,
+                    enabled = !isSaving,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) {
                     Text(
                         text = stringResource(R.string.finish_game_skip_save),
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -162,6 +197,36 @@ private fun FinishGameDialogPreview() {
             onDismiss = {},
             onSkipSave = {},
             onSave = {},
+            isSaving = false,
+            hasSaveError = false,
+        )
+    }
+}
+
+@Preview(name = "Finish game dialog error", showBackground = true)
+@Composable
+private fun FinishGameDialogErrorPreview() {
+    ItamaePreviewTheme {
+        FinishGameDialog(
+            onDismiss = {},
+            onSkipSave = {},
+            onSave = {},
+            isSaving = false,
+            hasSaveError = true,
+        )
+    }
+}
+
+@Preview(name = "Finish game dialog loading", showBackground = true)
+@Composable
+private fun FinishGameDialogLoadingPreview() {
+    ItamaePreviewTheme {
+        FinishGameDialog(
+            onDismiss = {},
+            onSkipSave = {},
+            onSave = {},
+            isSaving = true,
+            hasSaveError = false,
         )
     }
 }

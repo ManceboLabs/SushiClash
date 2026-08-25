@@ -1,13 +1,10 @@
 package com.mancebolabs.sushiclash.data.repository
 
 import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
-import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
-import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GroupGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.repository.HistoryRepository
 import kotlinx.coroutines.flow.Flow
-import java.util.UUID
 
 class HistoryRepositoryImpl(
     private val dataStore: AppPreferencesDataStore,
@@ -17,39 +14,7 @@ class HistoryRepositoryImpl(
 
     override val groupHistory: Flow<List<GroupGameHistoryEntry>> = dataStore.groupHistory
 
-    override suspend fun saveFinishedGame(snapshot: FinishedGameSnapshot) {
-        when (snapshot.gameMode) {
-            GameMode.SOLO -> {
-                dataStore.appendSoloHistoryEntry(
-                    SoloGameHistoryEntry(
-                        id = UUID.randomUUID().toString(),
-                        date = snapshot.finishedAt,
-                        totalSushi = snapshot.soloCount ?: 0,
-                        randomRouletteEnabled = snapshot.randomRouletteEnabled,
-                        randomRouletteMode = rouletteModeLabel(snapshot),
-                    ),
-                )
-            }
-            GameMode.GROUP -> {
-                dataStore.appendGroupHistoryEntry(
-                    GroupGameHistoryEntry(
-                        id = UUID.randomUUID().toString(),
-                        date = snapshot.finishedAt,
-                        players = snapshot.playerScores,
-                        randomRouletteEnabled = snapshot.randomRouletteEnabled,
-                        randomRouletteMode = rouletteModeLabel(snapshot),
-                    ),
-                )
-            }
-        }
-    }
-
     override suspend fun clearHistory() {
         dataStore.clearHistory()
-    }
-
-    private fun rouletteModeLabel(snapshot: FinishedGameSnapshot): String? {
-        if (!snapshot.randomRouletteEnabled) return null
-        return snapshot.randomRouletteTriggerType.name
     }
 }

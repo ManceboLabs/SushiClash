@@ -4,7 +4,6 @@ import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.feature.counter.AppStartupState
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
 import com.mancebolabs.sushiclash.testutil.FakeGameRepository
-import com.mancebolabs.sushiclash.testutil.FakeHistoryRepository
 import com.mancebolabs.sushiclash.testutil.FakeOnboardingRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
 import com.mancebolabs.sushiclash.testutil.TestGameStates
@@ -29,7 +28,6 @@ class OnboardingStartupTest {
         val onboardingRepository = FakeOnboardingRepository(completed = false)
         val viewModel = CounterViewModel(
             gameRepository = FakeGameRepository(GameState(hasActiveGame = false)),
-            historyRepository = FakeHistoryRepository(),
             onboardingRepository = onboardingRepository,
         )
         advanceUntilIdle()
@@ -48,7 +46,6 @@ class OnboardingStartupTest {
     fun givenOnboardingCompleted_whenCounterInitialized_thenSkipsLoadingForGameplayState() = runTest {
         val viewModel = CounterViewModel(
             gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 4)),
-            historyRepository = FakeHistoryRepository(),
             onboardingRepository = FakeOnboardingRepository(completed = true),
         )
         advanceUntilIdle()
@@ -71,7 +68,6 @@ class OnboardingStartupTest {
         val onboardingRepository = FakeOnboardingRepository(completed = false)
         val viewModel = CounterViewModel(
             gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)),
-            historyRepository = FakeHistoryRepository(),
             onboardingRepository = onboardingRepository,
         )
         advanceUntilIdle()

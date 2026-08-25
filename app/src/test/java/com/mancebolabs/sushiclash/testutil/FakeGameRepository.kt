@@ -1,7 +1,7 @@
 package com.mancebolabs.sushiclash.testutil
 
 import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
-import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
+import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
@@ -10,12 +10,14 @@ import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteTriggerType
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 object TestGameStates {
     fun soloActive(
+        sessionId: String? = "test-session",
         count: Int = 0,
         randomRouletteEnabled: Boolean = false,
         triggerType: RandomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
@@ -24,6 +26,7 @@ object TestGameStates {
     ): GameState {
         return GameState(
             hasActiveGame = true,
+            sessionId = sessionId,
             gameMode = GameMode.SOLO,
             players = listOf(
                 Player(
@@ -41,12 +44,14 @@ object TestGameStates {
 
     fun groupActive(
         players: List<Player>,
+        sessionId: String? = "test-session",
         randomRouletteEnabled: Boolean = false,
         triggerType: RandomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
         fixedThreshold: Int = 5,
     ): GameState {
         return GameState(
             hasActiveGame = true,
+            sessionId = sessionId,
             gameMode = GameMode.GROUP,
             players = players,
             randomRouletteEnabled = randomRouletteEnabled,
@@ -62,11 +67,15 @@ class FakeGameRepository(
     private val _gameState = MutableStateFlow(initialState)
     override val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
-    var createFinishedGameSnapshotCallCount = 0
     var clearActiveGameCallCount = 0
     var restoreGameStateCallCount = 0
-    var lastFinishedSnapshot: FinishedGameSnapshot? = null
     var lastSetupConfig: GameSetupConfig? = null
+    var finishGameWithSavingCallCount = 0
+    var finishGameWithoutSavingCallCount = 0
+    val finishGameWithSavingResults = mutableListOf<FinishGameResult>()
+    val finishGameWithoutSavingResults = mutableListOf<FinishGameResult>()
+    var finishGameWithSavingGate: CompletableDeferred<Unit>? = null
+    var finishGameWithSavingThrowable: Throwable? = null
 
     override suspend fun restoreGameState(): GameState {
         restoreGameStateCallCount++
@@ -76,33 +85,35 @@ class FakeGameRepository(
         return _gameState.value
     }
 
-    override suspend fun createFinishedGameSnapshot(): FinishedGameSnapshot? {
-        createFinishedGameSnapshotCallCount++
-        val current = _gameState.value
-        if (!current.hasActiveGame || current.gameMode == null) {
-            return null
-        }
-        val snapshot = FinishedGameSnapshot(
-            gameMode = current.gameMode,
-            soloCount = if (current.gameMode == GameMode.SOLO) current.soloCount else null,
-            playerScores = current.players.map { player ->
-                com.mancebolabs.sushiclash.domain.model.PlayerScore(
-                    playerName = player.name,
-                    sushiCount = player.sushiCount,
-                )
-            },
-            randomRouletteEnabled = current.randomRouletteEnabled,
-            randomRouletteTriggerType = current.randomRouletteTriggerType,
-            randomRouletteFixedThreshold = current.randomRouletteFixedThreshold,
-            finishedAt = 1_700_000_000_000L,
-        )
-        lastFinishedSnapshot = snapshot
-        return snapshot
-    }
-
-    override suspend fun clearActiveGame() {
+    private fun clearActiveGame() {
         clearActiveGameCallCount++
         _gameState.value = GameState(hasActiveGame = false)
+    }
+
+    override suspend fun finishGameWithSaving(): FinishGameResult {
+        finishGameWithSavingCallCount++
+        finishGameWithSavingGate?.await()
+        finishGameWithSavingThrowable?.let { throw it }
+        val result = finishGameWithSavingResults.removeFirstOrNull()
+            ?: if (_gameState.value.hasActiveGame) {
+                FinishGameResult.Success
+            } else {
+                FinishGameResult.NoActiveGame
+            }
+        if (result is FinishGameResult.Success) clearActiveGame()
+        return result
+    }
+
+    override suspend fun finishGameWithoutSaving(): FinishGameResult {
+        finishGameWithoutSavingCallCount++
+        val result = finishGameWithoutSavingResults.removeFirstOrNull()
+            ?: if (_gameState.value.hasActiveGame) {
+                FinishGameResult.Success
+            } else {
+                FinishGameResult.NoActiveGame
+            }
+        if (result is FinishGameResult.Success) clearActiveGame()
+        return result
     }
 
     override suspend fun completeSetup(config: GameSetupConfig) {
