@@ -3,6 +3,7 @@ package com.mancebolabs.sushiclash.data.repository
 import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
 import com.mancebolabs.sushiclash.data.datastore.DecodedGameState
 import com.mancebolabs.sushiclash.data.datastore.FinishGamePersistenceResult
+import com.mancebolabs.sushiclash.data.datastore.RestoreGamePersistenceResult
 import com.mancebolabs.sushiclash.domain.model.CorruptGameHistoryException
 import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameMode
@@ -11,10 +12,13 @@ import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.GameStateValidator
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.InvalidActiveGameException
+import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteLogic
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteTriggerType
+import com.mancebolabs.sushiclash.domain.model.RestoreGameResult
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
+import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -33,13 +37,23 @@ class GameRepositoryImpl(
     // Serialize repository-local operations; DataStore transactions provide cross-instance atomicity.
     private val gameMutationMutex = Mutex()
 
-    override val gameState: Flow<GameState> = dataStore.decodedGameState.map { decodedState ->
-        decodedState.toSafeGameState()
+    override val gameState: Flow<GameState> = dataStore.decodedGameState.map { readState ->
+        when (readState) {
+            is PersistenceReadState.Data -> readState.value.toSafeGameState()
+            PersistenceReadState.Missing,
+            PersistenceReadState.Corrupted,
+            // Read I/O is not missing data; do not clear persistence here.
+            PersistenceReadState.Unavailable -> GameState()
+        }
     }
 
-    override suspend fun restoreGameState(): GameState {
+    override suspend fun restoreGameState(): RestoreGameResult {
         return gameMutationMutex.withLock {
-            dataStore.restoreGameState(migratedSessionId = sessionIdProvider())
+            when (val result = dataStore.restoreGameState(migratedSessionId = sessionIdProvider())) {
+                is RestoreGamePersistenceResult.Restored -> RestoreGameResult.Restored(result.gameState)
+                // I/O failure is not a missing game; persistence is left untouched for a later retry.
+                RestoreGamePersistenceResult.Unavailable -> RestoreGameResult.Unavailable
+            }
         }
     }
 
@@ -63,6 +77,8 @@ class GameRepositoryImpl(
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
+            } catch (failure: IOException) {
+                FinishGameResult.Failure(failure)
             } catch (failure: Exception) {
                 FinishGameResult.Failure(failure)
             }
@@ -127,19 +143,10 @@ class GameRepositoryImpl(
 
     override suspend fun incrementPlayerCount(playerId: String): IncrementResult {
         return gameMutationMutex.withLock {
-            val currentState = gameState.first()
-            if (!currentState.hasActiveGame) {
-                return@withLock IncrementResult(newCount = 0, shouldTriggerRoulette = false)
-            }
-            var newCount = 0
-            var shouldTrigger = false
-
-            val updatedPlayers = currentState.players.map { player ->
-                if (player.id != playerId) {
-                    return@map player
-                }
-
-                newCount = player.sushiCount + 1
+            // Mutex orders calls on this instance; DataStore.edit is the cross-instance read-modify-write.
+            dataStore.incrementPlayerCount(playerId) { player, currentState ->
+                val newCount = player.sushiCount + 1
+                var shouldTrigger = false
                 var updatedPlayer = player.copy(sushiCount = newCount)
 
                 if (currentState.randomRouletteEnabled) {
@@ -169,14 +176,11 @@ class GameRepositoryImpl(
                     }
                 }
 
-                updatedPlayer
+                updatedPlayer to IncrementResult(
+                    newCount = newCount,
+                    shouldTriggerRoulette = shouldTrigger,
+                )
             }
-
-            dataStore.setPlayers(updatedPlayers)
-            IncrementResult(
-                newCount = newCount,
-                shouldTriggerRoulette = shouldTrigger,
-            )
         }
     }
 

@@ -65,6 +65,10 @@
     <string name="finish_game_skip_save">No guardar</string>
     <string name="finish_game_error">No se ha podido finalizar la partida. Inténtalo de nuevo.</string>
 
+    <!-- Persistence -->
+    <string name="persistence_data_unavailable">No se han podido cargar algunos datos. Inténtalo de nuevo.</string>
+    <string name="persistence_retry">Reintentar</string>
+
     <!-- History screen -->
     <string name="history_screen_title">Histórico</string>
     <string name="history_section_solo">Solo</string>

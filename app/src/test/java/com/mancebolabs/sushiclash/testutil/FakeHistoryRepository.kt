@@ -1,6 +1,7 @@
 package com.mancebolabs.sushiclash.testutil
 
 import com.mancebolabs.sushiclash.domain.model.GroupGameHistoryEntry
+import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.repository.HistoryRepository
 import kotlinx.coroutines.flow.Flow
@@ -8,25 +9,47 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class FakeHistoryRepository : HistoryRepository {
-    private val _soloHistory = MutableStateFlow<List<SoloGameHistoryEntry>>(emptyList())
-    private val _groupHistory = MutableStateFlow<List<GroupGameHistoryEntry>>(emptyList())
+    private val _soloHistory =
+        MutableStateFlow<PersistenceReadState<List<SoloGameHistoryEntry>>>(PersistenceReadState.Missing)
+    private val _groupHistory =
+        MutableStateFlow<PersistenceReadState<List<GroupGameHistoryEntry>>>(PersistenceReadState.Missing)
 
-    override val soloHistory: Flow<List<SoloGameHistoryEntry>> = _soloHistory.asStateFlow()
-    override val groupHistory: Flow<List<GroupGameHistoryEntry>> = _groupHistory.asStateFlow()
+    override val soloHistory: Flow<PersistenceReadState<List<SoloGameHistoryEntry>>> =
+        _soloHistory.asStateFlow()
+    override val groupHistory: Flow<PersistenceReadState<List<GroupGameHistoryEntry>>> =
+        _groupHistory.asStateFlow()
 
     var clearHistoryCallCount = 0
+    var clearHistoryThrowable: Throwable? = null
 
     override suspend fun clearHistory() {
         clearHistoryCallCount++
-        _soloHistory.value = emptyList()
-        _groupHistory.value = emptyList()
+        clearHistoryThrowable?.let { throw it }
+        _soloHistory.value = PersistenceReadState.Missing
+        _groupHistory.value = PersistenceReadState.Missing
     }
 
     fun setSoloHistory(entries: List<SoloGameHistoryEntry>) {
-        _soloHistory.value = entries
+        _soloHistory.value = PersistenceReadState.Data(entries)
     }
 
     fun setGroupHistory(entries: List<GroupGameHistoryEntry>) {
-        _groupHistory.value = entries
+        _groupHistory.value = PersistenceReadState.Data(entries)
+    }
+
+    fun setSoloHistoryCorrupted() {
+        _soloHistory.value = PersistenceReadState.Corrupted
+    }
+
+    fun setGroupHistoryCorrupted() {
+        _groupHistory.value = PersistenceReadState.Corrupted
+    }
+
+    fun setSoloHistoryUnavailable() {
+        _soloHistory.value = PersistenceReadState.Unavailable
+    }
+
+    fun setGroupHistoryUnavailable() {
+        _groupHistory.value = PersistenceReadState.Unavailable
     }
 }

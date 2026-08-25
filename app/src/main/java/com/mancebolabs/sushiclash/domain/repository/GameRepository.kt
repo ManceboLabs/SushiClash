@@ -4,12 +4,13 @@ import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
+import com.mancebolabs.sushiclash.domain.model.RestoreGameResult
 import kotlinx.coroutines.flow.Flow
 
 interface GameRepository {
     val gameState: Flow<GameState>
 
-    suspend fun restoreGameState(): GameState
+    suspend fun restoreGameState(): RestoreGameResult
 
     suspend fun finishGameWithSaving(): FinishGameResult
 

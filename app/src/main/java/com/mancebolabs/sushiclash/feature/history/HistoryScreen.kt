@@ -32,11 +32,19 @@ import com.mancebolabs.sushiclash.domain.model.GroupPlayerRanking
 import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
+import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushiclash.ui.theme.itamaeScreenTopInsets
 import com.mancebolabs.sushiclash.ui.theme.rememberItamaeBottomContentPadding
+
+internal fun shouldShowHistoryEmptyCopy(
+    persistenceError: Boolean,
+    hasItems: Boolean,
+): Boolean {
+    return !persistenceError && !hasItems
+}
 
 @Composable
 fun HistoryScreen(
@@ -59,14 +67,24 @@ fun HistoryScreen(
     ) {
         ItamaeScreenTitle(title = stringResource(R.string.history_screen_title))
 
+        if (uiState.persistenceError) {
+            PersistenceErrorMessage(isRetrying = uiState.isPersistenceRetrying)
+        }
+
         HistorySectionSelector(
             selectedSection = uiState.selectedSection,
             onSectionSelected = onSectionSelected,
         )
 
         when (uiState.selectedSection) {
-            HistorySection.SOLO -> SoloHistoryContent(items = uiState.soloItems)
-            HistorySection.GROUP -> GroupHistoryContent(items = uiState.groupItems)
+            HistorySection.SOLO -> SoloHistoryContent(
+                items = uiState.soloItems,
+                persistenceError = uiState.persistenceError,
+            )
+            HistorySection.GROUP -> GroupHistoryContent(
+                items = uiState.groupItems,
+                persistenceError = uiState.persistenceError,
+            )
         }
     }
 }
@@ -141,11 +159,13 @@ private fun HistorySectionChip(
 @Composable
 private fun SoloHistoryContent(
     items: List<SoloHistoryItem>,
+    persistenceError: Boolean,
 ) {
-    if (items.isEmpty()) {
+    if (shouldShowHistoryEmptyCopy(persistenceError = persistenceError, hasItems = items.isNotEmpty())) {
         HistoryEmptyState(message = stringResource(R.string.history_solo_empty))
         return
     }
+    if (items.isEmpty()) return
 
     Column(verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.sm)) {
         items.forEach { item ->
@@ -191,11 +211,13 @@ private fun SoloHistoryCard(
 @Composable
 private fun GroupHistoryContent(
     items: List<GroupHistoryItem>,
+    persistenceError: Boolean,
 ) {
-    if (items.isEmpty()) {
+    if (shouldShowHistoryEmptyCopy(persistenceError = persistenceError, hasItems = items.isNotEmpty())) {
         HistoryEmptyState(message = stringResource(R.string.history_group_empty))
         return
     }
+    if (items.isEmpty()) return
 
     Column(verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.sm)) {
         items.forEach { item ->
@@ -367,6 +389,28 @@ private fun HistorySoloEmptyPreview() {
     ItamaePreviewTheme {
         HistoryScreen(
             uiState = HistoryUiState(selectedSection = HistorySection.SOLO),
+            onSectionSelected = {},
+        )
+    }
+}
+
+@Preview(name = "History persistence error – Light", showBackground = true)
+@Composable
+private fun HistoryPersistenceErrorLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        HistoryScreen(
+            uiState = HistoryUiState(persistenceError = true),
+            onSectionSelected = {},
+        )
+    }
+}
+
+@Preview(name = "History persistence error – Dark", showBackground = true)
+@Composable
+private fun HistoryPersistenceErrorDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        HistoryScreen(
+            uiState = HistoryUiState(persistenceError = true),
             onSectionSelected = {},
         )
     }

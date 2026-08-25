@@ -9,6 +9,7 @@ import com.mancebolabs.sushiclash.domain.model.GameStateValidator
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteTriggerType
+import com.mancebolabs.sushiclash.domain.model.RestoreGameResult
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,7 +70,14 @@ class FakeGameRepository(
 
     var clearActiveGameCallCount = 0
     var restoreGameStateCallCount = 0
+    var completeSetupCallCount = 0
     var lastSetupConfig: GameSetupConfig? = null
+    var restoreResult: RestoreGameResult? = null
+    var completeSetupThrowable: Throwable? = null
+    var incrementThrowable: Throwable? = null
+    var incrementPlayerCountCallCount = 0
+    var resetSoloCountThrowable: Throwable? = null
+    var resetPlayerCountThrowable: Throwable? = null
     var finishGameWithSavingCallCount = 0
     var finishGameWithoutSavingCallCount = 0
     val finishGameWithSavingResults = mutableListOf<FinishGameResult>()
@@ -77,12 +85,13 @@ class FakeGameRepository(
     var finishGameWithSavingGate: CompletableDeferred<Unit>? = null
     var finishGameWithSavingThrowable: Throwable? = null
 
-    override suspend fun restoreGameState(): GameState {
+    override suspend fun restoreGameState(): RestoreGameResult {
         restoreGameStateCallCount++
+        restoreResult?.let { return it }
         val current = _gameState.value
-        if (GameStateValidator.isValid(current)) return current
+        if (GameStateValidator.isValid(current)) return RestoreGameResult.Restored(current)
         clearActiveGame()
-        return _gameState.value
+        return RestoreGameResult.Restored(_gameState.value)
     }
 
     private fun clearActiveGame() {
@@ -117,6 +126,8 @@ class FakeGameRepository(
     }
 
     override suspend fun completeSetup(config: GameSetupConfig) {
+        completeSetupCallCount++
+        completeSetupThrowable?.let { throw it }
         lastSetupConfig = config
         _gameState.value = when (config.gameMode) {
             GameMode.SOLO -> TestGameStates.soloActive(
@@ -136,6 +147,8 @@ class FakeGameRepository(
     }
 
     override suspend fun incrementPlayerCount(playerId: String): IncrementResult {
+        incrementPlayerCountCallCount++
+        incrementThrowable?.let { throw it }
         val current = _gameState.value
         if (!current.hasActiveGame) {
             return IncrementResult(newCount = 0, shouldTriggerRoulette = false)
@@ -158,6 +171,7 @@ class FakeGameRepository(
     }
 
     override suspend fun resetSoloCount() {
+        resetSoloCountThrowable?.let { throw it }
         val current = _gameState.value
         if (!current.hasActiveGame || current.gameMode != GameMode.SOLO) return
         _gameState.value = current.copy(
@@ -166,6 +180,7 @@ class FakeGameRepository(
     }
 
     override suspend fun resetPlayerCount(playerId: String) {
+        resetPlayerCountThrowable?.let { throw it }
         val current = _gameState.value
         if (!current.hasActiveGame || current.gameMode != GameMode.GROUP) return
         _gameState.value = current.copy(

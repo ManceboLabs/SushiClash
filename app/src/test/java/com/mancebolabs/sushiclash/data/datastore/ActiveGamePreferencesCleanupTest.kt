@@ -1,6 +1,5 @@
 package com.mancebolabs.sushiclash.data.datastore
 
-import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.mutablePreferencesOf
@@ -8,7 +7,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.Player
-import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -161,9 +159,10 @@ class ActiveGamePreferencesCleanupTest {
     }
 
     private fun createDataStore(): AppPreferencesDataStore {
-        val context = mockk<Context>()
-        every { context.applicationContext } returns context
-        return AppPreferencesDataStore(context)
+        return AppPreferencesDataStore(
+            dataStore = mockk(relaxed = true),
+            logger = NoOpPersistenceLogger,
+        )
     }
 
     private fun validSoloGameState(sessionId: String?): GameState {

@@ -5,6 +5,7 @@ import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.Player
+import com.mancebolabs.sushiclash.domain.model.RestoreGameResult
 import com.mancebolabs.sushiclash.feature.counter.AppStartupState
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
 import com.mancebolabs.sushiclash.feature.counter.RouletteTriggerEvent
@@ -12,6 +13,7 @@ import com.mancebolabs.sushiclash.testutil.FakeGameRepository
 import com.mancebolabs.sushiclash.testutil.FakeOnboardingRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
 import com.mancebolabs.sushiclash.testutil.TestGameStates
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -446,6 +448,202 @@ class CounterViewModelTest {
         advanceUntilIdle()
 
         assertEquals(RouletteTriggerEvent.Solo(count = 5), viewModel.uiState.value.rouletteTriggerEvent)
+    }
+
+    @Test
+    fun givenUnreadableOnboarding_whenInitialized_thenLeavesLoadingWithoutHanging() = runTest {
+        val onboardingRepository = FakeOnboardingRepository(completed = false).apply {
+            setHasCompletedOnboardingUnreadable()
+        }
+        val viewModel = CounterViewModel(
+            gameRepository = FakeGameRepository(GameState(hasActiveGame = false)),
+            onboardingRepository = onboardingRepository,
+        )
+        runCurrent()
+
+        val state = viewModel.uiState.value
+        assertEquals(AppStartupState.NoActiveGame, state.startupState)
+        assertTrue(state.persistenceError)
+        assertEquals(0, onboardingRepository.setOnboardingCompletedCallCount)
+    }
+
+    @Test
+    fun givenUnavailableRestore_whenInitialized_thenShowsPersistenceErrorWithoutCompletingSetup() = runTest {
+        val gameRepository = FakeGameRepository(GameState(hasActiveGame = false)).apply {
+            restoreResult = RestoreGameResult.Unavailable
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(AppStartupState.NoActiveGame, state.startupState)
+        assertTrue(state.persistenceError)
+        assertEquals(0, gameRepository.completeSetupCallCount)
+        assertNull(gameRepository.lastSetupConfig)
+    }
+
+    @Test
+    fun givenUnavailableRestore_whenRetrySucceeds_thenRestoresActiveGame() = runTest {
+        val restoredState = TestGameStates.soloActive(count = 6)
+        val gameRepository = FakeGameRepository(GameState(hasActiveGame = false)).apply {
+            restoreResult = RestoreGameResult.Unavailable
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+
+        gameRepository.restoreResult = RestoreGameResult.Restored(restoredState)
+        gameRepository.setGameState(restoredState)
+        viewModel.onPersistenceRetry()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(AppStartupState.ActiveGame, state.startupState)
+        assertFalse(state.persistenceError)
+        assertEquals(6, state.soloCount)
+        assertEquals(2, gameRepository.restoreGameStateCallCount)
+    }
+
+    @Test
+    fun givenIncrementThrows_whenSushiTapped_thenDoesNotIncrementOrEmitRoulette() = runTest {
+        val gameRepository = FakeGameRepository(
+            TestGameStates.soloActive(
+                count = 4,
+                randomRouletteEnabled = true,
+                fixedThreshold = 5,
+            ),
+        ).apply {
+            incrementThrowable = IOException("disk")
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+
+        viewModel.onSoloSushiTapped()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(4, state.soloCount)
+        assertNull(state.rouletteTriggerEvent)
+        assertTrue(state.persistenceError)
+        assertEquals(AppStartupState.ActiveGame, state.startupState)
+    }
+
+    @Test
+    fun givenCompleteSetupThrows_whenSetupConfirmed_thenDoesNotActivateGame() = runTest {
+        val gameRepository = FakeGameRepository(GameState(hasActiveGame = false)).apply {
+            completeSetupThrowable = IOException("disk")
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onStartGameRequested()
+
+        viewModel.onSetupConfirmed(GameSetupConfig(gameMode = GameMode.SOLO))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(AppStartupState.NoActiveGame, state.startupState)
+        assertTrue(state.persistenceError)
+        assertFalse(state.showSetupDialog)
+        assertNull(state.rouletteTriggerEvent)
+        assertFalse(state.gameState.hasActiveGame)
+        assertNull(gameRepository.lastSetupConfig)
+    }
+
+    @Test
+    fun givenIncrementThrows_whenRetrySucceeds_thenRetriesIncrementWithoutRestoring() = runTest {
+        val gameRepository = FakeGameRepository(
+            TestGameStates.soloActive(count = 4),
+        ).apply {
+            incrementThrowable = IOException("disk")
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        val restoreCountAfterInit = gameRepository.restoreGameStateCallCount
+
+        viewModel.onSoloSushiTapped()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.persistenceError)
+        assertEquals(4, viewModel.uiState.value.soloCount)
+        assertEquals(1, gameRepository.incrementPlayerCountCallCount)
+
+        gameRepository.incrementThrowable = null
+        viewModel.onPersistenceRetry()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.persistenceError)
+        assertEquals(5, state.soloCount)
+        assertEquals(2, gameRepository.incrementPlayerCountCallCount)
+        assertEquals(restoreCountAfterInit, gameRepository.restoreGameStateCallCount)
+    }
+
+    @Test
+    fun givenCompleteSetupThrows_whenRetrySucceeds_thenCompletesSetupWithoutRestoring() = runTest {
+        val config = GameSetupConfig(gameMode = GameMode.SOLO)
+        val gameRepository = FakeGameRepository(GameState(hasActiveGame = false)).apply {
+            completeSetupThrowable = IOException("disk")
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+        viewModel.onStartGameRequested()
+
+        viewModel.onSetupConfirmed(config)
+        advanceUntilIdle()
+
+        val failed = viewModel.uiState.value
+        assertTrue(failed.persistenceError)
+        assertFalse(failed.showSetupDialog)
+        assertEquals(AppStartupState.NoActiveGame, failed.startupState)
+        val restoreCountAfterSetup = gameRepository.restoreGameStateCallCount
+
+        gameRepository.completeSetupThrowable = null
+        viewModel.onPersistenceRetry()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(AppStartupState.ActiveGame, state.startupState)
+        assertFalse(state.persistenceError)
+        assertFalse(state.showSetupDialog)
+        assertEquals(GameMode.SOLO, state.gameMode)
+        assertEquals(config, gameRepository.lastSetupConfig)
+        assertEquals(2, gameRepository.completeSetupCallCount)
+        assertEquals(restoreCountAfterSetup, gameRepository.restoreGameStateCallCount)
+    }
+
+    @Test
+    fun givenResetSoloThrows_whenResetConfirmed_thenShowsPersistenceError() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 4)).apply {
+            resetSoloCountThrowable = IOException("disk")
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+
+        viewModel.onResetSoloCountConfirmed()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(4, state.soloCount)
+        assertTrue(state.persistenceError)
+    }
+
+    @Test
+    fun givenResetPlayerThrows_whenResetConfirmed_thenShowsPersistenceError() = runTest {
+        val players = listOf(
+            Player(id = "p1", name = "Ana", sushiCount = 5),
+            Player(id = "p2", name = "Luis", sushiCount = 2),
+        )
+        val gameRepository = FakeGameRepository(TestGameStates.groupActive(players)).apply {
+            resetPlayerCountThrowable = IOException("disk")
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+
+        viewModel.onPlayerResetRequested("p1")
+        viewModel.onPlayerResetConfirmed()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(5, state.players.first { it.id == "p1" }.sushiCount)
+        assertTrue(state.persistenceError)
     }
 
     private fun createViewModel(initialState: GameState): CounterViewModel {

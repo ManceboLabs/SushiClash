@@ -3,6 +3,7 @@ package com.mancebolabs.sushiclash.settings
 import app.cash.turbine.test
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.domain.model.GroupGameHistoryEntry
+import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushiclash.feature.settings.SettingsViewModel
 import com.mancebolabs.sushiclash.navigation.OnboardingSource
@@ -10,6 +11,7 @@ import com.mancebolabs.sushiclash.navigation.SushiDestination
 import com.mancebolabs.sushiclash.testutil.FakeHistoryRepository
 import com.mancebolabs.sushiclash.testutil.FakeThemeRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
+import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -82,8 +84,8 @@ class SettingsViewModelTest {
         viewModel.onClearHistoryConfirmed()
 
         assertEquals(1, historyRepository.clearHistoryCallCount)
-        assertTrue(historyRepository.soloHistory.first().isEmpty())
-        assertTrue(historyRepository.groupHistory.first().isEmpty())
+        assertTrue(isClearedHistory(historyRepository.soloHistory.first()))
+        assertTrue(isClearedHistory(historyRepository.groupHistory.first()))
     }
 
     @Test
@@ -134,5 +136,119 @@ class SettingsViewModelTest {
         val route = SushiDestination.Onboarding.route(OnboardingSource.SETTINGS)
 
         assertEquals("onboarding/SETTINGS", route)
+    }
+
+    @Test
+    fun givenThemeWriteFails_whenSelectingDark_thenKeepsPreviousThemeAndShowsError() = runTest {
+        val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT).apply {
+            setThemeModeThrow = IOException("disk")
+        }
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository())
+
+        viewModel.uiState.test {
+            assertEquals(AppThemeMode.LIGHT, awaitItem().themeMode)
+            viewModel.onThemeModeSelected(AppThemeMode.DARK)
+            val state = awaitItem()
+            assertEquals(AppThemeMode.LIGHT, state.themeMode)
+            assertTrue(state.persistenceError)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenThemeWriteFails_whenRetrySucceeds_thenAppliesDarkTheme() = runTest {
+        val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT).apply {
+            setThemeModeThrow = IOException("disk")
+        }
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository())
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onThemeModeSelected(AppThemeMode.DARK)
+            assertTrue(awaitItem().persistenceError)
+
+            themeRepository.setThemeModeThrow = null
+            viewModel.onPersistenceRetry()
+            val state = expectMostRecentItem()
+            assertEquals(AppThemeMode.DARK, state.themeMode)
+            assertFalse(state.persistenceError)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenClearHistoryThrows_whenConfirmed_thenKeepsDialogAndHistory() = runTest {
+        val historyRepository = FakeHistoryRepository()
+        val soloEntry = SoloGameHistoryEntry(
+            id = "solo-1",
+            date = 1L,
+            totalSushi = 5,
+            randomRouletteEnabled = false,
+            randomRouletteMode = null,
+        )
+        historyRepository.setSoloHistory(listOf(soloEntry))
+        historyRepository.clearHistoryThrowable = IOException("disk")
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository)
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onClearHistoryRequested()
+            assertTrue(awaitItem().showClearHistoryDialog)
+
+            viewModel.onClearHistoryConfirmed()
+            val state = expectMostRecentItem()
+            assertTrue(state.showClearHistoryDialog)
+            assertTrue(state.persistenceError)
+            assertEquals(1, historyRepository.clearHistoryCallCount)
+            assertEquals(
+                PersistenceReadState.Data(listOf(soloEntry)),
+                historyRepository.soloHistory.first(),
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenClearHistoryThrows_whenRetrySucceeds_thenHistoryClearedDialogClosedAndErrorCleared() = runTest {
+        val historyRepository = FakeHistoryRepository()
+        val soloEntry = SoloGameHistoryEntry(
+            id = "solo-1",
+            date = 1L,
+            totalSushi = 5,
+            randomRouletteEnabled = false,
+            randomRouletteMode = null,
+        )
+        historyRepository.setSoloHistory(listOf(soloEntry))
+        historyRepository.clearHistoryThrowable = IOException("disk")
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository)
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onClearHistoryRequested()
+            assertTrue(awaitItem().showClearHistoryDialog)
+
+            viewModel.onClearHistoryConfirmed()
+            val failed = expectMostRecentItem()
+            assertTrue(failed.showClearHistoryDialog)
+            assertTrue(failed.persistenceError)
+
+            historyRepository.clearHistoryThrowable = null
+            viewModel.onPersistenceRetry()
+            val retried = expectMostRecentItem()
+            assertFalse(retried.showClearHistoryDialog)
+            assertFalse(retried.persistenceError)
+            assertEquals(2, historyRepository.clearHistoryCallCount)
+            assertTrue(isClearedHistory(historyRepository.soloHistory.first()))
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    private fun <T> isClearedHistory(state: PersistenceReadState<List<T>>): Boolean {
+        return when (state) {
+            PersistenceReadState.Missing -> true
+            is PersistenceReadState.Data -> state.value.isEmpty()
+            PersistenceReadState.Corrupted,
+            PersistenceReadState.Unavailable -> false
+        }
     }
 }

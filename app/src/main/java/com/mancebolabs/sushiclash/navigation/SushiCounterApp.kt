@@ -37,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.di.AppContainer
+import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
 import com.mancebolabs.sushiclash.feature.counter.CounterScreen
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
@@ -80,6 +81,18 @@ private val mainTabRoutes = setOf(
     SushiDestination.Settings.route,
 )
 
+internal fun resolveOnboardingCompleted(
+    previous: Boolean?,
+    state: PersistenceReadState<Boolean>,
+): Boolean? {
+    return when (state) {
+        PersistenceReadState.Missing -> false
+        is PersistenceReadState.Data -> state.value
+        PersistenceReadState.Corrupted,
+        PersistenceReadState.Unavailable -> previous ?: true
+    }
+}
+
 @Composable
 fun SushiCounterApp(
     modifier: Modifier = Modifier,
@@ -89,8 +102,10 @@ fun SushiCounterApp(
     var hasCompletedOnboarding by remember { mutableStateOf<Boolean?>(null) }
 
     LaunchedEffect(onboardingRepository) {
-        onboardingRepository.hasCompletedOnboarding.collect { completed ->
-            hasCompletedOnboarding = completed
+        var lastKnown = hasCompletedOnboarding
+        onboardingRepository.hasCompletedOnboardingState.collect { state ->
+            lastKnown = resolveOnboardingCompleted(lastKnown, state)
+            hasCompletedOnboarding = lastKnown
         }
     }
 
@@ -239,6 +254,7 @@ private fun SushiCounterNavHost(
                             }
                         },
                         onRouletteTriggerDismissed = viewModel::onRouletteTriggerDismissed,
+                        onPersistenceRetry = viewModel::onPersistenceRetry,
                     )
                 }
                 composable(SushiDestination.Wheel.route) {
@@ -265,6 +281,7 @@ private fun SushiCounterNavHost(
                         onSpin = viewModel::onSpin,
                         onWinnerDialogDismissed = viewModel::onWinnerDialogDismissed,
                         onInsufficientParticipantsDismissed = viewModel::onInsufficientParticipantsDismissed,
+                        onPersistenceRetry = viewModel::onPersistenceRetry,
                     )
                 }
                 composable(SushiDestination.History.route) {
@@ -311,6 +328,7 @@ private fun SushiCounterNavHost(
                                 SushiDestination.Onboarding.route(OnboardingSource.SETTINGS),
                             )
                         },
+                        onPersistenceRetry = viewModel::onPersistenceRetry,
                         appVersion = appVersion,
                     )
                 }

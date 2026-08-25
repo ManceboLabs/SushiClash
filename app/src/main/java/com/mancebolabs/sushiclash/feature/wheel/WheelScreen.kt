@@ -30,6 +30,7 @@ import com.mancebolabs.sushiclash.ui.components.ItamaeCard
 import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushiclash.ui.components.ItamaeTextField
+import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
 import com.mancebolabs.sushiclash.ui.components.RouletteWheel
 import com.mancebolabs.sushiclash.ui.components.WinnerDialog
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
@@ -49,6 +50,7 @@ fun WheelScreen(
     onSpin: () -> Unit,
     onWinnerDialogDismissed: () -> Unit,
     onInsufficientParticipantsDismissed: () -> Unit,
+    onPersistenceRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     uiState.selectedWinner?.let { winner ->
@@ -83,6 +85,13 @@ fun WheelScreen(
         verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.md),
     ) {
         ItamaeScreenTitle(title = stringResource(R.string.wheel_screen_title))
+
+        if (uiState.persistenceError) {
+            PersistenceErrorMessage(
+                isRetrying = uiState.isPersistenceRetrying,
+                onRetry = onPersistenceRetry,
+            )
+        }
 
         ItamaeCard {
             Row(
@@ -229,6 +238,7 @@ private fun WheelEmptyLightPreview() {
             onSpin = {},
             onWinnerDialogDismissed = {},
             onInsufficientParticipantsDismissed = {},
+            onPersistenceRetry = {},
         )
     }
 }
@@ -248,6 +258,7 @@ private fun WheelWithParticipantsLightPreview() {
             onSpin = {},
             onWinnerDialogDismissed = {},
             onInsufficientParticipantsDismissed = {},
+            onPersistenceRetry = {},
         )
     }
 }
@@ -266,6 +277,7 @@ private fun WheelWithParticipantsDarkPreview() {
             onSpin = {},
             onWinnerDialogDismissed = {},
             onInsufficientParticipantsDismissed = {},
+            onPersistenceRetry = {},
         )
     }
 }
@@ -285,6 +297,41 @@ private fun WheelWinnerDialogPreview() {
             onSpin = {},
             onWinnerDialogDismissed = {},
             onInsufficientParticipantsDismissed = {},
+            onPersistenceRetry = {},
+        )
+    }
+}
+
+@Preview(name = "Wheel persistence error – Light", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun WheelPersistenceErrorLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        WheelScreen(
+            uiState = WheelUiState(persistenceError = true),
+            onInputChanged = {},
+            onAddParticipant = {},
+            onRemoveParticipant = {},
+            onSpin = {},
+            onWinnerDialogDismissed = {},
+            onInsufficientParticipantsDismissed = {},
+            onPersistenceRetry = {},
+        )
+    }
+}
+
+@Preview(name = "Wheel persistence error – Dark", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun WheelPersistenceErrorDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        WheelScreen(
+            uiState = WheelUiState(persistenceError = true),
+            onInputChanged = {},
+            onAddParticipant = {},
+            onRemoveParticipant = {},
+            onSpin = {},
+            onWinnerDialogDismissed = {},
+            onInsufficientParticipantsDismissed = {},
+            onPersistenceRetry = {},
         )
     }
 }

@@ -33,6 +33,7 @@ import com.mancebolabs.sushiclash.ui.components.ItamaeCard
 import com.mancebolabs.sushiclash.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
+import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
 import com.mancebolabs.sushiclash.ui.components.SushiClickerButton
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
@@ -56,6 +57,7 @@ fun CounterScreen(
     onSetupConfirmed: (GameSetupConfig) -> Unit,
     onRouletteTriggerAccepted: () -> Unit,
     onRouletteTriggerDismissed: () -> Unit,
+    onPersistenceRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     FinishGameDialogs(
@@ -78,7 +80,10 @@ fun CounterScreen(
         AppStartupState.NoActiveGame -> {
             // Setup is intentionally user-driven; first launch shows "Empezar partida" instead.
             NoActiveGameContent(
+                persistenceError = uiState.persistenceError,
+                isPersistenceRetrying = uiState.isPersistenceRetrying,
                 onStartGameRequested = onStartGameRequested,
+                onPersistenceRetry = onPersistenceRetry,
                 modifier = modifier,
             )
         }
@@ -94,6 +99,7 @@ fun CounterScreen(
                 onFinishGameRequested = onFinishGameRequested,
                 onRouletteTriggerAccepted = onRouletteTriggerAccepted,
                 onRouletteTriggerDismissed = onRouletteTriggerDismissed,
+                onPersistenceRetry = onPersistenceRetry,
                 modifier = modifier,
             )
         }
@@ -133,7 +139,10 @@ private fun StartupLoadingScreen(
 
 @Composable
 private fun NoActiveGameContent(
+    persistenceError: Boolean,
+    isPersistenceRetrying: Boolean,
     onStartGameRequested: () -> Unit,
+    onPersistenceRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -146,6 +155,14 @@ private fun NoActiveGameContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ItamaeScreenTitle(title = stringResource(R.string.counter_screen_title))
+
+        if (persistenceError) {
+            Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
+            PersistenceErrorMessage(
+                isRetrying = isPersistenceRetrying,
+                onRetry = onPersistenceRetry,
+            )
+        }
 
         Spacer(modifier = Modifier.height(ItamaeSpacing.md))
 
@@ -197,6 +214,7 @@ private fun ActiveGameContent(
     onFinishGameRequested: () -> Unit,
     onRouletteTriggerAccepted: () -> Unit,
     onRouletteTriggerDismissed: () -> Unit,
+    onPersistenceRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showResetDialog by remember { mutableStateOf(false) }
@@ -258,6 +276,14 @@ private fun ActiveGameContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ItamaeScreenTitle(title = stringResource(R.string.counter_screen_title))
+
+        if (uiState.persistenceError) {
+            Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
+            PersistenceErrorMessage(
+                isRetrying = uiState.isPersistenceRetrying,
+                onRetry = onPersistenceRetry,
+            )
+        }
 
         Spacer(modifier = Modifier.height(ItamaeSpacing.md))
 
@@ -343,6 +369,7 @@ private fun PreviewCounterScreen(uiState: CounterUiState) {
         onSetupConfirmed = {},
         onRouletteTriggerAccepted = {},
         onRouletteTriggerDismissed = {},
+        onPersistenceRetry = {},
     )
 }
 
@@ -468,6 +495,32 @@ private fun FinishGameDialogPreview() {
             uiState = CounterUiState(
                 startupState = AppStartupState.NoActiveGame,
                 showFinishGameDialog = true,
+            ),
+        )
+    }
+}
+
+@Preview(name = "Persistence error – Light", showBackground = true)
+@Composable
+private fun PersistenceErrorLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.NoActiveGame,
+                persistenceError = true,
+            ),
+        )
+    }
+}
+
+@Preview(name = "Persistence error – Dark", showBackground = true)
+@Composable
+private fun PersistenceErrorDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.NoActiveGame,
+                persistenceError = true,
             ),
         )
     }

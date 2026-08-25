@@ -16,6 +16,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WheelViewModelTest {
@@ -87,6 +88,130 @@ class WheelViewModelTest {
 
         assertEquals(listOf("Marta"), viewModel.uiState.value.participants)
         assertEquals("", viewModel.uiState.value.inputName)
+    }
+
+    @Test
+    fun givenCorruptedParticipants_whenObserving_thenShowsPersistenceErrorAndEmptyList() = runTest(testDispatcher) {
+        val participantsRepository = FakeParticipantsRepository(listOf("Ana", "Luis")).apply {
+            setParticipantsCorrupted()
+        }
+        val viewModel = WheelViewModel(participantsRepository)
+        subscribeToUiState(this, viewModel)
+
+        val state = viewModel.uiState.value
+        assertTrue(state.persistenceError)
+        assertTrue(state.participants.isEmpty())
+    }
+
+    @Test
+    fun givenUnavailableParticipants_whenObserving_thenShowsPersistenceErrorAndEmptyList() = runTest(testDispatcher) {
+        val participantsRepository = FakeParticipantsRepository(listOf("Ana", "Luis")).apply {
+            setParticipantsUnavailable()
+        }
+        val viewModel = WheelViewModel(participantsRepository)
+        subscribeToUiState(this, viewModel)
+
+        val state = viewModel.uiState.value
+        assertTrue(state.persistenceError)
+        assertTrue(state.participants.isEmpty())
+    }
+
+    @Test
+    fun givenCorruptedParticipants_whenAdding_thenKeepsErrorAndDoesNotClearInput() = runTest(testDispatcher) {
+        val participantsRepository = FakeParticipantsRepository().apply {
+            setParticipantsCorrupted()
+        }
+        val viewModel = WheelViewModel(participantsRepository)
+        subscribeToUiState(this, viewModel)
+
+        viewModel.onInputChanged("Marta")
+        viewModel.onAddParticipant()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.persistenceError)
+        assertTrue(state.participants.isEmpty())
+        assertEquals("Marta", state.inputName)
+    }
+
+    @Test
+    fun givenAddThrows_whenAddingParticipant_thenShowsPersistenceErrorAndKeepsInput() = runTest(testDispatcher) {
+        val participantsRepository = FakeParticipantsRepository(listOf("Ana")).apply {
+            addParticipantThrowable = IOException("disk")
+        }
+        val viewModel = WheelViewModel(participantsRepository)
+        subscribeToUiState(this, viewModel)
+
+        viewModel.onInputChanged("Marta")
+        viewModel.onAddParticipant()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.persistenceError)
+        assertEquals(listOf("Ana"), state.participants)
+        assertEquals("Marta", state.inputName)
+    }
+
+    @Test
+    fun givenAddThrows_whenRetrySucceeds_thenAddsParticipantAndClearsError() = runTest(testDispatcher) {
+        val participantsRepository = FakeParticipantsRepository(listOf("Ana")).apply {
+            addParticipantThrowable = IOException("disk")
+        }
+        val viewModel = WheelViewModel(participantsRepository)
+        subscribeToUiState(this, viewModel)
+
+        viewModel.onInputChanged("Marta")
+        viewModel.onAddParticipant()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.persistenceError)
+        assertEquals(1, participantsRepository.addParticipantCallCount)
+
+        viewModel.onPersistenceRetry()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.persistenceError)
+        assertEquals(listOf("Ana"), viewModel.uiState.value.participants)
+        assertEquals("Marta", viewModel.uiState.value.inputName)
+
+        participantsRepository.addParticipantThrowable = null
+        viewModel.onPersistenceRetry()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.persistenceError)
+        assertEquals(listOf("Ana", "Marta"), state.participants)
+        assertEquals("", state.inputName)
+        assertEquals(3, participantsRepository.addParticipantCallCount)
+    }
+
+    @Test
+    fun givenSeedThrows_whenInitialized_thenShowsPersistenceError() = runTest(testDispatcher) {
+        val participantsRepository = FakeParticipantsRepository(listOf("Ana")).apply {
+            ensureGroupParticipantsSeededThrowable = IOException("disk")
+        }
+        val viewModel = WheelViewModel(participantsRepository)
+        subscribeToUiState(this, viewModel)
+
+        assertTrue(viewModel.uiState.value.persistenceError)
+        assertEquals(listOf("Ana"), viewModel.uiState.value.participants)
+    }
+
+    @Test
+    fun givenCorruptedParticipants_whenRetryWithoutPendingWrite_thenDoesNotClaimSuccess() = runTest(testDispatcher) {
+        val participantsRepository = FakeParticipantsRepository(listOf("Ana", "Luis")).apply {
+            setParticipantsCorrupted()
+        }
+        val viewModel = WheelViewModel(participantsRepository)
+        subscribeToUiState(this, viewModel)
+        val seedCountAfterInit = participantsRepository.ensureGroupParticipantsSeededCallCount
+        assertTrue(viewModel.uiState.value.persistenceError)
+
+        viewModel.onPersistenceRetry()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.persistenceError)
+        assertTrue(state.participants.isEmpty())
+        assertEquals(seedCountAfterInit + 1, participantsRepository.ensureGroupParticipantsSeededCallCount)
     }
 
     private fun subscribeToUiState(scope: TestScope, viewModel: WheelViewModel) {

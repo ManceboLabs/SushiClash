@@ -42,6 +42,7 @@ import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.ui.components.ConfirmationDialog
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
+import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
@@ -56,6 +57,7 @@ fun SettingsScreen(
     onClearHistoryConfirmed: () -> Unit,
     onClearHistoryDismissed: () -> Unit,
     onViewTutorialRequested: () -> Unit,
+    onPersistenceRetry: () -> Unit,
     appVersion: String = "",
     modifier: Modifier = Modifier,
 ) {
@@ -84,6 +86,13 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.lg),
     ) {
         ItamaeScreenTitle(title = stringResource(R.string.settings_screen_title))
+
+        if (uiState.persistenceError) {
+            PersistenceErrorMessage(
+                isRetrying = uiState.isPersistenceRetrying,
+                onRetry = onPersistenceRetry,
+            )
+        }
 
         SettingsSectionCard(
             title = stringResource(R.string.settings_appearance_section),
@@ -371,6 +380,7 @@ private fun SettingsLightPreview() {
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
             onViewTutorialRequested = {},
+            onPersistenceRetry = {},
             appVersion = "1.0",
         )
     }
@@ -387,6 +397,7 @@ private fun SettingsDarkPreview() {
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
             onViewTutorialRequested = {},
+            onPersistenceRetry = {},
             appVersion = "1.0",
         )
     }
@@ -406,6 +417,47 @@ private fun SettingsClearHistoryDialogPreview() {
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
             onViewTutorialRequested = {},
+            onPersistenceRetry = {},
+            appVersion = "1.0",
+        )
+    }
+}
+
+@Preview(name = "Settings persistence error – Light", showBackground = true)
+@Composable
+private fun SettingsPersistenceErrorLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        SettingsScreen(
+            uiState = SettingsUiState(
+                themeMode = AppThemeMode.LIGHT,
+                persistenceError = true,
+            ),
+            onThemeModeSelected = {},
+            onClearHistoryRequested = {},
+            onClearHistoryConfirmed = {},
+            onClearHistoryDismissed = {},
+            onViewTutorialRequested = {},
+            onPersistenceRetry = {},
+            appVersion = "1.0",
+        )
+    }
+}
+
+@Preview(name = "Settings persistence error – Dark", showBackground = true)
+@Composable
+private fun SettingsPersistenceErrorDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        SettingsScreen(
+            uiState = SettingsUiState(
+                themeMode = AppThemeMode.DARK,
+                persistenceError = true,
+            ),
+            onThemeModeSelected = {},
+            onClearHistoryRequested = {},
+            onClearHistoryConfirmed = {},
+            onClearHistoryDismissed = {},
+            onViewTutorialRequested = {},
+            onPersistenceRetry = {},
             appVersion = "1.0",
         )
     }

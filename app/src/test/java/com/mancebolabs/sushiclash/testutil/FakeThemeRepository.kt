@@ -12,7 +12,10 @@ class FakeThemeRepository(
     private val _themeMode = MutableStateFlow(initialMode)
     override val themeMode: Flow<AppThemeMode> = _themeMode.asStateFlow()
 
+    var setThemeModeThrow: Throwable? = null
+
     override suspend fun setThemeMode(themeMode: AppThemeMode) {
+        setThemeModeThrow?.let { throw it }
         _themeMode.value = themeMode
     }
 }

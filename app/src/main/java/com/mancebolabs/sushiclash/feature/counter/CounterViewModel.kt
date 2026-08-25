@@ -8,15 +8,17 @@ import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
+import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.model.Player
+import com.mancebolabs.sushiclash.domain.model.RestoreGameResult
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -46,6 +48,8 @@ data class CounterUiState(
     val isFinishGameSaving: Boolean = false,
     val finishGameSaveError: Boolean = false,
     val showSetupDialog: Boolean = false,
+    val persistenceError: Boolean = false,
+    val isPersistenceRetrying: Boolean = false,
 ) {
     val gameMode: GameMode?
         get() = gameState.gameMode
@@ -69,24 +73,72 @@ class CounterViewModel(
     private val isFinishGameSaving = MutableStateFlow(false)
     private val finishGameSaveError = MutableStateFlow(false)
     private val showSetupDialog = MutableStateFlow(false)
+    private val persistenceError = MutableStateFlow(false)
+    private val isPersistenceRetrying = MutableStateFlow(false)
+    private var lastFailedPersistenceAction: LastFailedPersistenceAction? = null
 
     init {
-        // Resolve startup only after onboarding preference and game state are known.
-        // First-launch onboarding is shown by the app shell; this VM stays in Loading until it completes.
+        // Resolve startup after onboarding is known. Unreadable onboarding must not hang Loading.
         viewModelScope.launch {
-            if (!onboardingRepository.hasCompletedOnboarding.first()) {
-                onboardingRepository.hasCompletedOnboarding.filter { completed -> completed }.first()
-            }
-            resolveStartupStateFromPersistence()
+            awaitOnboardingOrUnreadable()
+            resolveStartupStateFromPersistence(clearErrorOnSuccess = false)
         }
     }
 
-    private suspend fun resolveStartupStateFromPersistence() {
-        val loadedState = gameRepository.restoreGameState()
-        startupState.value = if (loadedState.hasActiveGame) {
-            AppStartupState.ActiveGame
-        } else {
-            AppStartupState.NoActiveGame
+    fun onPersistenceRetry() {
+        if (!isPersistenceRetrying.compareAndSet(expect = false, update = true)) return
+        viewModelScope.launch {
+            try {
+                when (val failedAction = lastFailedPersistenceAction) {
+                    is LastFailedPersistenceAction.Increment -> incrementCount(failedAction.playerId)
+                    is LastFailedPersistenceAction.Setup -> completeConfirmedSetup(failedAction.config)
+                    LastFailedPersistenceAction.Restore,
+                    null -> resolveStartupStateFromPersistence(clearErrorOnSuccess = true)
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: IOException) {
+                persistenceError.value = true
+            } finally {
+                isPersistenceRetrying.value = false
+            }
+        }
+    }
+
+    private suspend fun awaitOnboardingOrUnreadable() {
+        val onboardingState = onboardingRepository.hasCompletedOnboardingState.first { state ->
+            when (state) {
+                is PersistenceReadState.Data -> state.value
+                PersistenceReadState.Missing -> false
+                PersistenceReadState.Corrupted,
+                PersistenceReadState.Unavailable -> true
+            }
+        }
+        if (onboardingState is PersistenceReadState.Corrupted ||
+            onboardingState is PersistenceReadState.Unavailable
+        ) {
+            persistenceError.value = true
+        }
+    }
+
+    private suspend fun resolveStartupStateFromPersistence(clearErrorOnSuccess: Boolean) {
+        when (val loadedState = gameRepository.restoreGameState()) {
+            is RestoreGameResult.Restored -> {
+                if (clearErrorOnSuccess) {
+                    lastFailedPersistenceAction = null
+                    persistenceError.value = false
+                }
+                startupState.value = if (loadedState.gameState.hasActiveGame) {
+                    AppStartupState.ActiveGame
+                } else {
+                    AppStartupState.NoActiveGame
+                }
+            }
+            RestoreGameResult.Unavailable -> {
+                lastFailedPersistenceAction = LastFailedPersistenceAction.Restore
+                persistenceError.value = true
+                startupState.value = AppStartupState.NoActiveGame
+            }
         }
     }
 
@@ -102,6 +154,11 @@ class CounterViewModel(
         val showDialog: Boolean,
         val isSaving: Boolean,
         val hasError: Boolean,
+    )
+
+    private data class PersistenceUiState(
+        val hasError: Boolean,
+        val isRetrying: Boolean,
     )
 
     private val finishGameUiState = combine(
@@ -133,7 +190,13 @@ class CounterViewModel(
                 showSetupDialog = setupDialog,
             )
         },
-    ) { gameState, screenState ->
+        combine(persistenceError, isPersistenceRetrying) { hasError, isRetrying ->
+            PersistenceUiState(
+                hasError = hasError,
+                isRetrying = isRetrying,
+            )
+        },
+    ) { gameState, screenState, persistence ->
         CounterUiState(
             gameState = gameState,
             startupState = screenState.startupState,
@@ -143,6 +206,8 @@ class CounterViewModel(
             isFinishGameSaving = screenState.finishGame.isSaving,
             finishGameSaveError = screenState.finishGame.hasError,
             showSetupDialog = screenState.showSetupDialog,
+            persistenceError = persistence.hasError,
+            isPersistenceRetrying = persistence.isRetrying,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -157,13 +222,7 @@ class CounterViewModel(
     fun onPlayerSushiTapped(playerId: String) {
         if (startupState.value != AppStartupState.ActiveGame) return
         viewModelScope.launch {
-            val state = gameRepository.gameState.first()
-            val result = gameRepository.incrementPlayerCount(playerId)
-            emitRouletteTriggerIfNeeded(
-                gameState = state,
-                playerId = playerId,
-                result = result,
-            )
+            incrementCount(playerId)
         }
     }
 
@@ -182,28 +241,53 @@ class CounterViewModel(
     fun onPlayerResetConfirmed() {
         val request = playerResetRequest.value ?: return
         viewModelScope.launch {
-            gameRepository.resetPlayerCount(request.playerId)
-            playerResetRequest.value = null
+            try {
+                gameRepository.resetPlayerCount(request.playerId)
+                playerResetRequest.value = null
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: IOException) {
+                persistenceError.value = true
+            }
         }
     }
 
     fun onSoloSushiTapped() {
         if (startupState.value != AppStartupState.ActiveGame) return
         viewModelScope.launch {
+            val playerId = gameRepository.gameState.first().players.firstOrNull()?.id ?: return@launch
+            incrementCount(playerId)
+        }
+    }
+
+    private suspend fun incrementCount(playerId: String) {
+        try {
             val state = gameRepository.gameState.first()
-            val playerId = state.players.firstOrNull()?.id ?: return@launch
             val result = gameRepository.incrementPlayerCount(playerId)
             emitRouletteTriggerIfNeeded(
                 gameState = state,
                 playerId = playerId,
                 result = result,
             )
+            lastFailedPersistenceAction = null
+            persistenceError.value = false
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: IOException) {
+            lastFailedPersistenceAction = LastFailedPersistenceAction.Increment(playerId)
+            persistenceError.value = true
         }
     }
 
     fun onResetSoloCountConfirmed() {
         viewModelScope.launch {
-            gameRepository.resetSoloCount()
+            try {
+                gameRepository.resetSoloCount()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: IOException) {
+                persistenceError.value = true
+            }
         }
     }
 
@@ -249,7 +333,7 @@ class CounterViewModel(
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
-            } catch (_: Exception) {
+            } catch (_: IOException) {
                 finishGameSaveError.value = true
             } finally {
                 isFinishGameSaving.value = false
@@ -259,9 +343,23 @@ class CounterViewModel(
 
     fun onSetupConfirmed(config: GameSetupConfig) {
         viewModelScope.launch {
+            completeConfirmedSetup(config)
+        }
+    }
+
+    private suspend fun completeConfirmedSetup(config: GameSetupConfig) {
+        try {
             gameRepository.completeSetup(config)
             showSetupDialog.value = false
             startupState.value = AppStartupState.ActiveGame
+            lastFailedPersistenceAction = null
+            persistenceError.value = false
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: IOException) {
+            showSetupDialog.value = false
+            lastFailedPersistenceAction = LastFailedPersistenceAction.Setup(config)
+            persistenceError.value = true
         }
     }
 
@@ -309,4 +407,10 @@ class CounterViewModel(
             }
         }
     }
+}
+
+private sealed interface LastFailedPersistenceAction {
+    data object Restore : LastFailedPersistenceAction
+    data class Increment(val playerId: String) : LastFailedPersistenceAction
+    data class Setup(val config: GameSetupConfig) : LastFailedPersistenceAction
 }

@@ -1,15 +1,16 @@
 package com.mancebolabs.sushiclash.domain.repository
 
+import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import kotlinx.coroutines.flow.Flow
 
 interface ParticipantsRepository {
-    val participants: Flow<List<String>>
+    val participants: Flow<PersistenceReadState<List<String>>>
 
-    suspend fun ensureGroupParticipantsSeeded()
+    suspend fun ensureGroupParticipantsSeeded(): Boolean
 
-    suspend fun addParticipant(name: String)
+    suspend fun addParticipant(name: String): Boolean
 
-    suspend fun removeParticipant(name: String)
+    suspend fun removeParticipant(name: String): Boolean
 
-    suspend fun clearParticipants()
+    suspend fun clearParticipants(): Boolean
 }

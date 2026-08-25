@@ -6,11 +6,14 @@ import com.mancebolabs.sushiclash.domain.model.PlayerScore
 import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushiclash.feature.history.HistorySection
 import com.mancebolabs.sushiclash.feature.history.HistoryViewModel
+import com.mancebolabs.sushiclash.feature.history.shouldShowHistoryEmptyCopy
 import com.mancebolabs.sushiclash.testutil.FakeHistoryRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -84,6 +87,50 @@ class HistoryViewModelTest {
             assertEquals(HistorySection.GROUP, awaitItem().selectedSection)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun givenCorruptedSoloHistory_whenObservingState_thenShowsPersistenceErrorAndEmptyRankings() = runTest {
+        val repository = FakeHistoryRepository().apply {
+            setSoloHistory(
+                listOf(soloEntry(totalSushi = 99, date = 100L)),
+            )
+            setSoloHistoryCorrupted()
+        }
+        val viewModel = HistoryViewModel(repository)
+
+        viewModel.uiState.test {
+            val state = expectMostRecentItem()
+            assertTrue(state.persistenceError)
+            assertTrue(state.soloItems.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenCorruptedHistory_whenDataBecomesAvailable_thenShowsRankingsAndClearsError() = runTest {
+        val repository = FakeHistoryRepository().apply {
+            setSoloHistoryCorrupted()
+        }
+        val viewModel = HistoryViewModel(repository)
+
+        viewModel.uiState.test {
+            assertTrue(expectMostRecentItem().persistenceError)
+
+            repository.setSoloHistory(listOf(soloEntry(totalSushi = 12, date = 50L)))
+            val recovered = expectMostRecentItem()
+            assertFalse(recovered.persistenceError)
+            assertEquals(12, recovered.soloItems.single().entry.totalSushi)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenPersistenceError_whenHistoryHasNoItems_thenHidesEmptyCopy() {
+        assertFalse(shouldShowHistoryEmptyCopy(persistenceError = true, hasItems = false))
+        assertTrue(shouldShowHistoryEmptyCopy(persistenceError = false, hasItems = false))
+        assertFalse(shouldShowHistoryEmptyCopy(persistenceError = false, hasItems = true))
+        assertFalse(shouldShowHistoryEmptyCopy(persistenceError = true, hasItems = true))
     }
 
     private fun soloEntry(totalSushi: Int, date: Long): SoloGameHistoryEntry {
