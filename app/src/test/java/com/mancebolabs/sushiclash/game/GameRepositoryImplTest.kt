@@ -19,9 +19,13 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.Runs
 import io.mockk.slot
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -146,6 +150,85 @@ class GameRepositoryImplTest {
     }
 
     @Test
+    fun givenActiveSoloGame_whenIncrementingConcurrently_thenNoIncrementsAreLost() = runTest {
+        gameStateFlow.value = TestGameStates.soloActive()
+        persistPlayerUpdatesWithCooperativeYield()
+
+        coroutineScope {
+            List(100) {
+                async {
+                    repository.incrementPlayerCount(AppPreferencesDataStore.SOLO_PLAYER_ID)
+                }
+            }.awaitAll()
+        }
+
+        assertEquals(100, gameStateFlow.value.soloCount)
+    }
+
+    @Test
+    fun givenGroupGame_whenIncrementingDifferentPlayersConcurrently_thenEachCountIsPreserved() = runTest {
+        gameStateFlow.value = TestGameStates.groupActive(
+            players = listOf(
+                Player(id = "p1", name = "Ana"),
+                Player(id = "p2", name = "Luis"),
+            ),
+        )
+        persistPlayerUpdatesWithCooperativeYield()
+
+        coroutineScope {
+            val playerAUpdates = List(50) {
+                async { repository.incrementPlayerCount("p1") }
+            }
+            val playerBUpdates = List(75) {
+                async { repository.incrementPlayerCount("p2") }
+            }
+            (playerAUpdates + playerBUpdates).awaitAll()
+        }
+
+        assertEquals(50, gameStateFlow.value.players.first { it.id == "p1" }.sushiCount)
+        assertEquals(75, gameStateFlow.value.players.first { it.id == "p2" }.sushiCount)
+    }
+
+    @Test
+    fun givenGroupGame_whenIncrementingSamePlayerConcurrently_thenNoIncrementsAreLost() = runTest {
+        gameStateFlow.value = TestGameStates.groupActive(
+            players = listOf(Player(id = "p1", name = "Ana")),
+        )
+        persistPlayerUpdatesWithCooperativeYield()
+
+        coroutineScope {
+            List(100) {
+                async { repository.incrementPlayerCount("p1") }
+            }.awaitAll()
+        }
+
+        assertEquals(100, gameStateFlow.value.players.single().sushiCount)
+    }
+
+    @Test
+    fun givenFixedRoulette_whenConcurrentIncrementsReachThreshold_thenRouletteTriggersAtThreshold() = runTest {
+        gameStateFlow.value = TestGameStates.soloActive(
+            randomRouletteEnabled = true,
+            fixedThreshold = 5,
+        )
+        persistPlayerUpdatesWithCooperativeYield()
+
+        val results = coroutineScope {
+            List(5) {
+                async {
+                    repository.incrementPlayerCount(AppPreferencesDataStore.SOLO_PLAYER_ID)
+                }
+            }.awaitAll()
+        }
+
+        assertEquals(5, gameStateFlow.value.soloCount)
+        assertEquals(
+            listOf(5),
+            results.filter { it.shouldTriggerRoulette }.map { it.newCount },
+        )
+    }
+
+    @Test
     fun givenGroupGame_whenResettingOnePlayer_thenOnlyThatPlayerIsReset() = runTest {
         val players = listOf(
             Player(id = "p1", name = "Ana", sushiCount = 8),
@@ -190,6 +273,15 @@ class GameRepositoryImplTest {
         repository.clearActiveGame()
 
         coVerify(exactly = 1) { dataStore.clearActiveGame() }
+    }
+
+    private fun persistPlayerUpdatesWithCooperativeYield() {
+        coEvery { dataStore.setPlayers(any()) } coAnswers {
+            yield()
+            gameStateFlow.value = gameStateFlow.value.copy(
+                players = arg<List<Player>>(0),
+            )
+        }
     }
 }
 
