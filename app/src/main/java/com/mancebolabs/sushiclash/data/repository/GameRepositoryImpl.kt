@@ -1,10 +1,12 @@
 package com.mancebolabs.sushiclash.data.repository
 
 import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
+import com.mancebolabs.sushiclash.data.datastore.DecodedGameState
 import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
+import com.mancebolabs.sushiclash.domain.model.GameStateValidator
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.PlayerScore
@@ -14,6 +16,7 @@ import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -22,13 +25,26 @@ class GameRepositoryImpl(
     private val randomRouletteLogic: RandomRouletteLogic = RandomRouletteLogic.Default,
 ) : GameRepository {
 
-    // Serialize read-modify-write operations so concurrent taps cannot overwrite newer game state.
+    // Serialize restoration and mutations so stale recovery cannot overwrite newer game state.
     private val gameMutationMutex = Mutex()
 
-    override val gameState: Flow<GameState> = dataStore.gameState
+    override val gameState: Flow<GameState> = dataStore.decodedGameState.map { decodedState ->
+        decodedState.toSafeGameState()
+    }
+
+    override suspend fun restoreGameState(): GameState {
+        return gameMutationMutex.withLock {
+            val decodedState = dataStore.decodedGameState.first()
+            val safeGameState = decodedState.toSafeGameState()
+            if (decodedState.gameState.hasActiveGame && !safeGameState.hasActiveGame) {
+                dataStore.clearActiveGame()
+            }
+            safeGameState
+        }
+    }
 
     override suspend fun createFinishedGameSnapshot(): FinishedGameSnapshot? {
-        val currentState = dataStore.gameState.first()
+        val currentState = gameState.first()
         if (!currentState.hasActiveGame || currentState.gameMode == null) {
             return null
         }
@@ -55,7 +71,9 @@ class GameRepositoryImpl(
     }
 
     override suspend fun clearActiveGame() {
-        dataStore.clearActiveGame()
+        gameMutationMutex.withLock {
+            dataStore.clearActiveGame()
+        }
     }
 
     override suspend fun completeSetup(config: GameSetupConfig) {
@@ -80,23 +98,25 @@ class GameRepositoryImpl(
             }
         }
 
-        dataStore.saveGameState(
-            gameMode = config.gameMode,
-            players = players,
-            randomRouletteEnabled = config.randomRouletteEnabled,
-            randomRouletteTriggerType = config.randomRouletteTriggerType,
-            randomRouletteFixedThreshold = fixedThreshold,
-        )
+        gameMutationMutex.withLock {
+            dataStore.saveGameState(
+                gameMode = config.gameMode,
+                players = players,
+                randomRouletteEnabled = config.randomRouletteEnabled,
+                randomRouletteTriggerType = config.randomRouletteTriggerType,
+                randomRouletteFixedThreshold = fixedThreshold,
+            )
 
-        dataStore.setParticipants(emptyList())
-        if (config.gameMode == GameMode.GROUP) {
-            dataStore.setParticipants(players.map { it.name })
+            dataStore.setParticipants(emptyList())
+            if (config.gameMode == GameMode.GROUP) {
+                dataStore.setParticipants(players.map { it.name })
+            }
         }
     }
 
     override suspend fun incrementPlayerCount(playerId: String): IncrementResult {
         return gameMutationMutex.withLock {
-            val currentState = dataStore.gameState.first()
+            val currentState = gameState.first()
             if (!currentState.hasActiveGame) {
                 return@withLock IncrementResult(newCount = 0, shouldTriggerRoulette = false)
             }
@@ -151,7 +171,7 @@ class GameRepositoryImpl(
 
     override suspend fun resetSoloCount() {
         gameMutationMutex.withLock {
-            val currentState = dataStore.gameState.first()
+            val currentState = gameState.first()
             if (!currentState.hasActiveGame || currentState.gameMode != GameMode.SOLO) {
                 return@withLock
             }
@@ -168,7 +188,7 @@ class GameRepositoryImpl(
 
     override suspend fun resetPlayerCount(playerId: String) {
         gameMutationMutex.withLock {
-            val currentState = dataStore.gameState.first()
+            val currentState = gameState.first()
             if (!currentState.hasActiveGame || currentState.gameMode != GameMode.GROUP) {
                 return@withLock
             }
@@ -223,5 +243,14 @@ class GameRepositoryImpl(
                 null
             },
         )
+    }
+
+    private fun DecodedGameState.toSafeGameState(): GameState {
+        val decodedState = gameState
+        return if (isDecodeValid && GameStateValidator.isValid(decodedState)) {
+            decodedState
+        } else {
+            GameState(hasActiveGame = false)
+        }
     }
 }

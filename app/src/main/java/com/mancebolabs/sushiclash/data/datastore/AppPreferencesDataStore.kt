@@ -12,6 +12,7 @@ import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupRules
 import com.mancebolabs.sushiclash.domain.model.GameState
+import com.mancebolabs.sushiclash.domain.model.GameStateValidator
 import com.mancebolabs.sushiclash.domain.model.GroupGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.PlayerScore
@@ -26,42 +27,51 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "sushi_counter_preferences",
 )
 
+data class DecodedGameState(
+    val gameState: GameState,
+    val isDecodeValid: Boolean = true,
+)
+
 class AppPreferencesDataStore(
     private val context: Context,
 ) {
-    val gameState: Flow<GameState> = context.dataStore.data.map { preferences ->
+    val decodedGameState: Flow<DecodedGameState> = context.dataStore.data.map { preferences ->
         // Prefer has_active_game; fall back to legacy has_completed_setup for migration.
         val hasActiveGame = preferences[HAS_ACTIVE_GAME_KEY]
             ?: preferences[HAS_COMPLETED_SETUP_KEY]
             ?: false
 
         if (!hasActiveGame) {
-            return@map GameState(hasActiveGame = false)
+            return@map DecodedGameState(GameState(hasActiveGame = false))
         }
 
-        val gameMode = preferences[GAME_MODE_KEY]?.let { storedMode ->
-            runCatching { GameMode.valueOf(storedMode) }.getOrNull()
+        val storedMode = preferences[GAME_MODE_KEY]
+        val gameMode = storedMode?.let {
+            runCatching { GameMode.valueOf(it) }.getOrNull()
         }
-        val players = decodePlayers(preferences[PLAYERS_KEY].orEmpty())
+        val decodedPlayers = decodePlayers(preferences[PLAYERS_KEY])
 
-        val triggerType = preferences[RANDOM_ROULETTE_TRIGGER_TYPE_KEY]?.let { storedType ->
-            runCatching { RandomRouletteTriggerType.valueOf(storedType) }.getOrNull()
+        val storedTriggerType = preferences[RANDOM_ROULETTE_TRIGGER_TYPE_KEY]
+        val decodedTriggerType = storedTriggerType?.let {
+            runCatching { RandomRouletteTriggerType.valueOf(it) }.getOrNull()
         } ?: RandomRouletteTriggerType.FIXED
         val fixedThreshold = (preferences[RANDOM_ROULETTE_FIXED_THRESHOLD_KEY]
             ?: preferences[RANDOM_ROULETTE_THRESHOLD_KEY]
             ?: GameState.DEFAULT_RANDOM_ROULETTE_THRESHOLD)
-            .coerceIn(
-                GameState.MIN_RANDOM_ROULETTE_THRESHOLD,
-                GameState.MAX_RANDOM_ROULETTE_THRESHOLD,
-            )
 
-        GameState(
-            hasActiveGame = true,
-            gameMode = gameMode,
-            players = players,
-            randomRouletteEnabled = preferences[RANDOM_ROULETTE_ENABLED_KEY] ?: false,
-            randomRouletteTriggerType = triggerType,
-            randomRouletteFixedThreshold = fixedThreshold,
+        DecodedGameState(
+            gameState = GameState(
+                hasActiveGame = true,
+                gameMode = gameMode,
+                players = decodedPlayers.players,
+                randomRouletteEnabled = preferences[RANDOM_ROULETTE_ENABLED_KEY] ?: false,
+                randomRouletteTriggerType = decodedTriggerType,
+                randomRouletteFixedThreshold = fixedThreshold,
+            ),
+            isDecodeValid = decodedPlayers.isValid &&
+                (storedMode == null || gameMode != null) &&
+                (storedTriggerType == null ||
+                    runCatching { RandomRouletteTriggerType.valueOf(storedTriggerType) }.isSuccess),
         )
     }
 
@@ -186,27 +196,47 @@ class AppPreferencesDataStore(
         return jsonArray.toString()
     }
 
-    private fun decodePlayers(raw: String): List<Player> {
-        if (raw.isBlank()) return emptyList()
+    private fun decodePlayers(raw: String?): DecodedPlayers {
+        if (raw == null || raw.isBlank()) {
+            return DecodedPlayers(players = emptyList(), isValid = false)
+        }
         return runCatching {
             val jsonArray = JSONArray(raw)
-            buildList {
+            val players = buildList {
                 for (index in 0 until jsonArray.length()) {
                     val item = jsonArray.getJSONObject(index)
                     add(
                         Player(
                             id = item.getString("id"),
                             name = item.getString("name"),
-                            sushiCount = item.optInt("sushiCount", 0),
-                            nextRandomRouletteTarget = item.optInt("nextRandomRouletteTarget", -1)
-                                .takeIf { it >= GameState.MIN_RANDOM_ROULETTE_THRESHOLD },
-                            lastRandomRouletteTrigger = item.optInt("lastRandomRouletteTrigger", 0),
+                            sushiCount = if (item.has("sushiCount")) item.getInt("sushiCount") else 0,
+                            nextRandomRouletteTarget = if (
+                                item.has("nextRandomRouletteTarget") &&
+                                !item.isNull("nextRandomRouletteTarget")
+                            ) {
+                                item.getInt("nextRandomRouletteTarget")
+                            } else {
+                                null
+                            },
+                            lastRandomRouletteTrigger = if (item.has("lastRandomRouletteTrigger")) {
+                                item.getInt("lastRandomRouletteTrigger")
+                            } else {
+                                0
+                            },
                         ),
                     )
                 }
             }
-        }.getOrDefault(emptyList())
+            DecodedPlayers(players = players, isValid = true)
+        }.getOrElse {
+            DecodedPlayers(players = emptyList(), isValid = false)
+        }
     }
+
+    private data class DecodedPlayers(
+        val players: List<Player>,
+        val isValid: Boolean,
+    )
 
     private fun encodeParticipants(names: List<String>): String {
         val jsonArray = JSONArray()
@@ -240,7 +270,7 @@ class AppPreferencesDataStore(
         private val SOLO_HISTORY_KEY = stringPreferencesKey("solo_history")
         private val GROUP_HISTORY_KEY = stringPreferencesKey("group_history")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
-        const val SOLO_PLAYER_ID = "solo_player"
+        const val SOLO_PLAYER_ID = GameStateValidator.SOLO_PLAYER_ID
         const val MAX_GROUP_PLAYERS = GameSetupRules.MAX_GROUP_PLAYERS
         const val MIN_GROUP_PLAYERS = GameSetupRules.MIN_GROUP_PLAYERS
     }

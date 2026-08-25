@@ -78,7 +78,7 @@ class CounterViewModel(
     }
 
     private suspend fun resolveStartupStateFromPersistence() {
-        val loadedState = gameRepository.gameState.first()
+        val loadedState = gameRepository.restoreGameState()
         startupState.value = if (loadedState.hasActiveGame) {
             AppStartupState.ActiveGame
         } else {

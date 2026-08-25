@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 interface GameRepository {
     val gameState: Flow<GameState>
 
+    suspend fun restoreGameState(): GameState
+
     suspend fun createFinishedGameSnapshot(): FinishedGameSnapshot?
 
     suspend fun clearActiveGame()

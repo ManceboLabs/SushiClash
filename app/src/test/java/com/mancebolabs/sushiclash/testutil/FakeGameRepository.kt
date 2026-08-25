@@ -5,6 +5,7 @@ import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
+import com.mancebolabs.sushiclash.domain.model.GameStateValidator
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteTriggerType
@@ -63,8 +64,17 @@ class FakeGameRepository(
 
     var createFinishedGameSnapshotCallCount = 0
     var clearActiveGameCallCount = 0
+    var restoreGameStateCallCount = 0
     var lastFinishedSnapshot: FinishedGameSnapshot? = null
     var lastSetupConfig: GameSetupConfig? = null
+
+    override suspend fun restoreGameState(): GameState {
+        restoreGameStateCallCount++
+        val current = _gameState.value
+        if (GameStateValidator.isValid(current)) return current
+        clearActiveGame()
+        return _gameState.value
+    }
 
     override suspend fun createFinishedGameSnapshot(): FinishedGameSnapshot? {
         createFinishedGameSnapshotCallCount++

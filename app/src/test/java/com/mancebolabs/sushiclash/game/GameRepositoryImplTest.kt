@@ -1,6 +1,7 @@
 package com.mancebolabs.sushiclash.game
 
 import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
+import com.mancebolabs.sushiclash.data.datastore.DecodedGameState
 import com.mancebolabs.sushiclash.data.repository.GameRepositoryImpl
 import com.mancebolabs.sushiclash.data.repository.HistoryRepositoryImpl
 import com.mancebolabs.sushiclash.domain.model.FinishedGameSnapshot
@@ -14,16 +15,22 @@ import com.mancebolabs.sushiclash.testutil.FakeRandomProvider
 import com.mancebolabs.sushiclash.testutil.TestGameStates
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.Runs
 import io.mockk.slot
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
@@ -42,8 +49,113 @@ class GameRepositoryImplTest {
 
     @Before
     fun setUp() {
-        every { dataStore.gameState } returns gameStateFlow
+        every { dataStore.decodedGameState } returns gameStateFlow.map { gameState ->
+            DecodedGameState(gameState)
+        }
         repository = GameRepositoryImpl(dataStore, RandomRouletteLogic(FakeRandomProvider().apply { enqueue(7) }))
+    }
+
+    @Test
+    fun givenValidPersistedSoloGame_whenRestoring_thenPreservesActiveStateAndCount() = runTest {
+        val persistedState = TestGameStates.soloActive(count = 12)
+        gameStateFlow.value = persistedState
+
+        val restoredState = repository.restoreGameState()
+
+        assertEquals(persistedState, restoredState)
+        assertTrue(restoredState.hasActiveGame)
+        assertEquals(12, restoredState.soloCount)
+        coVerify(exactly = 0) { dataStore.clearActiveGame() }
+    }
+
+    @Test
+    fun givenMalformedPersistedPlayersSignal_whenRestoring_thenClearsAndReturnsInactiveState() = runTest {
+        every { dataStore.decodedGameState } returns flowOf(
+            DecodedGameState(
+                gameState = TestGameStates.soloActive(count = 12),
+                isDecodeValid = false,
+            ),
+        )
+        repository = GameRepositoryImpl(dataStore)
+        coEvery { dataStore.clearActiveGame() } just Runs
+
+        val restoredState = repository.restoreGameState()
+
+        assertFalse(restoredState.hasActiveGame)
+        coVerify(exactly = 1) { dataStore.clearActiveGame() }
+    }
+
+    @Test
+    fun givenMissingSemanticData_whenRestoring_thenClearsDespiteValidDecodeSignal() = runTest {
+        every { dataStore.decodedGameState } returns flowOf(
+            DecodedGameState(
+                gameState = GameState(
+                    hasActiveGame = true,
+                    gameMode = null,
+                    players = listOf(Player(AppPreferencesDataStore.SOLO_PLAYER_ID, "")),
+                ),
+                isDecodeValid = true,
+            ),
+        )
+        repository = GameRepositoryImpl(dataStore)
+        coEvery { dataStore.clearActiveGame() } just Runs
+
+        val restoredState = repository.restoreGameState()
+
+        assertFalse(restoredState.hasActiveGame)
+        coVerify(exactly = 1) { dataStore.clearActiveGame() }
+    }
+
+    @Test
+    fun givenSemanticallyInvalidPersistedGame_whenCollectingFlow_thenNeverEmitsActiveGame() = runTest {
+        gameStateFlow.value =
+            GameState(
+                hasActiveGame = true,
+                gameMode = GameMode.GROUP,
+                players = emptyList(),
+            )
+        coEvery { dataStore.clearActiveGame() } just Runs
+
+        val exposedState = repository.gameState.first()
+
+        assertFalse(exposedState.hasActiveGame)
+        coVerify(exactly = 0) { dataStore.clearActiveGame() }
+    }
+
+    @Test
+    fun givenRestoreWaitingOnInvalidState_whenCompletingSetup_thenRestoreCannotClearNewGame() = runTest {
+        val restoreReadStarted = CompletableDeferred<Unit>()
+        val allowRestoreRead = CompletableDeferred<Unit>()
+        every { dataStore.decodedGameState } returns flow {
+            restoreReadStarted.complete(Unit)
+            allowRestoreRead.await()
+            emit(
+                DecodedGameState(
+                    gameState = GameState(hasActiveGame = true),
+                    isDecodeValid = false,
+                ),
+            )
+        }
+        coEvery { dataStore.clearActiveGame() } just Runs
+        coEvery { dataStore.saveGameState(any(), any(), any(), any(), any()) } just Runs
+        coEvery { dataStore.setParticipants(any()) } just Runs
+        repository = GameRepositoryImpl(dataStore)
+
+        val restoreJob = launch { repository.restoreGameState() }
+        restoreReadStarted.await()
+        val setupJob = launch {
+            repository.completeSetup(GameSetupConfig(gameMode = GameMode.SOLO))
+        }
+        yield()
+        allowRestoreRead.complete(Unit)
+        restoreJob.join()
+        setupJob.join()
+
+        coVerifyOrder {
+            dataStore.clearActiveGame()
+            dataStore.saveGameState(any(), any(), any(), any(), any())
+        }
+        coVerify(exactly = 1) { dataStore.clearActiveGame() }
     }
 
     @Test
@@ -192,7 +304,10 @@ class GameRepositoryImplTest {
     @Test
     fun givenGroupGame_whenIncrementingSamePlayerConcurrently_thenNoIncrementsAreLost() = runTest {
         gameStateFlow.value = TestGameStates.groupActive(
-            players = listOf(Player(id = "p1", name = "Ana")),
+            players = listOf(
+                Player(id = "p1", name = "Ana"),
+                Player(id = "p2", name = "Luis"),
+            ),
         )
         persistPlayerUpdatesWithCooperativeYield()
 
@@ -202,7 +317,7 @@ class GameRepositoryImplTest {
             }.awaitAll()
         }
 
-        assertEquals(100, gameStateFlow.value.players.single().sushiCount)
+        assertEquals(100, gameStateFlow.value.players.first { it.id == "p1" }.sushiCount)
     }
 
     @Test

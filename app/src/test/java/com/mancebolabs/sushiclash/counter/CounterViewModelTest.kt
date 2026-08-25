@@ -40,12 +40,41 @@ class CounterViewModelTest {
 
     @Test
     fun givenActiveGameOnLaunch_whenInitialized_thenShowsActiveGame() = runTest {
-        val viewModel = createViewModel(initialState = TestGameStates.soloActive(count = 3))
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 3))
+        val viewModel = CounterViewModel(
+            gameRepository,
+            FakeHistoryRepository(),
+            FakeOnboardingRepository(completed = true),
+        )
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
         assertEquals(AppStartupState.ActiveGame, state.startupState)
         assertEquals(3, state.soloCount)
+        assertEquals(1, gameRepository.restoreGameStateCallCount)
+    }
+
+    @Test
+    fun givenInvalidPersistedGameOnLaunch_whenInitialized_thenRecoversWithoutTouchingOtherRepositories() = runTest {
+        val invalidState = GameState(
+            hasActiveGame = true,
+            gameMode = GameMode.GROUP,
+            players = emptyList(),
+        )
+        val gameRepository = FakeGameRepository(invalidState)
+        val historyRepository = FakeHistoryRepository()
+        val onboardingRepository = FakeOnboardingRepository(completed = true)
+        val viewModel = CounterViewModel(gameRepository, historyRepository, onboardingRepository)
+
+        advanceUntilIdle()
+
+        assertEquals(AppStartupState.NoActiveGame, viewModel.uiState.value.startupState)
+        assertFalse(viewModel.uiState.value.gameState.hasActiveGame)
+        assertEquals(1, gameRepository.restoreGameStateCallCount)
+        assertEquals(1, gameRepository.clearActiveGameCallCount)
+        assertTrue(historyRepository.savedSnapshots.isEmpty())
+        assertEquals(0, historyRepository.clearHistoryCallCount)
+        assertEquals(0, onboardingRepository.setOnboardingCompletedCallCount)
     }
 
     @Test
