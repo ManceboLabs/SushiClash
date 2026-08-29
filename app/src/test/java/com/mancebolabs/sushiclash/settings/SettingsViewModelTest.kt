@@ -8,6 +8,7 @@ import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushiclash.feature.settings.SettingsViewModel
 import com.mancebolabs.sushiclash.navigation.OnboardingSource
 import com.mancebolabs.sushiclash.navigation.SushiDestination
+import com.mancebolabs.sushiclash.testutil.FakeFeedbackSettingsRepository
 import com.mancebolabs.sushiclash.testutil.FakeHistoryRepository
 import com.mancebolabs.sushiclash.testutil.FakeThemeRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
@@ -32,6 +33,7 @@ class SettingsViewModelTest {
         val viewModel = SettingsViewModel(
             themeRepository = FakeThemeRepository(AppThemeMode.LIGHT),
             historyRepository = FakeHistoryRepository(),
+            feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
         )
 
         viewModel.uiState.test {
@@ -43,7 +45,7 @@ class SettingsViewModelTest {
     @Test
     fun givenDarkThemeSelected_whenUpdatingTheme_thenStateReflectsDarkMode() = runTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT)
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -78,7 +80,7 @@ class SettingsViewModelTest {
                 ),
             ),
         )
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository)
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
 
         viewModel.onClearHistoryRequested()
         viewModel.onClearHistoryConfirmed()
@@ -91,7 +93,7 @@ class SettingsViewModelTest {
     @Test
     fun givenClearHistoryRequested_whenConfirmed_thenDialogIsDismissed() = runTest {
         val historyRepository = FakeHistoryRepository()
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository)
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -107,7 +109,7 @@ class SettingsViewModelTest {
     @Test
     fun givenClearHistoryRequested_whenDismissed_thenHistoryIsNotCleared() = runTest {
         val historyRepository = FakeHistoryRepository()
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository)
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -124,11 +126,90 @@ class SettingsViewModelTest {
     @Test
     fun givenClearHistoryConfirmed_whenThemeWasDark_thenThemeRemainsDark() = runTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.DARK)
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository())
 
         viewModel.onClearHistoryConfirmed()
 
         assertEquals(AppThemeMode.DARK, themeRepository.themeMode.first())
+    }
+
+    @Test
+    fun givenDefaultFeedbackSettings_whenObservingState_thenSoundAndVibrationEnabled() = runTest {
+        val viewModel = SettingsViewModel(
+            themeRepository = FakeThemeRepository(),
+            historyRepository = FakeHistoryRepository(),
+            feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
+        )
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertTrue(state.soundEnabled)
+            assertTrue(state.vibrationEnabled)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenSoundDisabled_whenUpdating_thenStateReflectsChange() = runTest {
+        val feedbackSettingsRepository = FakeFeedbackSettingsRepository()
+        val viewModel = SettingsViewModel(
+            FakeThemeRepository(),
+            FakeHistoryRepository(),
+            feedbackSettingsRepository,
+        )
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onSoundEnabledChanged(false)
+            assertFalse(awaitItem().soundEnabled)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenSoundWriteFails_whenDisabling_thenKeepsPreviousValueAndShowsError() = runTest {
+        val feedbackSettingsRepository = FakeFeedbackSettingsRepository().apply {
+            setSoundEnabledThrow = IOException("disk")
+        }
+        val viewModel = SettingsViewModel(
+            FakeThemeRepository(),
+            FakeHistoryRepository(),
+            feedbackSettingsRepository,
+        )
+
+        viewModel.uiState.test {
+            assertTrue(awaitItem().soundEnabled)
+            viewModel.onSoundEnabledChanged(false)
+            val state = awaitItem()
+            assertTrue(state.soundEnabled)
+            assertTrue(state.persistenceError)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenSoundWriteFails_whenRetrySucceeds_thenAppliesDisabledSound() = runTest {
+        val feedbackSettingsRepository = FakeFeedbackSettingsRepository().apply {
+            setSoundEnabledThrow = IOException("disk")
+        }
+        val viewModel = SettingsViewModel(
+            FakeThemeRepository(),
+            FakeHistoryRepository(),
+            feedbackSettingsRepository,
+        )
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onSoundEnabledChanged(false)
+            assertTrue(awaitItem().persistenceError)
+
+            feedbackSettingsRepository.setSoundEnabledThrow = null
+            viewModel.onPersistenceRetry()
+            val state = expectMostRecentItem()
+            assertFalse(state.soundEnabled)
+            assertFalse(state.persistenceError)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -143,7 +224,7 @@ class SettingsViewModelTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT).apply {
             setThemeModeThrow = IOException("disk")
         }
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository())
 
         viewModel.uiState.test {
             assertEquals(AppThemeMode.LIGHT, awaitItem().themeMode)
@@ -160,7 +241,7 @@ class SettingsViewModelTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT).apply {
             setThemeModeThrow = IOException("disk")
         }
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -188,7 +269,7 @@ class SettingsViewModelTest {
         )
         historyRepository.setSoloHistory(listOf(soloEntry))
         historyRepository.clearHistoryThrowable = IOException("disk")
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository)
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -220,7 +301,7 @@ class SettingsViewModelTest {
         )
         historyRepository.setSoloHistory(listOf(soloEntry))
         historyRepository.clearHistoryThrowable = IOException("disk")
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository)
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
 
         viewModel.uiState.test {
             awaitItem()

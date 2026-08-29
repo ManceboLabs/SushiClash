@@ -226,6 +226,7 @@ private fun SushiCounterNavHost(
                         factory = CounterViewModel.factory(
                             AppContainer.gameRepository(context),
                             AppContainer.onboardingRepository(context),
+                            AppContainer.feedbackSettingsRepository(context),
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -258,6 +259,7 @@ private fun SushiCounterNavHost(
                         },
                         onRouletteTriggerDismissed = viewModel::onRouletteTriggerDismissed,
                         onPersistenceRetry = viewModel::onPersistenceRetry,
+                        onFeedbackConsumed = viewModel::onFeedbackConsumed,
                     )
                 }
                 composable(SushiDestination.Wheel.route) {
@@ -314,6 +316,7 @@ private fun SushiCounterNavHost(
                         factory = SettingsViewModel.factory(
                             AppContainer.themeRepository(context),
                             AppContainer.historyRepository(context),
+                            AppContainer.feedbackSettingsRepository(context),
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -331,6 +334,8 @@ private fun SushiCounterNavHost(
                                 SushiDestination.Onboarding.route(OnboardingSource.SETTINGS),
                             )
                         },
+                        onSoundEnabledChanged = viewModel::onSoundEnabledChanged,
+                        onVibrationEnabledChanged = viewModel::onVibrationEnabledChanged,
                         onPersistenceRetry = viewModel::onPersistenceRetry,
                         appVersion = appVersion,
                     )

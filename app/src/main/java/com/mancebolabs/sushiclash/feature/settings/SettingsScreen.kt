@@ -18,14 +18,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Vibration
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -53,6 +56,8 @@ import com.mancebolabs.sushiclash.ui.theme.rememberItamaeBottomContentPadding
 fun SettingsScreen(
     uiState: SettingsUiState,
     onThemeModeSelected: (AppThemeMode) -> Unit,
+    onSoundEnabledChanged: (Boolean) -> Unit,
+    onVibrationEnabledChanged: (Boolean) -> Unit,
     onClearHistoryRequested: () -> Unit,
     onClearHistoryConfirmed: () -> Unit,
     onClearHistoryDismissed: () -> Unit,
@@ -112,6 +117,29 @@ fun SettingsScreen(
                 selected = uiState.themeMode == AppThemeMode.DARK,
                 icon = Icons.Outlined.DarkMode,
                 onClick = { onThemeModeSelected(AppThemeMode.DARK) },
+            )
+        }
+
+        SettingsSectionCard(
+            title = stringResource(R.string.settings_feedback_section),
+            icon = Icons.AutoMirrored.Outlined.VolumeUp,
+        ) {
+            SettingsToggleRow(
+                icon = Icons.AutoMirrored.Outlined.VolumeUp,
+                title = stringResource(R.string.settings_sound_title),
+                description = stringResource(R.string.settings_sound_description),
+                checked = uiState.soundEnabled,
+                onCheckedChange = onSoundEnabledChanged,
+            )
+
+            Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
+
+            SettingsToggleRow(
+                icon = Icons.Outlined.Vibration,
+                title = stringResource(R.string.settings_vibration_title),
+                description = stringResource(R.string.settings_vibration_description),
+                checked = uiState.vibrationEnabled,
+                onCheckedChange = onVibrationEnabledChanged,
             )
         }
 
@@ -266,6 +294,51 @@ private fun SettingsActionRow(
 }
 
 @Composable
+private fun SettingsToggleRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = ItamaeSpacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(ItamaeSpacing.md),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(ItamaeSpacing.lg),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.xs),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+        )
+    }
+}
+
+@Composable
 private fun SettingsAboutContent(appVersion: String) {
     Row(
         modifier = Modifier
@@ -376,6 +449,8 @@ private fun SettingsLightPreview() {
         SettingsScreen(
             uiState = SettingsUiState(themeMode = AppThemeMode.LIGHT),
             onThemeModeSelected = {},
+            onSoundEnabledChanged = {},
+            onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
@@ -393,6 +468,8 @@ private fun SettingsDarkPreview() {
         SettingsScreen(
             uiState = SettingsUiState(themeMode = AppThemeMode.DARK),
             onThemeModeSelected = {},
+            onSoundEnabledChanged = {},
+            onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
@@ -413,6 +490,8 @@ private fun SettingsClearHistoryDialogPreview() {
                 showClearHistoryDialog = true,
             ),
             onThemeModeSelected = {},
+            onSoundEnabledChanged = {},
+            onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
@@ -433,6 +512,8 @@ private fun SettingsPersistenceErrorLightPreview() {
                 persistenceError = true,
             ),
             onThemeModeSelected = {},
+            onSoundEnabledChanged = {},
+            onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
@@ -453,6 +534,8 @@ private fun SettingsPersistenceErrorDarkPreview() {
                 persistenceError = true,
             ),
             onThemeModeSelected = {},
+            onSoundEnabledChanged = {},
+            onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},

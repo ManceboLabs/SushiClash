@@ -5,6 +5,7 @@ import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.feature.counter.AppStartupState
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
 import com.mancebolabs.sushiclash.navigation.resolveOnboardingCompleted
+import com.mancebolabs.sushiclash.testutil.FakeFeedbackSettingsRepository
 import com.mancebolabs.sushiclash.testutil.FakeGameRepository
 import com.mancebolabs.sushiclash.testutil.FakeOnboardingRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
@@ -31,6 +32,7 @@ class OnboardingStartupTest {
         val viewModel = CounterViewModel(
             gameRepository = FakeGameRepository(GameState(hasActiveGame = false)),
             onboardingRepository = onboardingRepository,
+            feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
         )
         advanceUntilIdle()
 
@@ -49,6 +51,7 @@ class OnboardingStartupTest {
         val viewModel = CounterViewModel(
             gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 4)),
             onboardingRepository = FakeOnboardingRepository(completed = true),
+            feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
         )
         advanceUntilIdle()
 
@@ -71,6 +74,7 @@ class OnboardingStartupTest {
         val viewModel = CounterViewModel(
             gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)),
             onboardingRepository = onboardingRepository,
+            feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
         )
         advanceUntilIdle()
         assertEquals(AppStartupState.Loading, viewModel.uiState.value.startupState)

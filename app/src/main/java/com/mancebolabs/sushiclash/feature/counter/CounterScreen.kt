@@ -35,6 +35,7 @@ import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
 import com.mancebolabs.sushiclash.ui.components.SushiClickerButton
+import com.mancebolabs.sushiclash.feature.feedback.CounterFeedbackEffect
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushiclash.ui.theme.itamaeScreenBottomInsets
@@ -59,8 +60,14 @@ fun CounterScreen(
     onRouletteTriggerAccepted: () -> Unit,
     onRouletteTriggerDismissed: () -> Unit,
     onPersistenceRetry: () -> Unit,
+    onFeedbackConsumed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    CounterFeedbackEffect(
+        uiState = uiState,
+        onFeedbackConsumed = onFeedbackConsumed,
+    )
+
     FinishGameDialogs(
         showFinishGameDialog = uiState.showFinishGameDialog,
         isFinishGameSaving = uiState.isFinishGameSaving,
@@ -375,6 +382,7 @@ private fun PreviewCounterScreen(uiState: CounterUiState) {
         onRouletteTriggerAccepted = {},
         onRouletteTriggerDismissed = {},
         onPersistenceRetry = {},
+        onFeedbackConsumed = {},
     )
 }
 

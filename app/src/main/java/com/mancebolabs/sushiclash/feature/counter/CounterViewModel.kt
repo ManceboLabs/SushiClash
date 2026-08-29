@@ -11,8 +11,10 @@ import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.RestoreGameResult
+import com.mancebolabs.sushiclash.domain.repository.FeedbackSettingsRepository
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
+import com.mancebolabs.sushiclash.feature.feedback.CounterFeedbackEvent
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,6 +52,9 @@ data class CounterUiState(
     val showSetupDialog: Boolean = false,
     val persistenceError: Boolean = false,
     val isPersistenceRetrying: Boolean = false,
+    val soundEnabled: Boolean = true,
+    val vibrationEnabled: Boolean = true,
+    val feedbackEvent: CounterFeedbackEvent? = null,
 ) {
     val gameMode: GameMode?
         get() = gameState.gameMode
@@ -64,6 +69,7 @@ data class CounterUiState(
 class CounterViewModel(
     private val gameRepository: GameRepository,
     private val onboardingRepository: OnboardingRepository,
+    private val feedbackSettingsRepository: FeedbackSettingsRepository,
 ) : ViewModel() {
 
     private val startupState = MutableStateFlow<AppStartupState>(AppStartupState.Loading)
@@ -75,6 +81,7 @@ class CounterViewModel(
     private val showSetupDialog = MutableStateFlow(false)
     private val persistenceError = MutableStateFlow(false)
     private val isPersistenceRetrying = MutableStateFlow(false)
+    private val feedbackEvent = MutableStateFlow<CounterFeedbackEvent?>(null)
     private var lastFailedPersistenceAction: LastFailedPersistenceAction? = null
 
     init {
@@ -150,6 +157,14 @@ class CounterViewModel(
         val showSetupDialog: Boolean,
     )
 
+    private data class CounterPreferencesUiState(
+        val persistenceError: Boolean,
+        val isPersistenceRetrying: Boolean,
+        val soundEnabled: Boolean,
+        val vibrationEnabled: Boolean,
+        val feedbackEvent: CounterFeedbackEvent?,
+    )
+
     private data class FinishGameUiState(
         val showDialog: Boolean,
         val isSaving: Boolean,
@@ -160,6 +175,10 @@ class CounterViewModel(
         val hasError: Boolean,
         val isRetrying: Boolean,
     )
+
+    fun onFeedbackConsumed() {
+        feedbackEvent.value = null
+    }
 
     private val finishGameUiState = combine(
         showFinishGameDialog,
@@ -190,13 +209,22 @@ class CounterViewModel(
                 showSetupDialog = setupDialog,
             )
         },
-        combine(persistenceError, isPersistenceRetrying) { hasError, isRetrying ->
-            PersistenceUiState(
-                hasError = hasError,
-                isRetrying = isRetrying,
+        combine(
+            persistenceError,
+            isPersistenceRetrying,
+            feedbackSettingsRepository.soundEnabled,
+            feedbackSettingsRepository.vibrationEnabled,
+            feedbackEvent,
+        ) { hasError, isRetrying, soundEnabled, vibrationEnabled, pendingFeedback ->
+            CounterPreferencesUiState(
+                persistenceError = hasError,
+                isPersistenceRetrying = isRetrying,
+                soundEnabled = soundEnabled,
+                vibrationEnabled = vibrationEnabled,
+                feedbackEvent = pendingFeedback,
             )
         },
-    ) { gameState, screenState, persistence ->
+    ) { gameState, screenState, preferences ->
         CounterUiState(
             gameState = gameState,
             startupState = screenState.startupState,
@@ -206,8 +234,11 @@ class CounterViewModel(
             isFinishGameSaving = screenState.finishGame.isSaving,
             finishGameSaveError = screenState.finishGame.hasError,
             showSetupDialog = screenState.showSetupDialog,
-            persistenceError = persistence.hasError,
-            isPersistenceRetrying = persistence.isRetrying,
+            persistenceError = preferences.persistenceError,
+            isPersistenceRetrying = preferences.isPersistenceRetrying,
+            soundEnabled = preferences.soundEnabled,
+            vibrationEnabled = preferences.vibrationEnabled,
+            feedbackEvent = preferences.feedbackEvent,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -267,12 +298,22 @@ class CounterViewModel(
     private suspend fun incrementCount(playerId: String) {
         try {
             val state = gameRepository.gameState.first()
+            val previousCount = state.players.find { it.id == playerId }?.sushiCount
             val result = gameRepository.incrementPlayerCount(playerId)
-            emitRouletteTriggerIfNeeded(
-                gameState = state,
-                playerId = playerId,
-                result = result,
-            )
+            if (!wasCounterIncrementSuccessful(previousCount, result)) {
+                return
+            }
+
+            if (result.shouldTriggerRoulette) {
+                emitRouletteTriggerIfNeeded(
+                    gameState = state,
+                    playerId = playerId,
+                    result = result,
+                )
+                feedbackEvent.value = CounterFeedbackEvent.RouletteTriggered
+            } else {
+                feedbackEvent.value = CounterFeedbackEvent.SushiIncrement
+            }
             lastFailedPersistenceAction = null
             persistenceError.value = false
         } catch (cancellation: CancellationException) {
@@ -399,6 +440,7 @@ class CounterViewModel(
         fun factory(
             gameRepository: GameRepository,
             onboardingRepository: OnboardingRepository,
+            feedbackSettingsRepository: FeedbackSettingsRepository,
         ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -406,6 +448,7 @@ class CounterViewModel(
                     return CounterViewModel(
                         gameRepository,
                         onboardingRepository,
+                        feedbackSettingsRepository,
                     ) as T
                 }
             }

@@ -24,6 +24,11 @@
     <string name="settings_about_section">Acerca de</string>
     <string name="settings_about_version">Versión %1$s</string>
     <string name="settings_about_branding">Mancebo Labs</string>
+    <string name="settings_feedback_section">Feedback</string>
+    <string name="settings_sound_title">Sonido</string>
+    <string name="settings_sound_description">Reproduce un sonido breve al contar sushi y en eventos especiales.</string>
+    <string name="settings_vibration_title">Vibración</string>
+    <string name="settings_vibration_description">Vibra al contar sushi y con un patrón distinto en la ruleta automática.</string>
 
     <!-- Onboarding -->
     <string name="onboarding_skip">Saltar</string>

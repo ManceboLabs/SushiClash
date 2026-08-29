@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.preferencesOf
 import app.cash.turbine.test
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
+import com.mancebolabs.sushiclash.domain.model.FeedbackSettingsDefaults
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.GameStateValidator
@@ -59,6 +60,73 @@ class AppPreferencesDataStoreTest {
         try {
             store.setThemeMode(AppThemeMode.DARK)
             assertEquals(AppThemeMode.DARK, store.themeMode.first())
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenMissingFeedbackPreferences_whenObserving_thenDefaultsToEnabled() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            assertTrue(store.soundEnabled.first())
+            assertTrue(store.vibrationEnabled.first())
+            assertEquals(
+                PersistenceReadState.Missing,
+                store.soundEnabledState.first(),
+            )
+            assertEquals(
+                PersistenceReadState.Missing,
+                store.vibrationEnabledState.first(),
+            )
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenFeedbackDisabled_whenPersisted_thenEmitsStoredValues() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            store.setSoundEnabled(false)
+            store.setVibrationEnabled(false)
+
+            assertFalse(store.soundEnabled.first())
+            assertFalse(store.vibrationEnabled.first())
+            assertEquals(
+                PersistenceReadState.Data(false),
+                store.soundEnabledState.first(),
+            )
+            assertEquals(
+                PersistenceReadState.Data(false),
+                store.vibrationEnabledState.first(),
+            )
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenMissingFeedbackPreferences_whenMappedForUi_thenUsesBackwardCompatibleDefaults() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            assertEquals(FeedbackSettingsDefaults.SOUND_ENABLED, store.soundEnabled.first())
+            assertEquals(FeedbackSettingsDefaults.VIBRATION_ENABLED, store.vibrationEnabled.first())
         } finally {
             dataStoreJob.cancel()
         }

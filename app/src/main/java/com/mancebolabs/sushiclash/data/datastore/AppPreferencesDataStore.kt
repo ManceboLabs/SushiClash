@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
+import com.mancebolabs.sushiclash.domain.model.FeedbackSettingsDefaults
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupRules
 import com.mancebolabs.sushiclash.domain.model.GameState
@@ -240,6 +241,56 @@ class AppPreferencesDataStore(
             PersistenceReadState.Missing,
             PersistenceReadState.Corrupted,
             PersistenceReadState.Unavailable -> AppThemeMode.LIGHT
+        }
+    }
+
+    internal val soundEnabledState: Flow<PersistenceReadState<Boolean>> = dataStore.data
+        .mapWithPersistenceReadState(
+            logger = logger,
+            operation = "readSoundEnabled",
+        ) { preferences ->
+            val stored = preferences[SOUND_ENABLED_KEY]
+                ?: return@mapWithPersistenceReadState PersistenceReadState.Missing
+            PersistenceReadState.Data(stored)
+        }
+
+    val soundEnabled: Flow<Boolean> = soundEnabledState.map { state ->
+        when (state) {
+            is PersistenceReadState.Data -> state.value
+            PersistenceReadState.Missing,
+            PersistenceReadState.Corrupted,
+            PersistenceReadState.Unavailable -> FeedbackSettingsDefaults.SOUND_ENABLED
+        }
+    }
+
+    internal val vibrationEnabledState: Flow<PersistenceReadState<Boolean>> = dataStore.data
+        .mapWithPersistenceReadState(
+            logger = logger,
+            operation = "readVibrationEnabled",
+        ) { preferences ->
+            val stored = preferences[VIBRATION_ENABLED_KEY]
+                ?: return@mapWithPersistenceReadState PersistenceReadState.Missing
+            PersistenceReadState.Data(stored)
+        }
+
+    val vibrationEnabled: Flow<Boolean> = vibrationEnabledState.map { state ->
+        when (state) {
+            is PersistenceReadState.Data -> state.value
+            PersistenceReadState.Missing,
+            PersistenceReadState.Corrupted,
+            PersistenceReadState.Unavailable -> FeedbackSettingsDefaults.VIBRATION_ENABLED
+        }
+    }
+
+    suspend fun setSoundEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SOUND_ENABLED_KEY] = enabled
+        }
+    }
+
+    suspend fun setVibrationEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[VIBRATION_ENABLED_KEY] = enabled
         }
     }
 
@@ -578,6 +629,8 @@ class AppPreferencesDataStore(
         internal val SOLO_HISTORY_KEY = stringPreferencesKey("solo_history")
         internal val GROUP_HISTORY_KEY = stringPreferencesKey("group_history")
         internal val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
+        internal val SOUND_ENABLED_KEY = booleanPreferencesKey("sound_enabled")
+        internal val VIBRATION_ENABLED_KEY = booleanPreferencesKey("vibration_enabled")
         const val SOLO_PLAYER_ID = GameStateValidator.SOLO_PLAYER_ID
         const val MAX_GROUP_PLAYERS = GameSetupRules.MAX_GROUP_PLAYERS
         const val MIN_GROUP_PLAYERS = GameSetupRules.MIN_GROUP_PLAYERS
