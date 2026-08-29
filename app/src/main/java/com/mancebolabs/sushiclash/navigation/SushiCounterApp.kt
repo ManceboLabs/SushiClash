@@ -86,10 +86,12 @@ internal fun resolveOnboardingCompleted(
     state: PersistenceReadState<Boolean>,
 ): Boolean? {
     return when (state) {
-        PersistenceReadState.Missing -> false
         is PersistenceReadState.Data -> state.value
+        // Missing means the flag was never persisted; only treat as incomplete on first resolution.
+        PersistenceReadState.Missing -> previous ?: false
+        // Keep loading or the last known value while onboarding persistence is unreadable.
         PersistenceReadState.Corrupted,
-        PersistenceReadState.Unavailable -> previous ?: true
+        PersistenceReadState.Unavailable -> previous
     }
 }
 

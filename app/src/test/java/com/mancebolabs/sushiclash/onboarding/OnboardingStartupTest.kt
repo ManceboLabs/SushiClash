@@ -85,7 +85,7 @@ class OnboardingStartupTest {
     @Test
     fun givenMissingOnboarding_whenResolvingCompletion_thenShowsOnboarding() {
         assertEquals(false, resolveOnboardingCompleted(previous = null, state = PersistenceReadState.Missing))
-        assertEquals(false, resolveOnboardingCompleted(previous = true, state = PersistenceReadState.Missing))
+        assertEquals(true, resolveOnboardingCompleted(previous = true, state = PersistenceReadState.Missing))
     }
 
     @Test
@@ -95,9 +95,30 @@ class OnboardingStartupTest {
     }
 
     @Test
-    fun givenUnreadableOnboardingWithoutPrevious_whenResolvingCompletion_thenEntersApp() {
-        assertEquals(true, resolveOnboardingCompleted(previous = null, state = PersistenceReadState.Corrupted))
-        assertEquals(true, resolveOnboardingCompleted(previous = null, state = PersistenceReadState.Unavailable))
+    fun givenUnreadableOnboardingWithoutPrevious_whenResolvingCompletion_thenKeepsStartupLoading() {
+        assertEquals(null, resolveOnboardingCompleted(previous = null, state = PersistenceReadState.Corrupted))
+        assertEquals(null, resolveOnboardingCompleted(previous = null, state = PersistenceReadState.Unavailable))
+    }
+
+    @Test
+    fun givenFirstLaunchReadFailureThenMissing_whenResolvingCompletion_thenShowsOnboarding() {
+        var resolved = resolveOnboardingCompleted(previous = null, state = PersistenceReadState.Unavailable)
+        assertEquals(null, resolved)
+
+        resolved = resolveOnboardingCompleted(resolved, PersistenceReadState.Missing)
+        assertEquals(false, resolved)
+    }
+
+    @Test
+    fun givenCompletedOnboarding_whenTransientReadFailure_thenDoesNotFlashOnboarding() {
+        var resolved = resolveOnboardingCompleted(previous = null, state = PersistenceReadState.Data(true))
+        assertEquals(true, resolved)
+
+        resolved = resolveOnboardingCompleted(resolved, PersistenceReadState.Unavailable)
+        assertEquals(true, resolved)
+
+        resolved = resolveOnboardingCompleted(resolved, PersistenceReadState.Missing)
+        assertEquals(true, resolved)
     }
 
     @Test

@@ -656,11 +656,43 @@ class AppPreferencesDataStoreTest {
         }
 
     @Test
+    fun givenEmptyStore_whenReadingOnboardingState_thenEmitsMissing() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            assertEquals(PersistenceReadState.Missing, store.hasCompletedOnboardingState.first())
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenOnboardingCompleted_whenPersisted_thenEmitsDataTrue() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            store.setOnboardingCompleted()
+            assertEquals(PersistenceReadState.Data(true), store.hasCompletedOnboardingState.first())
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
     fun givenReadIOException_whenCollectingHistoryAndParticipants_thenEmitsUnavailableThenRecovers() =
         runTest {
             assertUnavailableThenMissing(createHistoryParticipantsStore()) { it.soloHistory }
             assertUnavailableThenMissing(createHistoryParticipantsStore()) { it.groupHistory }
             assertUnavailableThenMissing(createHistoryParticipantsStore()) { it.participants }
+            assertUnavailableThenMissing(createHistoryParticipantsStore()) { it.hasCompletedOnboardingState }
         }
 
     private fun TestScope.createHistoryParticipantsStore(): AppPreferencesDataStore {
