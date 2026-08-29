@@ -55,6 +55,7 @@ fun CounterScreen(
     onFinishGameWithoutSaving: () -> Unit,
     onFinishGameWithSaving: () -> Unit,
     onSetupConfirmed: (GameSetupConfig) -> Unit,
+    onSetupDismissed: () -> Unit,
     onRouletteTriggerAccepted: () -> Unit,
     onRouletteTriggerDismissed: () -> Unit,
     onPersistenceRetry: () -> Unit,
@@ -70,7 +71,10 @@ fun CounterScreen(
     )
 
     if (uiState.showSetupDialog) {
-        GameSetupDialog(onConfirm = onSetupConfirmed)
+        GameSetupDialog(
+            onConfirm = onSetupConfirmed,
+            onDismiss = onSetupDismissed,
+        )
     }
 
     when (uiState.startupState) {
@@ -367,6 +371,7 @@ private fun PreviewCounterScreen(uiState: CounterUiState) {
         onFinishGameWithoutSaving = {},
         onFinishGameWithSaving = {},
         onSetupConfirmed = {},
+        onSetupDismissed = {},
         onRouletteTriggerAccepted = {},
         onRouletteTriggerDismissed = {},
         onPersistenceRetry = {},
@@ -474,9 +479,35 @@ private fun GroupCounterDarkPreview() {
     }
 }
 
-@Preview(name = "Setup popup", showBackground = true, widthDp = 360, heightDp = 780)
+@Preview(name = "Setup – Light", showBackground = true, widthDp = 360, heightDp = 780)
 @Composable
-private fun SetupPopupPreview() {
+private fun SetupLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.NoActiveGame,
+                showSetupDialog = true,
+            ),
+        )
+    }
+}
+
+@Preview(name = "Setup – Dark", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun SetupDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        PreviewCounterScreen(
+            uiState = CounterUiState(
+                startupState = AppStartupState.NoActiveGame,
+                showSetupDialog = true,
+            ),
+        )
+    }
+}
+
+@Preview(name = "Setup – Small phone", showBackground = true, widthDp = 320, heightDp = 640)
+@Composable
+private fun SetupSmallPhonePreview() {
     ItamaePreviewTheme {
         PreviewCounterScreen(
             uiState = CounterUiState(

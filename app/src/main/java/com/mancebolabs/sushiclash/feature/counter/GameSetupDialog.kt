@@ -2,12 +2,15 @@ package com.mancebolabs.sushiclash.feature.counter
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -31,22 +34,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.dialog
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.mancebolabs.sushiclash.R
-import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
-import com.mancebolabs.sushiclash.domain.model.GameSetupRules
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
+import com.mancebolabs.sushiclash.domain.model.GameSetupRules
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteTriggerType
+import com.mancebolabs.sushiclash.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushiclash.ui.components.ItamaeTextField
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
@@ -56,153 +63,223 @@ import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 @Composable
 fun GameSetupDialog(
     onConfirm: (GameSetupConfig) -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    var selectedMode by remember { mutableStateOf<GameMode?>(null) }
-    var inputName by remember { mutableStateOf("") }
+    var selectedMode by rememberSaveable { mutableStateOf<GameMode?>(null) }
+    var inputName by rememberSaveable { mutableStateOf("") }
     var groupPlayers by remember { mutableStateOf(emptyList<String>()) }
-    var randomRouletteEnabled by remember { mutableStateOf(false) }
-    var randomRouletteTriggerType by remember {
+    var randomRouletteEnabled by rememberSaveable { mutableStateOf(false) }
+    var randomRouletteTriggerType by rememberSaveable {
         mutableStateOf(RandomRouletteTriggerType.FIXED)
     }
-    var randomRouletteFixedThreshold by remember {
+    var randomRouletteFixedThreshold by rememberSaveable {
         mutableIntStateOf(GameState.DEFAULT_RANDOM_ROULETTE_THRESHOLD)
     }
     val scrollState = rememberScrollState()
-
+    val setupTitle = stringResource(R.string.setup_title)
     val canConfirm = GameSetupRules.canConfirmSetup(selectedMode, groupPlayers.size)
 
     Dialog(
-        onDismissRequest = {},
+        onDismissRequest = onDismiss,
         properties = DialogProperties(
-            dismissOnBackPress = false,
+            dismissOnBackPress = true,
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false,
         ),
     ) {
-        Surface(
+        Box(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .widthIn(max = 560.dp)
-                .heightIn(max = 640.dp),
-            shape = ItamaeShapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        ) {
-            Column(
-                modifier = Modifier.padding(ItamaeSpacing.lg),
-            ) {
-                Text(
-                    text = stringResource(R.string.setup_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
+                .fillMaxSize()
+                .padding(
+                    horizontal = ItamaeSpacing.marginMobile,
+                    vertical = ItamaeSpacing.md,
                 )
-
-                Spacer(modifier = Modifier.height(ItamaeSpacing.md))
-
+                .imePadding(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.94f)
+                    .widthIn(max = 600.dp)
+                    .semantics {
+                        dialog()
+                        paneTitle = setupTitle
+                    },
+                shape = ItamaeShapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                tonalElevation = 6.dp,
+                shadowElevation = 12.dp,
+            ) {
                 Column(
                     modifier = Modifier
-                        .heightIn(max = 420.dp)
-                        .verticalScroll(scrollState)
-                        .selectableGroup(),
-                    verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.md),
+                        .fillMaxSize()
+                        .padding(ItamaeSpacing.lg),
                 ) {
-                    GameModeOption(
-                        selected = selectedMode == GameMode.SOLO,
-                        title = stringResource(R.string.setup_solo_title),
-                        description = stringResource(R.string.setup_solo_description),
-                        onClick = { selectedMode = GameMode.SOLO },
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = setupTitle,
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                        )
+                        ItamaeGhostButton(
+                            text = stringResource(R.string.counter_cancel),
+                            onClick = onDismiss,
+                        )
+                    }
 
-                    GameModeOption(
-                        selected = selectedMode == GameMode.GROUP,
-                        title = stringResource(R.string.setup_group_title),
-                        description = stringResource(R.string.setup_group_description),
-                        onClick = { selectedMode = GameMode.GROUP },
-                    )
+                    Spacer(modifier = Modifier.height(ItamaeSpacing.md))
 
-                    if (selectedMode == GameMode.GROUP) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(ItamaeSpacing.sm),
-                            verticalAlignment = Alignment.Bottom,
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(scrollState)
+                            .selectableGroup(),
+                        verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.lg),
+                    ) {
+                        SetupSection(
+                            title = stringResource(R.string.setup_mode_section),
                         ) {
-                            ItamaeTextField(
-                                value = inputName,
-                                onValueChange = { inputName = it },
-                                label = stringResource(R.string.setup_player_name_hint),
-                                modifier = Modifier.weight(1f),
+                            GameModeOption(
+                                selected = selectedMode == GameMode.SOLO,
+                                title = stringResource(R.string.setup_solo_title),
+                                description = stringResource(R.string.setup_solo_description),
+                                onClick = { selectedMode = GameMode.SOLO },
                             )
-                            ItamaePrimaryButton(
-                                text = stringResource(R.string.wheel_add),
-                                onClick = {
-                                    val trimmedName = inputName.trim()
-                                    if (
-                                        trimmedName.isNotEmpty() &&
-                                        groupPlayers.size < GameSetupRules.MAX_GROUP_PLAYERS &&
-                                        groupPlayers.none { it.equals(trimmedName, ignoreCase = true) }
-                                    ) {
-                                        groupPlayers = groupPlayers + trimmedName
-                                        inputName = ""
-                                    }
-                                },
-                                enabled = inputName.isNotBlank() &&
-                                    groupPlayers.size < GameSetupRules.MAX_GROUP_PLAYERS,
+
+                            GameModeOption(
+                                selected = selectedMode == GameMode.GROUP,
+                                title = stringResource(R.string.setup_group_title),
+                                description = stringResource(R.string.setup_group_description),
+                                onClick = { selectedMode = GameMode.GROUP },
                             )
                         }
 
-                        if (groupPlayers.size < GameSetupRules.MIN_GROUP_PLAYERS) {
-                            Text(
-                                text = stringResource(R.string.setup_min_players_hint),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                        if (selectedMode == GameMode.GROUP) {
+                            SetupSection(
+                                title = stringResource(R.string.setup_players_section),
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(ItamaeSpacing.sm),
+                                    verticalAlignment = Alignment.Bottom,
+                                ) {
+                                    ItamaeTextField(
+                                        value = inputName,
+                                        onValueChange = { inputName = it },
+                                        label = stringResource(R.string.setup_player_name_hint),
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    ItamaePrimaryButton(
+                                        text = stringResource(R.string.wheel_add),
+                                        onClick = {
+                                            val trimmedName = inputName.trim()
+                                            if (
+                                                trimmedName.isNotEmpty() &&
+                                                groupPlayers.size < GameSetupRules.MAX_GROUP_PLAYERS &&
+                                                groupPlayers.none { it.equals(trimmedName, ignoreCase = true) }
+                                            ) {
+                                                groupPlayers = groupPlayers + trimmedName
+                                                inputName = ""
+                                            }
+                                        },
+                                        enabled = inputName.isNotBlank() &&
+                                            groupPlayers.size < GameSetupRules.MAX_GROUP_PLAYERS,
+                                    )
+                                }
+
+                                if (groupPlayers.size < GameSetupRules.MIN_GROUP_PLAYERS) {
+                                    Text(
+                                        text = stringResource(R.string.setup_min_players_hint),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+
+                                groupPlayers.forEach { playerName ->
+                                    SetupPlayerRow(
+                                        name = playerName,
+                                        onDelete = {
+                                            groupPlayers = groupPlayers.filterNot { it == playerName }
+                                        },
+                                    )
+                                }
+                            }
                         }
 
-                        groupPlayers.forEach { playerName ->
-                            SetupPlayerRow(
-                                name = playerName,
-                                onDelete = {
-                                    groupPlayers = groupPlayers.filterNot { it == playerName }
-                                },
+                        SetupSection(
+                            title = stringResource(R.string.setup_roulette_section),
+                        ) {
+                            RandomRouletteSetupSection(
+                                enabled = randomRouletteEnabled,
+                                triggerType = randomRouletteTriggerType,
+                                fixedThreshold = randomRouletteFixedThreshold,
+                                onEnabledChanged = { randomRouletteEnabled = it },
+                                onTriggerTypeChanged = { randomRouletteTriggerType = it },
+                                onFixedThresholdChanged = { randomRouletteFixedThreshold = it },
                             )
                         }
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(modifier = Modifier.height(ItamaeSpacing.md))
 
-                    RandomRouletteSetupSection(
-                        enabled = randomRouletteEnabled,
-                        triggerType = randomRouletteTriggerType,
-                        fixedThreshold = randomRouletteFixedThreshold,
-                        onEnabledChanged = { randomRouletteEnabled = it },
-                        onTriggerTypeChanged = { randomRouletteTriggerType = it },
-                        onFixedThresholdChanged = { randomRouletteFixedThreshold = it },
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(ItamaeSpacing.lg))
-
-                ItamaePrimaryButton(
-                    text = stringResource(R.string.setup_start),
-                    onClick = {
-                        val mode = selectedMode ?: return@ItamaePrimaryButton
-                        onConfirm(
-                            GameSetupConfig(
-                                gameMode = mode,
-                                playerNames = groupPlayers,
-                                randomRouletteEnabled = randomRouletteEnabled,
-                                randomRouletteTriggerType = randomRouletteTriggerType,
-                                randomRouletteFixedThreshold = randomRouletteFixedThreshold.coerceIn(
-                                    GameState.MIN_RANDOM_ROULETTE_THRESHOLD,
-                                    GameState.MAX_RANDOM_ROULETTE_THRESHOLD,
-                                ),
-                            ),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(ItamaeSpacing.sm),
+                    ) {
+                        ItamaeGhostButton(
+                            text = stringResource(R.string.counter_cancel),
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f),
                         )
-                    },
-                    enabled = canConfirm,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                        ItamaePrimaryButton(
+                            text = stringResource(R.string.setup_start),
+                            onClick = {
+                                val mode = selectedMode ?: return@ItamaePrimaryButton
+                                onConfirm(
+                                    GameSetupConfig(
+                                        gameMode = mode,
+                                        playerNames = groupPlayers,
+                                        randomRouletteEnabled = randomRouletteEnabled,
+                                        randomRouletteTriggerType = randomRouletteTriggerType,
+                                        randomRouletteFixedThreshold = randomRouletteFixedThreshold.coerceIn(
+                                            GameState.MIN_RANDOM_ROULETTE_THRESHOLD,
+                                            GameState.MAX_RANDOM_ROULETTE_THRESHOLD,
+                                        ),
+                                    ),
+                                )
+                            },
+                            enabled = canConfirm,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun SetupSection(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.sm),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        content()
     }
 }
 
@@ -249,6 +326,8 @@ private fun RandomRouletteSetupSection(
         }
 
         if (enabled) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
             Text(
                 text = stringResource(R.string.setup_roulette_frequency_title),
                 style = MaterialTheme.typography.titleSmall,
@@ -468,10 +547,26 @@ private fun SetupPlayerRow(
     }
 }
 
-@Preview(name = "Game setup dialog", showBackground = true, widthDp = 360, heightDp = 780)
+@Preview(name = "Game setup – Light", showBackground = true, widthDp = 360, heightDp = 780)
 @Composable
-private fun GameSetupDialogPreview() {
+private fun GameSetupDialogLightPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        GameSetupDialog(onConfirm = {}, onDismiss = {})
+    }
+}
+
+@Preview(name = "Game setup – Dark", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun GameSetupDialogDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        GameSetupDialog(onConfirm = {}, onDismiss = {})
+    }
+}
+
+@Preview(name = "Game setup – Small phone", showBackground = true, widthDp = 320, heightDp = 640)
+@Composable
+private fun GameSetupDialogSmallPhonePreview() {
     ItamaePreviewTheme {
-        GameSetupDialog(onConfirm = {})
+        GameSetupDialog(onConfirm = {}, onDismiss = {})
     }
 }

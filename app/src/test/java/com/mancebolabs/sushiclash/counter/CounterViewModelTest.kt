@@ -91,6 +91,41 @@ class CounterViewModelTest {
     }
 
     @Test
+    fun givenSetupVisible_whenDismissed_thenHidesSetupWithoutChangingGameState() = runTest {
+        val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+
+        viewModel.onStartGameRequested()
+        assertTrue(viewModel.uiState.value.showSetupDialog)
+
+        viewModel.onSetupDismissed()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.showSetupDialog)
+        assertEquals(AppStartupState.NoActiveGame, state.startupState)
+        assertFalse(state.gameState.hasActiveGame)
+        assertEquals(0, gameRepository.completeSetupCallCount)
+    }
+
+    @Test
+    fun givenActiveGame_whenSetupDismissedAfterOpen_thenActiveGameRemains() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 5))
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())
+        advanceUntilIdle()
+
+        viewModel.onStartGameRequested()
+        viewModel.onSetupDismissed()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.showSetupDialog)
+        assertEquals(AppStartupState.ActiveGame, state.startupState)
+        assertEquals(5, state.soloCount)
+    }
+
+    @Test
     fun givenSetupConfirmed_whenStartingSoloGame_thenActivatesGameAndHidesSetup() = runTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
         val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository())

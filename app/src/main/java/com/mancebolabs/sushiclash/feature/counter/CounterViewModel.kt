@@ -219,6 +219,10 @@ class CounterViewModel(
         showSetupDialog.value = true
     }
 
+    fun onSetupDismissed() {
+        showSetupDialog.value = false
+    }
+
     fun onPlayerSushiTapped(playerId: String) {
         if (startupState.value != AppStartupState.ActiveGame) return
         viewModelScope.launch {

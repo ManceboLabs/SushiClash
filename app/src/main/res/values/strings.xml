@@ -84,6 +84,9 @@
 
     <!-- Setup -->
     <string name="setup_title">Elige el modo de juego</string>
+    <string name="setup_mode_section">Modo de juego</string>
+    <string name="setup_players_section">Jugadores</string>
+    <string name="setup_roulette_section">Ruleta aleatoria</string>
     <string name="setup_solo_title">Solo</string>
     <string name="setup_solo_description">Un jugador, un contador de sushi</string>
     <string name="setup_group_title">Grupo</string>

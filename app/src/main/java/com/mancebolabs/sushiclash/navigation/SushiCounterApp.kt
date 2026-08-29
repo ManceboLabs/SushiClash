@@ -244,6 +244,7 @@ private fun SushiCounterNavHost(
                         onFinishGameWithoutSaving = viewModel::onFinishGameWithoutSaving,
                         onFinishGameWithSaving = viewModel::onFinishGameWithSaving,
                         onSetupConfirmed = viewModel::onSetupConfirmed,
+                        onSetupDismissed = viewModel::onSetupDismissed,
                         onRouletteTriggerAccepted = {
                             viewModel.onRouletteTriggerConfirmed()
                             rouletteNavState.requestAutoSpin()
