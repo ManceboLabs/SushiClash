@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import com.mancebolabs.sushiclash.MainActivity
 import com.mancebolabs.sushiclash.R
+import com.mancebolabs.sushiclash.feature.onboarding.defaultOnboardingSteps
 
 typealias SushiClashComposeTestRule =
     AndroidComposeTestRule<ActivityScenarioRule<MainActivity>, MainActivity>
@@ -98,6 +99,17 @@ fun SushiClashComposeTestRule.completeOnboarding() {
 
     clickText(R.string.onboarding_finish)
     waitForText(R.string.counter_start_game)
+}
+
+fun SushiClashComposeTestRule.navigateToLastOnboardingStep() {
+    waitForText(R.string.onboarding_step_welcome_title)
+
+    repeat(defaultOnboardingSteps().lastIndex) {
+        clickText(R.string.onboarding_next)
+        waitForIdle()
+    }
+
+    waitForText(R.string.onboarding_step_responsible_use_title)
 }
 
 fun SushiClashComposeTestRule.startSoloGame() {

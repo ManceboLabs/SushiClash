@@ -3,8 +3,12 @@ package com.mancebolabs.sushiclash
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.support.completeOnboarding
+import com.mancebolabs.sushiclash.support.navigateToLastOnboardingStep
+import com.mancebolabs.sushiclash.support.onText
 import com.mancebolabs.sushiclash.support.skipOnboardingIfShown
 import com.mancebolabs.sushiclash.support.waitForText
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.performScrollTo
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -29,5 +33,14 @@ class OnboardingFlowInstrumentedTest : SushiClashInstrumentedTestCase() {
         composeTestRule.completeOnboarding()
         composeTestRule.waitForText(R.string.counter_no_active_game_title)
         composeTestRule.waitForText(R.string.counter_start_game)
+    }
+
+    @Test
+    fun givenLastOnboardingStep_whenDisplayed_thenResponsibleUseBodyIsScrollableAndFinishIsVisible() {
+        composeTestRule.navigateToLastOnboardingStep()
+        composeTestRule.onText(R.string.onboarding_step_responsible_use_description)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule.onText(R.string.onboarding_finish).assertIsDisplayed()
     }
 }

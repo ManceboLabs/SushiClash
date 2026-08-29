@@ -3,15 +3,19 @@ package com.mancebolabs.sushiclash.feature.onboarding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.outlined.Autorenew
@@ -33,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.ui.components.ItamaeGhostButton
@@ -42,6 +47,17 @@ import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushiclash.ui.theme.itamaeScreenTopInsets
+
+private val OnboardingIllustrationMaxSize = 220.dp
+private val OnboardingIllustrationMinSize = 120.dp
+private const val OnboardingIllustrationMaxHeightFraction = 0.30f
+
+internal fun resolveOnboardingIllustrationSize(maxHeight: Dp): Dp {
+    return minOf(
+        OnboardingIllustrationMaxSize,
+        maxHeight * OnboardingIllustrationMaxHeightFraction,
+    ).coerceIn(OnboardingIllustrationMinSize, OnboardingIllustrationMaxSize)
+}
 
 fun defaultOnboardingSteps(): List<OnboardingStep> = listOf(
     OnboardingStep(
@@ -106,6 +122,7 @@ fun OnboardingScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .itamaeScreenTopInsets()
+            .navigationBarsPadding()
             .padding(horizontal = ItamaeSpacing.marginMobile)
             .padding(bottom = ItamaeSpacing.xl),
     ) {
@@ -121,10 +138,16 @@ fun OnboardingScreen(
 
         Spacer(modifier = Modifier.height(ItamaeSpacing.md))
 
-        OnboardingStepContent(
-            step = currentStep,
-            modifier = Modifier.weight(1f),
-        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) {
+            OnboardingStepContent(
+                step = currentStep,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
 
         Spacer(modifier = Modifier.height(ItamaeSpacing.lg))
 
@@ -152,44 +175,61 @@ fun OnboardingStepContent(
     step: OnboardingStep,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    val scrollState = rememberScrollState()
+
+    BoxWithConstraints(
         modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
-        OnboardingIllustration(
-            illustration = step.illustration,
-            modifier = Modifier.size(220.dp),
-        )
+        val illustrationSize = resolveOnboardingIllustrationSize(maxHeight)
 
-        Spacer(modifier = Modifier.height(ItamaeSpacing.xl))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            OnboardingIllustration(
+                illustration = step.illustration,
+                containerSize = illustrationSize,
+            )
 
-        Text(
-            text = stringResource(step.titleRes),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
+            Spacer(modifier = Modifier.height(ItamaeSpacing.lg))
 
-        Spacer(modifier = Modifier.height(ItamaeSpacing.md))
+            Text(
+                text = stringResource(step.titleRes),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+            )
 
-        Text(
-            text = stringResource(step.descriptionRes),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = ItamaeSpacing.sm),
-        )
+            Spacer(modifier = Modifier.height(ItamaeSpacing.md))
+
+            Text(
+                text = stringResource(step.descriptionRes),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = ItamaeSpacing.sm),
+            )
+
+            Spacer(modifier = Modifier.height(ItamaeSpacing.md))
+        }
     }
 }
 
 @Composable
 private fun OnboardingIllustration(
     illustration: OnboardingIllustration,
+    containerSize: Dp,
     modifier: Modifier = Modifier,
 ) {
+    val iconSize = containerSize * 0.64f
+
     Box(
         modifier = modifier
+            .size(containerSize)
             .clip(ItamaeShapes.large)
             .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)),
         contentAlignment = Alignment.Center,
@@ -198,14 +238,14 @@ private fun OnboardingIllustration(
             is OnboardingIllustration.DrawableResource -> {
                 SushiIcon(
                     contentDescription = null,
-                    modifier = Modifier.size(140.dp),
+                    modifier = Modifier.size(iconSize),
                 )
             }
             is OnboardingIllustration.VectorIcon -> {
                 Icon(
                     imageVector = illustration.imageVector,
                     contentDescription = null,
-                    modifier = Modifier.size(120.dp),
+                    modifier = Modifier.size(iconSize * 0.86f),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }
@@ -345,6 +385,51 @@ private fun OnboardingLastStepPreview() {
         OnboardingScreen(
             steps = previewSteps,
             initialStepIndex = previewSteps.lastIndex,
+            onSkip = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Onboarding – Last step small phone", showBackground = true, widthDp = 360, heightDp = 640)
+@Composable
+private fun OnboardingLastStepSmallPhonePreview() {
+    ItamaePreviewTheme {
+        OnboardingScreen(
+            steps = previewSteps,
+            initialStepIndex = previewSteps.lastIndex,
+            onSkip = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Onboarding – Last step large font",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 640,
+    fontScale = 1.3f,
+)
+@Composable
+private fun OnboardingLastStepLargeFontPreview() {
+    ItamaePreviewTheme {
+        OnboardingScreen(
+            steps = previewSteps,
+            initialStepIndex = previewSteps.lastIndex,
+            onSkip = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Onboarding – Achievements step small phone", showBackground = true, widthDp = 360, heightDp = 640)
+@Composable
+private fun OnboardingAchievementsStepSmallPhonePreview() {
+    ItamaePreviewTheme {
+        OnboardingScreen(
+            steps = previewSteps,
+            initialStepIndex = 6,
             onSkip = {},
             onFinish = {},
         )
