@@ -44,6 +44,15 @@ class AndroidGameFeedbackController(
         }
     }
 
+    override fun playAchievementUnlocked(
+        vibrationEnabled: Boolean,
+    ) {
+        if (vibrationEnabled) {
+            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+        }
+    }
+
     private fun playTone(
         toneType: Int,
         durationMs: Int,

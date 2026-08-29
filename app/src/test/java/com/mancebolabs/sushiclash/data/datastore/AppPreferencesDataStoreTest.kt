@@ -133,6 +133,134 @@ class AppPreferencesDataStoreTest {
     }
 
     @Test
+    fun givenMissingAchievementState_whenObserving_thenDefaultsToEmptyProgress() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            val state = store.achievementState.first()
+            assertEquals(0, state.totalGamesCompleted)
+            assertEquals(0, state.totalRouletteSpins)
+            assertTrue(state.unlockedAtById.isEmpty())
+            assertEquals(
+                PersistenceReadState.Missing,
+                store.achievementStateFlow.first(),
+            )
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenAchievementUnlocked_whenPersisted_thenRoundTripsUnlockTimestamp() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            store.setAchievementState(
+                com.mancebolabs.sushiclash.domain.model.achievement.AchievementPersistenceState(
+                    totalGamesCompleted = 1,
+                    peakSushiInSingleGame = 12,
+                    unlockedAtById = mapOf("games_1" to 1_700_000_000_000L),
+                ),
+            )
+
+            val state = store.achievementState.first()
+            assertEquals(1, state.totalGamesCompleted)
+            assertEquals(12, state.peakSushiInSingleGame)
+            assertEquals(1_700_000_000_000L, state.unlockedAtById["games_1"])
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenAchievementProgress_whenResetToEmpty_thenRoundTripsDefaults() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            store.setAchievementState(
+                com.mancebolabs.sushiclash.domain.model.achievement.AchievementPersistenceState(
+                    totalGamesCompleted = 10,
+                    totalRouletteSpins = 5,
+                    peakSushiInSingleGame = 40,
+                    hasTriggeredAutomaticRoulette = true,
+                    unlockedAtById = mapOf("games_10" to 1_700_000_000_000L),
+                ),
+            )
+            store.setAchievementState(
+                com.mancebolabs.sushiclash.domain.model.achievement.AchievementPersistenceState(),
+            )
+
+            val state = store.achievementState.first()
+            assertEquals(com.mancebolabs.sushiclash.domain.model.achievement.AchievementPersistenceState(), state)
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenLifetimeSushiTotals_whenPersisted_thenRoundTripsValues() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            store.setAchievementState(
+                com.mancebolabs.sushiclash.domain.model.achievement.AchievementPersistenceState(
+                    lifetimeSoloSushiTotal = 742,
+                    lifetimeGroupSushiTotal = 1_250,
+                    unlockedAtById = mapOf("solo_total_50" to 1_700_000_000_000L),
+                ),
+            )
+
+            val state = store.achievementState.first()
+            assertEquals(742, state.lifetimeSoloSushiTotal)
+            assertEquals(1_250, state.lifetimeGroupSushiTotal)
+            assertEquals(1_700_000_000_000L, state.unlockedAtById["solo_total_50"])
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenLegacyAchievementStateWithoutLifetimeTotals_whenDecoded_thenDefaultsToZero() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            dataStore.updateData { preferences ->
+                preferences.toMutablePreferences().apply {
+                    this[AppPreferencesDataStore.ACHIEVEMENT_STATE_KEY] =
+                        """{"profiles":{"default":{"totalGamesCompleted":2,"peakSushiInSingleGame":15,"totalRouletteSpins":0,"hasTriggeredAutomaticRoulette":false,"unlockedAtById":{}}}}"""
+                }
+            }
+
+            val decoded = store.achievementState.first()
+            assertEquals(0, decoded.lifetimeSoloSushiTotal)
+            assertEquals(0, decoded.lifetimeGroupSushiTotal)
+            assertEquals(2, decoded.totalGamesCompleted)
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
     fun givenDataStoreAlwaysThrowsIOException_whenCollectingThemeModeState_thenEmitsUnavailableWithoutFloodingUntilDelay() =
         runTest {
             val dataStore = AlwaysFailingDataStore()

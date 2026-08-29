@@ -10,6 +10,10 @@ interface GameFeedbackController {
         soundEnabled: Boolean,
         vibrationEnabled: Boolean,
     )
+
+    fun playAchievementUnlocked(
+        vibrationEnabled: Boolean,
+    )
 }
 
 object NoOpGameFeedbackController : GameFeedbackController {
@@ -20,6 +24,10 @@ object NoOpGameFeedbackController : GameFeedbackController {
 
     override fun playRouletteTriggered(
         soundEnabled: Boolean,
+        vibrationEnabled: Boolean,
+    ) = Unit
+
+    override fun playAchievementUnlocked(
         vibrationEnabled: Boolean,
     ) = Unit
 }

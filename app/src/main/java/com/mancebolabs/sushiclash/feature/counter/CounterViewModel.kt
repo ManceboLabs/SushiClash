@@ -11,6 +11,9 @@ import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.RestoreGameResult
+import com.mancebolabs.sushiclash.domain.achievement.maxSushiInGame
+import com.mancebolabs.sushiclash.domain.achievement.totalSushiInGame
+import com.mancebolabs.sushiclash.domain.repository.AchievementRepository
 import com.mancebolabs.sushiclash.domain.repository.FeedbackSettingsRepository
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
@@ -70,6 +73,7 @@ class CounterViewModel(
     private val gameRepository: GameRepository,
     private val onboardingRepository: OnboardingRepository,
     private val feedbackSettingsRepository: FeedbackSettingsRepository,
+    private val achievementRepository: AchievementRepository,
 ) : ViewModel() {
 
     private val startupState = MutableStateFlow<AppStartupState>(AppStartupState.Loading)
@@ -311,9 +315,12 @@ class CounterViewModel(
                     result = result,
                 )
                 feedbackEvent.value = CounterFeedbackEvent.RouletteTriggered
+                achievementRepository.onAutomaticRouletteTriggered()
             } else {
                 feedbackEvent.value = CounterFeedbackEvent.SushiIncrement
             }
+            val updatedState = gameRepository.gameState.first()
+            achievementRepository.onSushiCountUpdated(updatedState.maxSushiInGame())
             lastFailedPersistenceAction = null
             persistenceError.value = false
         } catch (cancellation: CancellationException) {
@@ -363,11 +370,23 @@ class CounterViewModel(
         finishGameSaveError.value = false
 
         viewModelScope.launch {
+            val gameState = gameRepository.gameState.first()
+            val maxSushiInGame = gameState.maxSushiInGame()
+            val totalSushiInGame = gameState.totalSushiInGame()
+            val gameMode = gameState.gameMode ?: GameMode.SOLO
             try {
                 when (operation()) {
-                    FinishGameResult.Success,
-                    FinishGameResult.NoActiveGame,
-                    -> {
+                    FinishGameResult.Success -> {
+                        achievementRepository.onGameCompleted(
+                            gameMode = gameMode,
+                            maxSushiInGame = maxSushiInGame,
+                            totalSushiInGame = totalSushiInGame,
+                        )
+                        showFinishGameDialog.value = false
+                        finishGameSaveError.value = false
+                        startupState.value = AppStartupState.NoActiveGame
+                    }
+                    FinishGameResult.NoActiveGame -> {
                         showFinishGameDialog.value = false
                         finishGameSaveError.value = false
                         startupState.value = AppStartupState.NoActiveGame
@@ -441,6 +460,7 @@ class CounterViewModel(
             gameRepository: GameRepository,
             onboardingRepository: OnboardingRepository,
             feedbackSettingsRepository: FeedbackSettingsRepository,
+            achievementRepository: AchievementRepository,
         ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -449,6 +469,7 @@ class CounterViewModel(
                         gameRepository,
                         onboardingRepository,
                         feedbackSettingsRepository,
+                        achievementRepository,
                     ) as T
                 }
             }

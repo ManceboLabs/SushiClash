@@ -39,6 +39,9 @@ import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.di.AppContainer
 import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
+import com.mancebolabs.sushiclash.feature.achievements.AchievementNotificationHost
+import com.mancebolabs.sushiclash.feature.achievements.AchievementsScreen
+import com.mancebolabs.sushiclash.feature.achievements.AchievementsViewModel
 import com.mancebolabs.sushiclash.feature.counter.CounterScreen
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
 import com.mancebolabs.sushiclash.feature.history.HistoryScreen
@@ -66,6 +69,8 @@ sealed class SushiDestination(
     data object History : SushiDestination("history")
 
     data object Settings : SushiDestination("settings")
+
+    data object Achievements : SushiDestination("achievements")
 
     data object Onboarding : SushiDestination("onboarding/{source}") {
         const val SOURCE_ARG = "source"
@@ -152,6 +157,9 @@ private fun SushiCounterNavHost(
     val scope = rememberCoroutineScope()
     var floatingNavBarHeight by remember { mutableStateOf(ItamaeSpacing.floatingNavBarDefaultHeight) }
     val rouletteNavState = remember { RandomRouletteNavState() }
+    val context = LocalContext.current
+    val feedbackSettingsRepository = remember { AppContainer.feedbackSettingsRepository(context) }
+    val vibrationEnabled by feedbackSettingsRepository.vibrationEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     // Onboarding is a dedicated route; bottom navigation is limited to the four main tabs.
     val showBottomNavigation = currentRoute in mainTabRoutes
@@ -185,11 +193,12 @@ private fun SushiCounterNavHost(
             .background(MaterialTheme.colorScheme.background),
     ) {
         CompositionLocalProvider(LocalFloatingNavBarHeight provides floatingNavBarHeight) {
-            NavHost(
-                navController = navController,
-                startDestination = startDestination,
-                modifier = Modifier.fillMaxSize(),
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                NavHost(
+                    navController = navController,
+                    startDestination = startDestination,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                 composable(
                     route = SushiDestination.Onboarding.route,
                     arguments = listOf(
@@ -221,12 +230,12 @@ private fun SushiCounterNavHost(
                     )
                 }
                 composable(SushiDestination.Counter.route) {
-                    val context = LocalContext.current
                     val viewModel: CounterViewModel = viewModel(
                         factory = CounterViewModel.factory(
                             AppContainer.gameRepository(context),
                             AppContainer.onboardingRepository(context),
                             AppContainer.feedbackSettingsRepository(context),
+                            AppContainer.achievementRepository(context),
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -263,10 +272,10 @@ private fun SushiCounterNavHost(
                     )
                 }
                 composable(SushiDestination.Wheel.route) {
-                    val context = LocalContext.current
                     val viewModel: WheelViewModel = viewModel(
                         factory = WheelViewModel.factory(
                             AppContainer.participantsRepository(context),
+                            AppContainer.achievementRepository(context),
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -290,7 +299,6 @@ private fun SushiCounterNavHost(
                     )
                 }
                 composable(SushiDestination.History.route) {
-                    val context = LocalContext.current
                     val viewModel: HistoryViewModel = viewModel(
                         factory = HistoryViewModel.factory(
                             AppContainer.historyRepository(context),
@@ -304,7 +312,6 @@ private fun SushiCounterNavHost(
                     )
                 }
                 composable(SushiDestination.Settings.route) {
-                    val context = LocalContext.current
                     val appVersion = remember(context) {
                         runCatching {
                             context.packageManager
@@ -317,6 +324,7 @@ private fun SushiCounterNavHost(
                             AppContainer.themeRepository(context),
                             AppContainer.historyRepository(context),
                             AppContainer.feedbackSettingsRepository(context),
+                            AppContainer.achievementRepository(context),
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -327,6 +335,9 @@ private fun SushiCounterNavHost(
                         onClearHistoryRequested = viewModel::onClearHistoryRequested,
                         onClearHistoryConfirmed = viewModel::onClearHistoryConfirmed,
                         onClearHistoryDismissed = viewModel::onClearHistoryDismissed,
+                        onClearAchievementsRequested = viewModel::onClearAchievementsRequested,
+                        onClearAchievementsConfirmed = viewModel::onClearAchievementsConfirmed,
+                        onClearAchievementsDismissed = viewModel::onClearAchievementsDismissed,
                         onViewTutorialRequested = {
                             // Navigate to onboarding without mutating app state; completion
                             // and first-launch flags remain unchanged until the user finishes.
@@ -334,12 +345,39 @@ private fun SushiCounterNavHost(
                                 SushiDestination.Onboarding.route(OnboardingSource.SETTINGS),
                             )
                         },
+                        onViewAchievementsRequested = {
+                            navController.navigate(SushiDestination.Achievements.route)
+                        },
                         onSoundEnabledChanged = viewModel::onSoundEnabledChanged,
                         onVibrationEnabledChanged = viewModel::onVibrationEnabledChanged,
                         onPersistenceRetry = viewModel::onPersistenceRetry,
                         appVersion = appVersion,
                     )
                 }
+                composable(SushiDestination.Achievements.route) {
+                    val viewModel: AchievementsViewModel = viewModel(
+                        factory = AchievementsViewModel.factory(
+                            AppContainer.achievementRepository(context),
+                        ),
+                    )
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+                    AchievementsScreen(
+                        uiState = uiState,
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+            }
+
+                AchievementNotificationHost(
+                    vibrationEnabled = vibrationEnabled,
+                    onNavigateToAchievements = {
+                        navController.navigate(SushiDestination.Achievements.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
             }
         }
 

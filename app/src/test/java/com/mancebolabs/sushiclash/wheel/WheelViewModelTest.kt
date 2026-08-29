@@ -1,6 +1,7 @@
 package com.mancebolabs.sushiclash.wheel
 
 import com.mancebolabs.sushiclash.feature.wheel.WheelViewModel
+import com.mancebolabs.sushiclash.testutil.FakeAchievementRepository
 import com.mancebolabs.sushiclash.testutil.FakeParticipantsRepository
 import com.mancebolabs.sushiclash.testutil.FakeRandomProvider
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
@@ -34,6 +35,7 @@ class WheelViewModelTest {
         }
         val viewModel = WheelViewModel(
             participantsRepository = FakeParticipantsRepository(listOf("Ana", "Luis", "Bea")),
+            achievementRepository = FakeAchievementRepository(),
             randomProvider = random,
         )
         subscribeToUiState(this, viewModel)
@@ -52,7 +54,7 @@ class WheelViewModelTest {
             enqueue(4)
         }
         val participantsRepository = FakeParticipantsRepository(listOf("Ana", "Luis"))
-        val viewModel = WheelViewModel(participantsRepository, random)
+        val viewModel = WheelViewModel(participantsRepository, FakeAchievementRepository(), random)
         subscribeToUiState(this, viewModel)
 
         viewModel.onAutoSpinRequested()
@@ -64,9 +66,31 @@ class WheelViewModelTest {
     }
 
     @Test
+    fun givenSuccessfulSpin_whenCompleted_thenRecordsRouletteAchievement() = runTest(testDispatcher) {
+        val achievementRepository = FakeAchievementRepository()
+        val random = FakeRandomProvider().apply {
+            enqueue(0)
+            enqueue(4)
+        }
+        val viewModel = WheelViewModel(
+            participantsRepository = FakeParticipantsRepository(listOf("Ana", "Luis")),
+            achievementRepository = achievementRepository,
+            randomProvider = random,
+        )
+        subscribeToUiState(this, viewModel)
+
+        viewModel.onSpin()
+        advanceTimeBy(WheelViewModel.SPIN_DURATION_MS + 1)
+        advanceUntilIdle()
+
+        assertEquals(1, achievementRepository.onRouletteSpunCallCount)
+    }
+
+    @Test
     fun givenAutoSpinWithInsufficientParticipants_whenRequested_thenShowsWarning() = runTest(testDispatcher) {
         val viewModel = WheelViewModel(
             participantsRepository = FakeParticipantsRepository(listOf("Ana")),
+            achievementRepository = FakeAchievementRepository(),
         )
         subscribeToUiState(this, viewModel)
 
@@ -79,7 +103,7 @@ class WheelViewModelTest {
 
     @Test
     fun givenParticipantAdded_whenNameIsValid_thenUpdatesParticipantList() = runTest(testDispatcher) {
-        val viewModel = WheelViewModel(FakeParticipantsRepository())
+        val viewModel = WheelViewModel(FakeParticipantsRepository(), FakeAchievementRepository())
         subscribeToUiState(this, viewModel)
 
         viewModel.onInputChanged("Marta")
@@ -95,7 +119,7 @@ class WheelViewModelTest {
         val participantsRepository = FakeParticipantsRepository(listOf("Ana", "Luis")).apply {
             setParticipantsCorrupted()
         }
-        val viewModel = WheelViewModel(participantsRepository)
+        val viewModel = WheelViewModel(participantsRepository, FakeAchievementRepository())
         subscribeToUiState(this, viewModel)
 
         val state = viewModel.uiState.value
@@ -108,7 +132,7 @@ class WheelViewModelTest {
         val participantsRepository = FakeParticipantsRepository(listOf("Ana", "Luis")).apply {
             setParticipantsUnavailable()
         }
-        val viewModel = WheelViewModel(participantsRepository)
+        val viewModel = WheelViewModel(participantsRepository, FakeAchievementRepository())
         subscribeToUiState(this, viewModel)
 
         val state = viewModel.uiState.value
@@ -121,7 +145,7 @@ class WheelViewModelTest {
         val participantsRepository = FakeParticipantsRepository().apply {
             setParticipantsCorrupted()
         }
-        val viewModel = WheelViewModel(participantsRepository)
+        val viewModel = WheelViewModel(participantsRepository, FakeAchievementRepository())
         subscribeToUiState(this, viewModel)
 
         viewModel.onInputChanged("Marta")
@@ -139,7 +163,7 @@ class WheelViewModelTest {
         val participantsRepository = FakeParticipantsRepository(listOf("Ana")).apply {
             addParticipantThrowable = IOException("disk")
         }
-        val viewModel = WheelViewModel(participantsRepository)
+        val viewModel = WheelViewModel(participantsRepository, FakeAchievementRepository())
         subscribeToUiState(this, viewModel)
 
         viewModel.onInputChanged("Marta")
@@ -157,7 +181,7 @@ class WheelViewModelTest {
         val participantsRepository = FakeParticipantsRepository(listOf("Ana")).apply {
             addParticipantThrowable = IOException("disk")
         }
-        val viewModel = WheelViewModel(participantsRepository)
+        val viewModel = WheelViewModel(participantsRepository, FakeAchievementRepository())
         subscribeToUiState(this, viewModel)
 
         viewModel.onInputChanged("Marta")
@@ -188,7 +212,7 @@ class WheelViewModelTest {
         val participantsRepository = FakeParticipantsRepository(listOf("Ana")).apply {
             ensureGroupParticipantsSeededThrowable = IOException("disk")
         }
-        val viewModel = WheelViewModel(participantsRepository)
+        val viewModel = WheelViewModel(participantsRepository, FakeAchievementRepository())
         subscribeToUiState(this, viewModel)
 
         assertTrue(viewModel.uiState.value.persistenceError)
@@ -200,7 +224,7 @@ class WheelViewModelTest {
         val participantsRepository = FakeParticipantsRepository(listOf("Ana", "Luis")).apply {
             setParticipantsCorrupted()
         }
-        val viewModel = WheelViewModel(participantsRepository)
+        val viewModel = WheelViewModel(participantsRepository, FakeAchievementRepository())
         subscribeToUiState(this, viewModel)
         val seedCountAfterInit = participantsRepository.ensureGroupParticipantsSeededCallCount
         assertTrue(viewModel.uiState.value.persistenceError)

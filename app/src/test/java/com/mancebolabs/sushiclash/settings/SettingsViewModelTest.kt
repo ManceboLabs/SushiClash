@@ -1,6 +1,8 @@
 package com.mancebolabs.sushiclash.settings
 
 import app.cash.turbine.test
+import com.mancebolabs.sushiclash.domain.model.achievement.AchievementId
+import com.mancebolabs.sushiclash.domain.model.achievement.AchievementPersistenceState
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.domain.model.GroupGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
@@ -8,6 +10,7 @@ import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushiclash.feature.settings.SettingsViewModel
 import com.mancebolabs.sushiclash.navigation.OnboardingSource
 import com.mancebolabs.sushiclash.navigation.SushiDestination
+import com.mancebolabs.sushiclash.testutil.FakeAchievementRepository
 import com.mancebolabs.sushiclash.testutil.FakeFeedbackSettingsRepository
 import com.mancebolabs.sushiclash.testutil.FakeHistoryRepository
 import com.mancebolabs.sushiclash.testutil.FakeThemeRepository
@@ -34,6 +37,7 @@ class SettingsViewModelTest {
             themeRepository = FakeThemeRepository(AppThemeMode.LIGHT),
             historyRepository = FakeHistoryRepository(),
             feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
+            achievementRepository = FakeAchievementRepository(),
         )
 
         viewModel.uiState.test {
@@ -45,7 +49,7 @@ class SettingsViewModelTest {
     @Test
     fun givenDarkThemeSelected_whenUpdatingTheme_thenStateReflectsDarkMode() = runTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT)
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -80,7 +84,7 @@ class SettingsViewModelTest {
                 ),
             ),
         )
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.onClearHistoryRequested()
         viewModel.onClearHistoryConfirmed()
@@ -93,7 +97,7 @@ class SettingsViewModelTest {
     @Test
     fun givenClearHistoryRequested_whenConfirmed_thenDialogIsDismissed() = runTest {
         val historyRepository = FakeHistoryRepository()
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -109,7 +113,7 @@ class SettingsViewModelTest {
     @Test
     fun givenClearHistoryRequested_whenDismissed_thenHistoryIsNotCleared() = runTest {
         val historyRepository = FakeHistoryRepository()
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -126,7 +130,7 @@ class SettingsViewModelTest {
     @Test
     fun givenClearHistoryConfirmed_whenThemeWasDark_thenThemeRemainsDark() = runTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.DARK)
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.onClearHistoryConfirmed()
 
@@ -139,6 +143,7 @@ class SettingsViewModelTest {
             themeRepository = FakeThemeRepository(),
             historyRepository = FakeHistoryRepository(),
             feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
+            achievementRepository = FakeAchievementRepository(),
         )
 
         viewModel.uiState.test {
@@ -156,6 +161,7 @@ class SettingsViewModelTest {
             FakeThemeRepository(),
             FakeHistoryRepository(),
             feedbackSettingsRepository,
+            FakeAchievementRepository(),
         )
 
         viewModel.uiState.test {
@@ -175,6 +181,7 @@ class SettingsViewModelTest {
             FakeThemeRepository(),
             FakeHistoryRepository(),
             feedbackSettingsRepository,
+            FakeAchievementRepository(),
         )
 
         viewModel.uiState.test {
@@ -196,6 +203,7 @@ class SettingsViewModelTest {
             FakeThemeRepository(),
             FakeHistoryRepository(),
             feedbackSettingsRepository,
+            FakeAchievementRepository(),
         )
 
         viewModel.uiState.test {
@@ -224,7 +232,7 @@ class SettingsViewModelTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT).apply {
             setThemeModeThrow = IOException("disk")
         }
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             assertEquals(AppThemeMode.LIGHT, awaitItem().themeMode)
@@ -241,7 +249,7 @@ class SettingsViewModelTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT).apply {
             setThemeModeThrow = IOException("disk")
         }
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -269,7 +277,7 @@ class SettingsViewModelTest {
         )
         historyRepository.setSoloHistory(listOf(soloEntry))
         historyRepository.clearHistoryThrowable = IOException("disk")
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -301,7 +309,7 @@ class SettingsViewModelTest {
         )
         historyRepository.setSoloHistory(listOf(soloEntry))
         historyRepository.clearHistoryThrowable = IOException("disk")
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -320,6 +328,162 @@ class SettingsViewModelTest {
             assertFalse(retried.persistenceError)
             assertEquals(2, historyRepository.clearHistoryCallCount)
             assertTrue(isClearedHistory(historyRepository.soloHistory.first()))
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenClearAchievementsRequested_whenConfirmed_thenAchievementProgressIsReset() = runTest {
+        val achievementRepository = FakeAchievementRepository(
+            initialState = AchievementPersistenceState(
+                totalGamesCompleted = 5,
+                totalRouletteSpins = 3,
+                peakSushiInSingleGame = 25,
+                lifetimeSoloSushiTotal = 742,
+                lifetimeGroupSushiTotal = 1_250,
+                hasTriggeredAutomaticRoulette = true,
+                unlockedAtById = mapOf(
+                    AchievementId.GAMES_1.key to 1L,
+                    AchievementId.SUSHI_20.key to 2L,
+                    AchievementId.SOLO_TOTAL_50.key to 3L,
+                    AchievementId.GROUP_TOTAL_100.key to 4L,
+                ),
+            ),
+        )
+        val viewModel = SettingsViewModel(
+            FakeThemeRepository(),
+            FakeHistoryRepository(),
+            FakeFeedbackSettingsRepository(),
+            achievementRepository,
+        )
+
+        viewModel.onClearAchievementsRequested()
+        viewModel.onClearAchievementsConfirmed()
+
+        assertEquals(1, achievementRepository.clearAchievementsCallCount)
+        assertEquals(AchievementPersistenceState(), achievementRepository.achievementState.first())
+    }
+
+    @Test
+    fun givenClearAchievementsRequested_whenConfirmed_thenDialogIsDismissed() = runTest {
+        val viewModel = SettingsViewModel(
+            FakeThemeRepository(),
+            FakeHistoryRepository(),
+            FakeFeedbackSettingsRepository(),
+            FakeAchievementRepository(),
+        )
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onClearAchievementsRequested()
+            assertTrue(awaitItem().showClearAchievementsDialog)
+
+            viewModel.onClearAchievementsConfirmed()
+            assertFalse(awaitItem().showClearAchievementsDialog)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenClearAchievementsRequested_whenDismissed_thenAchievementsAreNotCleared() = runTest {
+        val achievementRepository = FakeAchievementRepository(
+            initialState = AchievementPersistenceState(
+                unlockedAtById = mapOf(AchievementId.GAMES_1.key to 1L),
+            ),
+        )
+        val viewModel = SettingsViewModel(
+            FakeThemeRepository(),
+            FakeHistoryRepository(),
+            FakeFeedbackSettingsRepository(),
+            achievementRepository,
+        )
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onClearAchievementsRequested()
+            assertTrue(awaitItem().showClearAchievementsDialog)
+
+            viewModel.onClearAchievementsDismissed()
+            assertFalse(awaitItem().showClearAchievementsDialog)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertEquals(0, achievementRepository.clearAchievementsCallCount)
+        assertTrue(achievementRepository.achievementState.first().isUnlocked(AchievementId.GAMES_1))
+    }
+
+    @Test
+    fun givenClearAchievementsConfirmed_whenHistoryExists_thenHistoryIsUntouched() = runTest {
+        val historyRepository = FakeHistoryRepository()
+        historyRepository.setSoloHistory(
+            listOf(
+                SoloGameHistoryEntry(
+                    id = "solo-1",
+                    date = 1L,
+                    totalSushi = 5,
+                    randomRouletteEnabled = false,
+                    randomRouletteMode = null,
+                ),
+            ),
+        )
+        val achievementRepository = FakeAchievementRepository(
+            initialState = AchievementPersistenceState(
+                unlockedAtById = mapOf(AchievementId.GAMES_1.key to 1L),
+            ),
+        )
+        val viewModel = SettingsViewModel(
+            FakeThemeRepository(),
+            historyRepository,
+            FakeFeedbackSettingsRepository(),
+            achievementRepository,
+        )
+
+        viewModel.onClearAchievementsConfirmed()
+
+        assertEquals(AchievementPersistenceState(), achievementRepository.achievementState.first())
+        assertEquals(
+            PersistenceReadState.Data(
+                listOf(
+                    SoloGameHistoryEntry(
+                        id = "solo-1",
+                        date = 1L,
+                        totalSushi = 5,
+                        randomRouletteEnabled = false,
+                        randomRouletteMode = null,
+                    ),
+                ),
+            ),
+            historyRepository.soloHistory.first(),
+        )
+    }
+
+    @Test
+    fun givenClearAchievementsThrows_whenConfirmed_thenKeepsDialogAndProgress() = runTest {
+        val achievementRepository = FakeAchievementRepository(
+            initialState = AchievementPersistenceState(
+                unlockedAtById = mapOf(AchievementId.GAMES_1.key to 1L),
+            ),
+        ).apply {
+            clearAchievementsThrowable = IOException("disk")
+        }
+        val viewModel = SettingsViewModel(
+            FakeThemeRepository(),
+            FakeHistoryRepository(),
+            FakeFeedbackSettingsRepository(),
+            achievementRepository,
+        )
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onClearAchievementsRequested()
+            assertTrue(awaitItem().showClearAchievementsDialog)
+
+            viewModel.onClearAchievementsConfirmed()
+            val state = expectMostRecentItem()
+            assertTrue(state.showClearAchievementsDialog)
+            assertTrue(state.persistenceError)
+            assertEquals(1, achievementRepository.clearAchievementsCallCount)
+            assertTrue(achievementRepository.achievementState.first().isUnlocked(AchievementId.GAMES_1))
             cancelAndIgnoreRemainingEvents()
         }
     }

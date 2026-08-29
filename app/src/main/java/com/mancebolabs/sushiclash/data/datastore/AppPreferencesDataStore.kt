@@ -11,6 +11,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.domain.model.FeedbackSettingsDefaults
+import com.mancebolabs.sushiclash.domain.model.achievement.AchievementId
+import com.mancebolabs.sushiclash.domain.model.achievement.AchievementPersistenceState
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupRules
 import com.mancebolabs.sushiclash.domain.model.GameState
@@ -291,6 +293,29 @@ class AppPreferencesDataStore(
     suspend fun setVibrationEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[VIBRATION_ENABLED_KEY] = enabled
+        }
+    }
+
+    internal val achievementStateFlow: Flow<PersistenceReadState<AchievementPersistenceState>> = dataStore.data
+        .mapWithPersistenceReadState(
+            logger = logger,
+            operation = "readAchievementState",
+        ) { preferences ->
+            decodeAchievementState(preferences[ACHIEVEMENT_STATE_KEY])
+        }
+
+    val achievementState: Flow<AchievementPersistenceState> = achievementStateFlow.map { state ->
+        when (state) {
+            is PersistenceReadState.Data -> state.value
+            PersistenceReadState.Missing,
+            PersistenceReadState.Corrupted,
+            PersistenceReadState.Unavailable -> AchievementPersistenceState()
+        }
+    }
+
+    suspend fun setAchievementState(state: AchievementPersistenceState) {
+        dataStore.edit { preferences ->
+            preferences[ACHIEVEMENT_STATE_KEY] = encodeAchievementState(state)
         }
     }
 
@@ -631,6 +656,7 @@ class AppPreferencesDataStore(
         internal val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         internal val SOUND_ENABLED_KEY = booleanPreferencesKey("sound_enabled")
         internal val VIBRATION_ENABLED_KEY = booleanPreferencesKey("vibration_enabled")
+        internal val ACHIEVEMENT_STATE_KEY = stringPreferencesKey("achievement_state")
         const val SOLO_PLAYER_ID = GameStateValidator.SOLO_PLAYER_ID
         const val MAX_GROUP_PLAYERS = GameSetupRules.MAX_GROUP_PLAYERS
         const val MIN_GROUP_PLAYERS = GameSetupRules.MIN_GROUP_PLAYERS
@@ -745,6 +771,68 @@ class AppPreferencesDataStore(
         }.getOrElse { error ->
             // Corrupted history must not be treated as emptyList that later gets persisted.
             logger.logFailure("decodeGroupHistory", error::class.java.simpleName)
+            PersistenceReadState.Corrupted
+        }
+    }
+
+    private fun encodeAchievementState(state: AchievementPersistenceState): String {
+        val profileJson = JSONObject().apply {
+            put("totalGamesCompleted", state.totalGamesCompleted)
+            put("totalRouletteSpins", state.totalRouletteSpins)
+            put("peakSushiInSingleGame", state.peakSushiInSingleGame)
+            put("lifetimeSoloSushiTotal", state.lifetimeSoloSushiTotal)
+            put("lifetimeGroupSushiTotal", state.lifetimeGroupSushiTotal)
+            put("hasTriggeredAutomaticRoulette", state.hasTriggeredAutomaticRoulette)
+            put(
+                "unlockedAtById",
+                JSONObject().apply {
+                    state.unlockedAtById.forEach { (achievementId, unlockedAt) ->
+                        put(achievementId, unlockedAt)
+                    }
+                },
+            )
+        }
+        return JSONObject().apply {
+            put(
+                "profiles",
+                JSONObject().apply {
+                    put(AchievementPersistenceState.DEFAULT_PROFILE_KEY, profileJson)
+                },
+            )
+        }.toString()
+    }
+
+    private fun decodeAchievementState(raw: String?): PersistenceReadState<AchievementPersistenceState> {
+        if (raw == null) return PersistenceReadState.Missing
+        return runCatching {
+            val root = JSONObject(raw)
+            val profiles = root.optJSONObject("profiles")
+                ?: return@runCatching PersistenceReadState.Data(AchievementPersistenceState())
+            val profile = profiles.optJSONObject(AchievementPersistenceState.DEFAULT_PROFILE_KEY)
+                ?: return@runCatching PersistenceReadState.Data(AchievementPersistenceState())
+
+            val unlocksJson = profile.optJSONObject("unlockedAtById") ?: JSONObject()
+            val unlockedAtById = buildMap {
+                unlocksJson.keys().forEach { key ->
+                    if (AchievementId.fromKey(key) != null) {
+                        put(key, unlocksJson.getLong(key))
+                    }
+                }
+            }
+
+            PersistenceReadState.Data(
+                AchievementPersistenceState(
+                    totalGamesCompleted = profile.optInt("totalGamesCompleted", 0),
+                    totalRouletteSpins = profile.optInt("totalRouletteSpins", 0),
+                    peakSushiInSingleGame = profile.optInt("peakSushiInSingleGame", 0),
+                    lifetimeSoloSushiTotal = profile.optInt("lifetimeSoloSushiTotal", 0),
+                    lifetimeGroupSushiTotal = profile.optInt("lifetimeGroupSushiTotal", 0),
+                    hasTriggeredAutomaticRoulette = profile.optBoolean("hasTriggeredAutomaticRoulette", false),
+                    unlockedAtById = unlockedAtById,
+                ),
+            )
+        }.getOrElse { error ->
+            logger.logFailure("decodeAchievementState", error::class.java.simpleName)
             PersistenceReadState.Corrupted
         }
     }

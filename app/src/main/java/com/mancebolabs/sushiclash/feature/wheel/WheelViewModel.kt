@@ -7,6 +7,7 @@ import com.mancebolabs.sushiclash.domain.model.DefaultRandomProvider
 import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.model.RandomProvider
 import com.mancebolabs.sushiclash.domain.model.isUnreadable
+import com.mancebolabs.sushiclash.domain.repository.AchievementRepository
 import com.mancebolabs.sushiclash.domain.repository.ParticipantsRepository
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
@@ -48,6 +49,7 @@ private data class WheelPersistenceSnapshot(
 
 class WheelViewModel(
     private val participantsRepository: ParticipantsRepository,
+    private val achievementRepository: AchievementRepository,
     private val randomProvider: RandomProvider = DefaultRandomProvider(),
 ) : ViewModel() {
 
@@ -158,6 +160,7 @@ class WheelViewModel(
             kotlinx.coroutines.delay(SPIN_DURATION_MS)
             isSpinning.value = false
             selectedWinner.value = winner
+            achievementRepository.onRouletteSpun()
         }
     }
 
@@ -260,12 +263,17 @@ class WheelViewModel(
 
         fun factory(
             participantsRepository: ParticipantsRepository,
+            achievementRepository: AchievementRepository,
             randomProvider: RandomProvider = DefaultRandomProvider(),
         ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return WheelViewModel(participantsRepository, randomProvider) as T
+                    return WheelViewModel(
+                        participantsRepository,
+                        achievementRepository,
+                        randomProvider,
+                    ) as T
                 }
             }
         }

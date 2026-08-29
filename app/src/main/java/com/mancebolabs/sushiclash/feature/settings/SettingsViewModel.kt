@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
+import com.mancebolabs.sushiclash.domain.repository.AchievementRepository
 import com.mancebolabs.sushiclash.domain.repository.FeedbackSettingsRepository
 import com.mancebolabs.sushiclash.domain.repository.HistoryRepository
 import com.mancebolabs.sushiclash.domain.repository.ThemeRepository
@@ -21,6 +22,7 @@ data class SettingsUiState(
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
     val showClearHistoryDialog: Boolean = false,
+    val showClearAchievementsDialog: Boolean = false,
     val persistenceError: Boolean = false,
     val isPersistenceRetrying: Boolean = false,
 )
@@ -29,9 +31,11 @@ class SettingsViewModel(
     private val themeRepository: ThemeRepository,
     private val historyRepository: HistoryRepository,
     private val feedbackSettingsRepository: FeedbackSettingsRepository,
+    private val achievementRepository: AchievementRepository,
 ) : ViewModel() {
 
     private val showClearHistoryDialog = MutableStateFlow(false)
+    private val showClearAchievementsDialog = MutableStateFlow(false)
     private val persistenceError = MutableStateFlow(false)
     private val isPersistenceRetrying = MutableStateFlow(false)
     private var pendingSettingsWrite: PendingSettingsWrite? = null
@@ -42,11 +46,13 @@ class SettingsViewModel(
         feedbackSettingsRepository.vibrationEnabled,
         combine(
             showClearHistoryDialog,
+            showClearAchievementsDialog,
             persistenceError,
             isPersistenceRetrying,
-        ) { clearDialog, hasError, isRetrying ->
+        ) { clearHistoryDialog, clearAchievementsDialog, hasError, isRetrying ->
             SettingsPersistenceUiState(
-                showClearHistoryDialog = clearDialog,
+                showClearHistoryDialog = clearHistoryDialog,
+                showClearAchievementsDialog = clearAchievementsDialog,
                 persistenceError = hasError,
                 isPersistenceRetrying = isRetrying,
             )
@@ -57,6 +63,7 @@ class SettingsViewModel(
             soundEnabled = soundEnabled,
             vibrationEnabled = vibrationEnabled,
             showClearHistoryDialog = persistence.showClearHistoryDialog,
+            showClearAchievementsDialog = persistence.showClearAchievementsDialog,
             persistenceError = persistence.persistenceError,
             isPersistenceRetrying = persistence.isPersistenceRetrying,
         )
@@ -98,6 +105,20 @@ class SettingsViewModel(
         }
     }
 
+    fun onClearAchievementsRequested() {
+        showClearAchievementsDialog.value = true
+    }
+
+    fun onClearAchievementsDismissed() {
+        showClearAchievementsDialog.value = false
+    }
+
+    fun onClearAchievementsConfirmed() {
+        viewModelScope.launch {
+            persistClearAchievements()
+        }
+    }
+
     fun onPersistenceRetry() {
         val pending = pendingSettingsWrite ?: return
         if (!isPersistenceRetrying.compareAndSet(expect = false, update = true)) return
@@ -108,6 +129,7 @@ class SettingsViewModel(
                     is PendingSettingsWrite.Sound -> persistSoundEnabled(pending.enabled)
                     is PendingSettingsWrite.Vibration -> persistVibrationEnabled(pending.enabled)
                     PendingSettingsWrite.ClearHistory -> persistClearHistory()
+                    PendingSettingsWrite.ClearAchievements -> persistClearAchievements()
                 }
             } finally {
                 isPersistenceRetrying.value = false
@@ -127,6 +149,22 @@ class SettingsViewModel(
             throw cancellation
         } catch (_: IOException) {
             pendingSettingsWrite = PendingSettingsWrite.ClearHistory
+            persistenceError.value = true
+        }
+    }
+
+    private suspend fun persistClearAchievements() {
+        try {
+            // Only achievement progress is cleared. History, active game, theme, feedback
+            // settings, and onboarding live in separate preferences and stay untouched.
+            achievementRepository.clearAchievements()
+            pendingSettingsWrite = null
+            showClearAchievementsDialog.value = false
+            persistenceError.value = false
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: IOException) {
+            pendingSettingsWrite = PendingSettingsWrite.ClearAchievements
             persistenceError.value = true
         }
     }
@@ -175,6 +213,7 @@ class SettingsViewModel(
             themeRepository: ThemeRepository,
             historyRepository: HistoryRepository,
             feedbackSettingsRepository: FeedbackSettingsRepository,
+            achievementRepository: AchievementRepository,
         ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -183,6 +222,7 @@ class SettingsViewModel(
                         themeRepository,
                         historyRepository,
                         feedbackSettingsRepository,
+                        achievementRepository,
                     ) as T
                 }
             }
@@ -195,10 +235,12 @@ private sealed interface PendingSettingsWrite {
     data class Sound(val enabled: Boolean) : PendingSettingsWrite
     data class Vibration(val enabled: Boolean) : PendingSettingsWrite
     data object ClearHistory : PendingSettingsWrite
+    data object ClearAchievements : PendingSettingsWrite
 }
 
 private data class SettingsPersistenceUiState(
     val showClearHistoryDialog: Boolean,
+    val showClearAchievementsDialog: Boolean,
     val persistenceError: Boolean,
     val isPersistenceRetrying: Boolean,
 )

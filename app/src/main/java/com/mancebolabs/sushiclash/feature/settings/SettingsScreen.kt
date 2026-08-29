@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Info
@@ -61,7 +62,11 @@ fun SettingsScreen(
     onClearHistoryRequested: () -> Unit,
     onClearHistoryConfirmed: () -> Unit,
     onClearHistoryDismissed: () -> Unit,
+    onClearAchievementsRequested: () -> Unit,
+    onClearAchievementsConfirmed: () -> Unit,
+    onClearAchievementsDismissed: () -> Unit,
     onViewTutorialRequested: () -> Unit,
+    onViewAchievementsRequested: () -> Unit,
     onPersistenceRetry: () -> Unit,
     appVersion: String = "",
     modifier: Modifier = Modifier,
@@ -77,6 +82,17 @@ fun SettingsScreen(
             dismissLabel = stringResource(R.string.counter_cancel),
             onConfirm = onClearHistoryConfirmed,
             onDismiss = onClearHistoryDismissed,
+        )
+    }
+
+    if (uiState.showClearAchievementsDialog) {
+        ConfirmationDialog(
+            title = stringResource(R.string.settings_clear_achievements_title),
+            message = stringResource(R.string.settings_clear_achievements_message),
+            confirmLabel = stringResource(R.string.settings_clear_achievements_confirm),
+            dismissLabel = stringResource(R.string.counter_cancel),
+            onConfirm = onClearAchievementsConfirmed,
+            onDismiss = onClearAchievementsDismissed,
         )
     }
 
@@ -154,6 +170,16 @@ fun SettingsScreen(
                 trailing = SettingsTrailing.Chevron,
                 onClick = onViewTutorialRequested,
             )
+
+            Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
+
+            SettingsActionRow(
+                icon = Icons.Filled.EmojiEvents,
+                title = stringResource(R.string.settings_view_achievements),
+                description = stringResource(R.string.settings_view_achievements_description),
+                trailing = SettingsTrailing.Chevron,
+                onClick = onViewAchievementsRequested,
+            )
         }
 
         SettingsSectionCard(
@@ -169,6 +195,19 @@ fun SettingsScreen(
                 ),
                 destructive = true,
                 onClick = onClearHistoryRequested,
+            )
+
+            Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
+
+            SettingsActionRow(
+                icon = Icons.Filled.EmojiEvents,
+                title = stringResource(R.string.settings_clear_achievements),
+                description = stringResource(R.string.settings_clear_achievements_description),
+                trailing = SettingsTrailing.DestructiveButton(
+                    label = stringResource(R.string.settings_clear_achievements),
+                ),
+                destructive = true,
+                onClick = onClearAchievementsRequested,
             )
         }
 
@@ -454,7 +493,11 @@ private fun SettingsLightPreview() {
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
+            onClearAchievementsRequested = {},
+            onClearAchievementsConfirmed = {},
+            onClearAchievementsDismissed = {},
             onViewTutorialRequested = {},
+            onViewAchievementsRequested = {},
             onPersistenceRetry = {},
             appVersion = "1.0",
         )
@@ -473,7 +516,11 @@ private fun SettingsDarkPreview() {
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
+            onClearAchievementsRequested = {},
+            onClearAchievementsConfirmed = {},
+            onClearAchievementsDismissed = {},
             onViewTutorialRequested = {},
+            onViewAchievementsRequested = {},
             onPersistenceRetry = {},
             appVersion = "1.0",
         )
@@ -495,7 +542,11 @@ private fun SettingsClearHistoryDialogPreview() {
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
+            onClearAchievementsRequested = {},
+            onClearAchievementsConfirmed = {},
+            onClearAchievementsDismissed = {},
             onViewTutorialRequested = {},
+            onViewAchievementsRequested = {},
             onPersistenceRetry = {},
             appVersion = "1.0",
         )
@@ -517,7 +568,11 @@ private fun SettingsPersistenceErrorLightPreview() {
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
+            onClearAchievementsRequested = {},
+            onClearAchievementsConfirmed = {},
+            onClearAchievementsDismissed = {},
             onViewTutorialRequested = {},
+            onViewAchievementsRequested = {},
             onPersistenceRetry = {},
             appVersion = "1.0",
         )
@@ -539,7 +594,11 @@ private fun SettingsPersistenceErrorDarkPreview() {
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
+            onClearAchievementsRequested = {},
+            onClearAchievementsConfirmed = {},
+            onClearAchievementsDismissed = {},
             onViewTutorialRequested = {},
+            onViewAchievementsRequested = {},
             onPersistenceRetry = {},
             appVersion = "1.0",
         )
