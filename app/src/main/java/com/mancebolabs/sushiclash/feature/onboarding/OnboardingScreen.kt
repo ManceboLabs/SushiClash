@@ -14,10 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Casino
-import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -73,7 +74,17 @@ fun defaultOnboardingSteps(): List<OnboardingStep> = listOf(
     OnboardingStep(
         titleRes = R.string.onboarding_step_history_title,
         descriptionRes = R.string.onboarding_step_history_description,
-        illustration = OnboardingIllustration.VectorIcon(Icons.Outlined.EmojiEvents),
+        illustration = OnboardingIllustration.VectorIcon(Icons.Outlined.History),
+    ),
+    OnboardingStep(
+        titleRes = R.string.onboarding_step_achievements_title,
+        descriptionRes = R.string.onboarding_step_achievements_description,
+        illustration = OnboardingIllustration.VectorIcon(Icons.Filled.EmojiEvents),
+    ),
+    OnboardingStep(
+        titleRes = R.string.onboarding_step_responsible_use_title,
+        descriptionRes = R.string.onboarding_step_responsible_use_description,
+        illustration = OnboardingIllustration.DrawableResource(R.drawable.ic_sushi),
     ),
 )
 
@@ -344,6 +355,26 @@ private fun OnboardingLastStepPreview() {
     }
 }
 
+@Preview(name = "Onboarding step content – Achievements", showBackground = true)
+@Composable
+private fun OnboardingAchievementsStepContentPreview() {
+    ItamaePreviewTheme {
+        OnboardingStepContent(
+            step = defaultOnboardingSteps()[6],
+        )
+    }
+}
+
+@Preview(name = "Onboarding step content – Responsible use", showBackground = true)
+@Composable
+private fun OnboardingResponsibleUseStepContentPreview() {
+    ItamaePreviewTheme {
+        OnboardingStepContent(
+            step = defaultOnboardingSteps().last(),
+        )
+    }
+}
+
 @Preview(name = "Onboarding step content", showBackground = true)
 @Composable
 private fun OnboardingStepContentPreview() {
@@ -362,6 +393,6 @@ private fun OnboardingStepContentPreview() {
 @Composable
 private fun OnboardingProgressDotsPreview() {
     ItamaePreviewTheme {
-        OnboardingProgressDots(stepCount = 5, currentStepIndex = 2)
+        OnboardingProgressDots(stepCount = defaultOnboardingSteps().size, currentStepIndex = 2)
     }
 }
