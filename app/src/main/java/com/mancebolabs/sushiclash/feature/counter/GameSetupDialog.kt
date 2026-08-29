@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,12 +46,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.mancebolabs.sushiclash.R
+import com.mancebolabs.sushiclash.domain.model.FrequentPlayer
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameSetupRules
@@ -60,8 +66,10 @@ import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GameSetupDialog(
+    frequentPlayers: List<FrequentPlayer>,
     onConfirm: (GameSetupConfig) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -164,6 +172,47 @@ fun GameSetupDialog(
                             SetupSection(
                                 title = stringResource(R.string.setup_players_section),
                             ) {
+                                val selectableFrequentPlayers = frequentPlayers.filter { player ->
+                                    GameSetupRules.canAddGroupPlayerName(groupPlayers, player.displayName)
+                                }
+
+                                if (selectableFrequentPlayers.isNotEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.setup_frequent_players_section),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(ItamaeSpacing.xs),
+                                        verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.xs),
+                                    ) {
+                                        selectableFrequentPlayers.forEach { player ->
+                                            val addPlayerDescription = stringResource(
+                                                R.string.setup_frequent_player_add_content_description,
+                                                player.displayName,
+                                            )
+                                            AssistChip(
+                                                onClick = {
+                                                    if (GameSetupRules.canAddGroupPlayerName(groupPlayers, player.displayName)) {
+                                                        groupPlayers = groupPlayers + player.displayName.trim()
+                                                    }
+                                                },
+                                                label = {
+                                                    Text(text = player.displayName)
+                                                },
+                                                enabled = GameSetupRules.canAddGroupPlayer(currentCount = groupPlayers.size),
+                                                colors = AssistChipDefaults.assistChipColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                                ),
+                                                modifier = Modifier.semantics {
+                                                    contentDescription = addPlayerDescription
+                                                },
+                                            )
+                                        }
+                                    }
+                                }
+
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(ItamaeSpacing.sm),
@@ -179,17 +228,12 @@ fun GameSetupDialog(
                                         text = stringResource(R.string.wheel_add),
                                         onClick = {
                                             val trimmedName = inputName.trim()
-                                            if (
-                                                trimmedName.isNotEmpty() &&
-                                                groupPlayers.size < GameSetupRules.MAX_GROUP_PLAYERS &&
-                                                groupPlayers.none { it.equals(trimmedName, ignoreCase = true) }
-                                            ) {
+                                            if (GameSetupRules.canAddGroupPlayerName(groupPlayers, trimmedName)) {
                                                 groupPlayers = groupPlayers + trimmedName
                                                 inputName = ""
                                             }
                                         },
-                                        enabled = inputName.isNotBlank() &&
-                                            groupPlayers.size < GameSetupRules.MAX_GROUP_PLAYERS,
+                                        enabled = GameSetupRules.canAddGroupPlayerName(groupPlayers, inputName),
                                     )
                                 }
 
@@ -551,7 +595,11 @@ private fun SetupPlayerRow(
 @Composable
 private fun GameSetupDialogLightPreview() {
     ItamaePreviewTheme(darkTheme = false) {
-        GameSetupDialog(onConfirm = {}, onDismiss = {})
+        GameSetupDialog(
+            frequentPlayers = previewFrequentPlayers,
+            onConfirm = {},
+            onDismiss = {},
+        )
     }
 }
 
@@ -559,7 +607,11 @@ private fun GameSetupDialogLightPreview() {
 @Composable
 private fun GameSetupDialogDarkPreview() {
     ItamaePreviewTheme(darkTheme = true) {
-        GameSetupDialog(onConfirm = {}, onDismiss = {})
+        GameSetupDialog(
+            frequentPlayers = previewFrequentPlayers,
+            onConfirm = {},
+            onDismiss = {},
+        )
     }
 }
 
@@ -567,6 +619,16 @@ private fun GameSetupDialogDarkPreview() {
 @Composable
 private fun GameSetupDialogSmallPhonePreview() {
     ItamaePreviewTheme {
-        GameSetupDialog(onConfirm = {}, onDismiss = {})
+        GameSetupDialog(
+            frequentPlayers = previewFrequentPlayers,
+            onConfirm = {},
+            onDismiss = {},
+        )
     }
 }
+
+private val previewFrequentPlayers = listOf(
+    FrequentPlayer(id = "1", displayName = "Ana"),
+    FrequentPlayer(id = "2", displayName = "Luis"),
+    FrequentPlayer(id = "3", displayName = "Marta"),
+)

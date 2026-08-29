@@ -18,4 +18,11 @@ object GameSetupRules {
     fun canAddGroupPlayer(currentCount: Int): Boolean {
         return currentCount < MAX_GROUP_PLAYERS
     }
+
+    fun canAddGroupPlayerName(currentPlayers: List<String>, name: String): Boolean {
+        val trimmedName = name.trim()
+        return trimmedName.isNotEmpty() &&
+            currentPlayers.size < MAX_GROUP_PLAYERS &&
+            currentPlayers.none { it.equals(trimmedName, ignoreCase = true) }
+    }
 }

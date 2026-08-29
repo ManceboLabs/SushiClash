@@ -1,5 +1,6 @@
 package com.mancebolabs.sushiclash.counter
 
+import com.mancebolabs.sushiclash.domain.model.FrequentPlayer
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
@@ -12,6 +13,7 @@ import com.mancebolabs.sushiclash.feature.counter.RouletteTriggerEvent
 import com.mancebolabs.sushiclash.feature.feedback.CounterFeedbackEvent
 import com.mancebolabs.sushiclash.testutil.FakeAchievementRepository
 import com.mancebolabs.sushiclash.testutil.FakeFeedbackSettingsRepository
+import com.mancebolabs.sushiclash.testutil.FakeFrequentPlayersRepository
 import com.mancebolabs.sushiclash.testutil.FakeGameRepository
 import com.mancebolabs.sushiclash.testutil.FakeOnboardingRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
@@ -54,6 +56,7 @@ class CounterViewModelTest {
             FakeOnboardingRepository(completed = true),
             FakeFeedbackSettingsRepository(),
             FakeAchievementRepository(),
+            FakeFrequentPlayersRepository(),
         )
         advanceUntilIdle()
 
@@ -72,7 +75,7 @@ class CounterViewModelTest {
         )
         val gameRepository = FakeGameRepository(invalidState)
         val onboardingRepository = FakeOnboardingRepository(completed = true)
-        val viewModel = CounterViewModel(gameRepository, onboardingRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, onboardingRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
 
         advanceUntilIdle()
 
@@ -98,7 +101,7 @@ class CounterViewModelTest {
     @Test
     fun givenSetupVisible_whenDismissed_thenHidesSetupWithoutChangingGameState() = runTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onStartGameRequested()
@@ -117,7 +120,7 @@ class CounterViewModelTest {
     @Test
     fun givenActiveGame_whenSetupDismissedAfterOpen_thenActiveGameRemains() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 5))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onStartGameRequested()
@@ -133,7 +136,7 @@ class CounterViewModelTest {
     @Test
     fun givenSetupConfirmed_whenStartingSoloGame_thenActivatesGameAndHidesSetup() = runTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onSetupConfirmed(
@@ -150,7 +153,7 @@ class CounterViewModelTest {
     @Test
     fun givenActiveSoloGame_whenSushiTapped_thenCounterIncrements() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 2))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -163,7 +166,7 @@ class CounterViewModelTest {
     @Test
     fun givenActiveSoloGame_whenFeedbackConsumed_thenClearsFeedbackEvent() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 2))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -185,6 +188,7 @@ class CounterViewModelTest {
             FakeOnboardingRepository(),
             feedbackSettingsRepository,
             FakeAchievementRepository(),
+            FakeFrequentPlayersRepository(),
         )
         advanceUntilIdle()
 
@@ -196,7 +200,7 @@ class CounterViewModelTest {
     @Test
     fun givenNoActiveGame_whenSushiTapped_thenCounterDoesNotIncrement() = runTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -213,7 +217,7 @@ class CounterViewModelTest {
             Player(id = "p2", name = "Luis", sushiCount = 2),
         )
         val gameRepository = FakeGameRepository(TestGameStates.groupActive(players))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onPlayerResetRequested("p1")
@@ -230,7 +234,7 @@ class CounterViewModelTest {
     @Test
     fun givenActiveGame_whenFinishRequested_thenKeepsActiveGameAndShowsDialogOnly() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -248,7 +252,7 @@ class CounterViewModelTest {
     @Test
     fun givenFinishDialog_whenSaving_thenPersistsHistoryClearsGameAndClosesDialog() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -270,7 +274,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
             finishGameWithSavingResults += FinishGameResult.NoActiveGame
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onFinishGameRequested()
         gameRepository.setGameState(GameState(hasActiveGame = false))
@@ -290,7 +294,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
         val finishGate = CompletableDeferred<Unit>()
         gameRepository.finishGameWithSavingGate = finishGate
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onFinishGameRequested()
 
@@ -310,7 +314,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
             finishGameWithSavingResults += FinishGameResult.Failure(IllegalStateException("test"))
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onFinishGameRequested()
 
@@ -332,7 +336,7 @@ class CounterViewModelTest {
             finishGameWithSavingResults += FinishGameResult.Failure(IllegalStateException("test"))
             finishGameWithSavingResults += FinishGameResult.Success
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onFinishGameRequested()
         viewModel.onFinishGameWithSaving()
@@ -360,7 +364,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
         val finishGate = CompletableDeferred<Unit>()
         gameRepository.finishGameWithSavingGate = finishGate
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onFinishGameRequested()
         viewModel.onFinishGameWithSaving()
@@ -383,7 +387,7 @@ class CounterViewModelTest {
     @Test
     fun givenFinishDialog_whenNotSaving_thenClearsGameWithoutHistory() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -406,7 +410,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
             finishGameWithoutSavingResults += FinishGameResult.Failure(IllegalStateException("test"))
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onFinishGameRequested()
 
@@ -426,7 +430,7 @@ class CounterViewModelTest {
     @Test
     fun givenFinishDialog_whenCancelled_thenKeepsActiveGameUnchanged() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -449,7 +453,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
             finishGameWithSavingResults += FinishGameResult.Failure(IllegalStateException("test"))
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onFinishGameRequested()
         viewModel.onFinishGameWithSaving()
@@ -469,7 +473,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
             finishGameWithSavingThrowable = CancellationException("test")
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onFinishGameRequested()
 
@@ -488,7 +492,7 @@ class CounterViewModelTest {
     @Test
     fun givenFinishDialogVisible_whenViewModelRecreated_thenActiveGameIsRestoredWithoutDialog() = runTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 7))
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onFinishGameRequested()
@@ -498,7 +502,7 @@ class CounterViewModelTest {
         assertTrue(viewModel.uiState.value.gameState.hasActiveGame)
 
         // Dialog visibility is in-memory only; closing the app must not clear persisted active state.
-        val restartedViewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val restartedViewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         assertFalse(restartedViewModel.uiState.value.showFinishGameDialog)
@@ -516,7 +520,7 @@ class CounterViewModelTest {
                 fixedThreshold = 5,
             ),
         )
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -536,6 +540,7 @@ class CounterViewModelTest {
             onboardingRepository = onboardingRepository,
             feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
             achievementRepository = FakeAchievementRepository(),
+            frequentPlayersRepository = FakeFrequentPlayersRepository(),
         )
         runCurrent()
 
@@ -550,7 +555,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false)).apply {
             restoreResult = RestoreGameResult.Unavailable
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -566,7 +571,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false)).apply {
             restoreResult = RestoreGameResult.Unavailable
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         gameRepository.restoreResult = RestoreGameResult.Restored(restoredState)
@@ -592,7 +597,7 @@ class CounterViewModelTest {
         ).apply {
             incrementThrowable = IOException("disk")
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onSoloSushiTapped()
@@ -611,7 +616,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false)).apply {
             completeSetupThrowable = IOException("disk")
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onStartGameRequested()
 
@@ -634,7 +639,7 @@ class CounterViewModelTest {
         ).apply {
             incrementThrowable = IOException("disk")
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         val restoreCountAfterInit = gameRepository.restoreGameStateCallCount
 
@@ -661,7 +666,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(GameState(hasActiveGame = false)).apply {
             completeSetupThrowable = IOException("disk")
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
         viewModel.onStartGameRequested()
 
@@ -693,7 +698,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 4)).apply {
             resetSoloCountThrowable = IOException("disk")
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onResetSoloCountConfirmed()
@@ -713,7 +718,7 @@ class CounterViewModelTest {
         val gameRepository = FakeGameRepository(TestGameStates.groupActive(players)).apply {
             resetPlayerCountThrowable = IOException("disk")
         }
-        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
         advanceUntilIdle()
 
         viewModel.onPlayerResetRequested("p1")
@@ -734,6 +739,7 @@ class CounterViewModelTest {
             FakeOnboardingRepository(),
             FakeFeedbackSettingsRepository(),
             achievementRepository,
+            FakeFrequentPlayersRepository(),
         )
         advanceUntilIdle()
 
@@ -753,6 +759,7 @@ class CounterViewModelTest {
             FakeOnboardingRepository(),
             FakeFeedbackSettingsRepository(),
             achievementRepository,
+            FakeFrequentPlayersRepository(),
         )
         advanceUntilIdle()
 
@@ -765,12 +772,34 @@ class CounterViewModelTest {
         assertEquals(com.mancebolabs.sushiclash.domain.model.GameMode.SOLO, achievementRepository.lastGameMode)
     }
 
+    @Test
+    fun givenStoredFrequentPlayers_whenInitialized_thenExposesThemInUiState() = runTest {
+        val frequentPlayersRepository = FakeFrequentPlayersRepository(
+            initialPlayers = listOf(
+                FrequentPlayer(id = "1", displayName = "Ana"),
+                FrequentPlayer(id = "2", displayName = "Luis"),
+            ),
+        )
+        val viewModel = CounterViewModel(
+            FakeGameRepository(GameState(hasActiveGame = false)),
+            FakeOnboardingRepository(completed = true),
+            FakeFeedbackSettingsRepository(),
+            FakeAchievementRepository(),
+            frequentPlayersRepository,
+        )
+        advanceUntilIdle()
+
+        assertEquals(2, viewModel.uiState.value.frequentPlayers.size)
+        assertEquals("Ana", viewModel.uiState.value.frequentPlayers.first().displayName)
+    }
+
     private fun createViewModel(initialState: GameState): CounterViewModel {
         return CounterViewModel(
             FakeGameRepository(initialState),
             FakeOnboardingRepository(completed = true),
             FakeFeedbackSettingsRepository(),
             FakeAchievementRepository(),
+            FakeFrequentPlayersRepository(),
         )
     }
 }

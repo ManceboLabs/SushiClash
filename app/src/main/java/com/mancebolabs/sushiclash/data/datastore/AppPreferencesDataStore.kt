@@ -11,6 +11,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.domain.model.FeedbackSettingsDefaults
+import com.mancebolabs.sushiclash.domain.frequentplayer.FrequentPlayersMerger
+import com.mancebolabs.sushiclash.domain.model.FrequentPlayer
 import com.mancebolabs.sushiclash.domain.model.achievement.AchievementId
 import com.mancebolabs.sushiclash.domain.model.achievement.AchievementPersistenceState
 import com.mancebolabs.sushiclash.domain.model.GameMode
@@ -223,6 +225,23 @@ class AppPreferencesDataStore(
         ) { preferences ->
             decodeParticipants(preferences[PARTICIPANTS_KEY])
         }
+
+    internal val frequentPlayersFlow: Flow<PersistenceReadState<List<FrequentPlayer>>> = dataStore.data
+        .mapWithPersistenceReadState(
+            logger = logger,
+            operation = "readFrequentPlayers",
+        ) { preferences ->
+            decodeFrequentPlayers(preferences[FREQUENT_PLAYERS_KEY])
+        }
+
+    val frequentPlayers: Flow<List<FrequentPlayer>> = frequentPlayersFlow.map { state ->
+        when (state) {
+            is PersistenceReadState.Data -> state.value
+            PersistenceReadState.Missing,
+            PersistenceReadState.Corrupted,
+            PersistenceReadState.Unavailable -> emptyList()
+        }
+    }
 
     internal val themeModeState: Flow<PersistenceReadState<AppThemeMode>> = dataStore.data
         .mapWithPersistenceReadState(
@@ -477,6 +496,10 @@ class AppPreferencesDataStore(
                     }
                     is FinishedGameHistoryUpdate.Group -> {
                         preferences[GROUP_HISTORY_KEY] = encodeGroupHistory(update.history)
+                        mergeFrequentPlayersFromGroupGame(
+                            preferences = preferences,
+                            playerNames = decodedState.gameState.players.map { it.name },
+                        )
                         clearActiveGameKeys(preferences)
                         result = FinishGamePersistenceResult.Saved
                     }
@@ -639,6 +662,59 @@ class AppPreferencesDataStore(
         }
     }
 
+    private fun encodeFrequentPlayers(players: List<FrequentPlayer>): String {
+        val jsonArray = JSONArray()
+        players.forEach { player ->
+            jsonArray.put(
+                JSONObject().apply {
+                    put("id", player.id)
+                    put("displayName", player.displayName)
+                },
+            )
+        }
+        return jsonArray.toString()
+    }
+
+    private fun decodeFrequentPlayers(raw: String?): PersistenceReadState<List<FrequentPlayer>> {
+        if (raw == null) return PersistenceReadState.Missing
+        return runCatching {
+            val jsonArray = JSONArray(raw)
+            val players = buildList {
+                for (index in 0 until jsonArray.length()) {
+                    val item = jsonArray.getJSONObject(index)
+                    val id = item.optString("id", "").trim()
+                    val displayName = item.optString("displayName", "").trim()
+                    if (id.isNotEmpty() && displayName.isNotEmpty()) {
+                        add(FrequentPlayer(id = id, displayName = displayName))
+                    }
+                }
+            }
+            PersistenceReadState.Data(players)
+        }.getOrElse { error ->
+            logger.logFailure("decodeFrequentPlayers", error::class.java.simpleName)
+            PersistenceReadState.Corrupted
+        }
+    }
+
+    private fun mergeFrequentPlayersFromGroupGame(
+        preferences: MutablePreferences,
+        playerNames: List<String>,
+    ) {
+        val existing = when (val decoded = decodeFrequentPlayers(preferences[FREQUENT_PLAYERS_KEY])) {
+            is PersistenceReadState.Data -> decoded.value
+            PersistenceReadState.Missing -> emptyList()
+            PersistenceReadState.Corrupted,
+            PersistenceReadState.Unavailable -> return
+        }
+        val merged = FrequentPlayersMerger.mergeFromGroupGame(
+            existing = existing,
+            playerNames = playerNames,
+        )
+        if (merged != existing) {
+            preferences[FREQUENT_PLAYERS_KEY] = encodeFrequentPlayers(merged)
+        }
+    }
+
     companion object {
         internal val HAS_ACTIVE_GAME_KEY = booleanPreferencesKey("has_active_game")
         internal val HAS_COMPLETED_SETUP_KEY = booleanPreferencesKey("has_completed_setup")
@@ -646,6 +722,7 @@ class AppPreferencesDataStore(
         internal val GAME_MODE_KEY = stringPreferencesKey("game_mode")
         internal val PLAYERS_KEY = stringPreferencesKey("players")
         internal val PARTICIPANTS_KEY = stringPreferencesKey("participants")
+        internal val FREQUENT_PLAYERS_KEY = stringPreferencesKey("frequent_players")
         internal val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
         internal val RANDOM_ROULETTE_ENABLED_KEY = booleanPreferencesKey("random_roulette_enabled")
         internal val RANDOM_ROULETTE_THRESHOLD_KEY = intPreferencesKey("random_roulette_threshold")

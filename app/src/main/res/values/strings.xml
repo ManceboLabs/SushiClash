@@ -110,6 +110,8 @@
     <string name="setup_start">Empezar</string>
     <string name="setup_player_name_hint">Introduce un nombre</string>
     <string name="setup_min_players_hint">Añade mínimo 2 jugadores para continuar</string>
+    <string name="setup_frequent_players_section">Jugadores frecuentes</string>
+    <string name="setup_frequent_player_add_content_description">Añadir a %1$s</string>
     <string name="setup_random_roulette_title">Modo ruleta aleatoria</string>
     <string name="setup_random_roulette_description">Activa una ruleta automáticamente cada cierto número de sushi.</string>
     <string name="setup_roulette_threshold_label">Activar ruleta cada</string>

@@ -79,6 +79,7 @@ fun CounterScreen(
 
     if (uiState.showSetupDialog) {
         GameSetupDialog(
+            frequentPlayers = uiState.frequentPlayers,
             onConfirm = onSetupConfirmed,
             onDismiss = onSetupDismissed,
         )

@@ -34,6 +34,36 @@ class GameSetupRulesTest {
     }
 
     @Test
+    fun givenDuplicateNameIgnoringCase_whenAddingGroupPlayerName_thenNotAllowed() {
+        assertFalse(
+            GameSetupRules.canAddGroupPlayerName(
+                currentPlayers = listOf("Ana"),
+                name = " ana ",
+            ),
+        )
+    }
+
+    @Test
+    fun givenBlankName_whenAddingGroupPlayerName_thenNotAllowed() {
+        assertFalse(
+            GameSetupRules.canAddGroupPlayerName(
+                currentPlayers = emptyList(),
+                name = "   ",
+            ),
+        )
+    }
+
+    @Test
+    fun givenUniqueValidName_whenAddingGroupPlayerName_thenAllowed() {
+        assertTrue(
+            GameSetupRules.canAddGroupPlayerName(
+                currentPlayers = listOf("Ana"),
+                name = " Luis ",
+            ),
+        )
+    }
+
+    @Test
     fun givenNoModeSelected_whenConfirmingSetup_thenNotAllowed() {
         assertFalse(GameSetupRules.canConfirmSetup(gameMode = null, groupPlayerCount = 4))
     }

@@ -6,6 +6,7 @@ import com.mancebolabs.sushiclash.feature.counter.AppStartupState
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
 import com.mancebolabs.sushiclash.navigation.resolveOnboardingCompleted
 import com.mancebolabs.sushiclash.testutil.FakeFeedbackSettingsRepository
+import com.mancebolabs.sushiclash.testutil.FakeFrequentPlayersRepository
 import com.mancebolabs.sushiclash.testutil.FakeAchievementRepository
 import com.mancebolabs.sushiclash.testutil.FakeGameRepository
 import com.mancebolabs.sushiclash.testutil.FakeOnboardingRepository
@@ -35,6 +36,7 @@ class OnboardingStartupTest {
             onboardingRepository = onboardingRepository,
             feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
             achievementRepository = FakeAchievementRepository(),
+            frequentPlayersRepository = FakeFrequentPlayersRepository(),
         )
         advanceUntilIdle()
 
@@ -55,6 +57,7 @@ class OnboardingStartupTest {
             onboardingRepository = FakeOnboardingRepository(completed = true),
             feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
             achievementRepository = FakeAchievementRepository(),
+            frequentPlayersRepository = FakeFrequentPlayersRepository(),
         )
         advanceUntilIdle()
 
@@ -79,6 +82,7 @@ class OnboardingStartupTest {
             onboardingRepository = onboardingRepository,
             feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
             achievementRepository = FakeAchievementRepository(),
+            frequentPlayersRepository = FakeFrequentPlayersRepository(),
         )
         advanceUntilIdle()
         assertEquals(AppStartupState.Loading, viewModel.uiState.value.startupState)

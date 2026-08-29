@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.mancebolabs.sushiclash.domain.model.FinishGameResult
+import com.mancebolabs.sushiclash.domain.model.FrequentPlayer
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
@@ -15,6 +16,7 @@ import com.mancebolabs.sushiclash.domain.achievement.maxSushiInGame
 import com.mancebolabs.sushiclash.domain.achievement.totalSushiInGame
 import com.mancebolabs.sushiclash.domain.repository.AchievementRepository
 import com.mancebolabs.sushiclash.domain.repository.FeedbackSettingsRepository
+import com.mancebolabs.sushiclash.domain.repository.FrequentPlayersRepository
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
 import com.mancebolabs.sushiclash.feature.feedback.CounterFeedbackEvent
@@ -58,6 +60,7 @@ data class CounterUiState(
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
     val feedbackEvent: CounterFeedbackEvent? = null,
+    val frequentPlayers: List<FrequentPlayer> = emptyList(),
 ) {
     val gameMode: GameMode?
         get() = gameState.gameMode
@@ -74,6 +77,7 @@ class CounterViewModel(
     private val onboardingRepository: OnboardingRepository,
     private val feedbackSettingsRepository: FeedbackSettingsRepository,
     private val achievementRepository: AchievementRepository,
+    private val frequentPlayersRepository: FrequentPlayersRepository,
 ) : ViewModel() {
 
     private val startupState = MutableStateFlow<AppStartupState>(AppStartupState.Loading)
@@ -228,7 +232,8 @@ class CounterViewModel(
                 feedbackEvent = pendingFeedback,
             )
         },
-    ) { gameState, screenState, preferences ->
+        frequentPlayersRepository.frequentPlayers,
+    ) { gameState, screenState, preferences, frequentPlayers ->
         CounterUiState(
             gameState = gameState,
             startupState = screenState.startupState,
@@ -243,6 +248,7 @@ class CounterViewModel(
             soundEnabled = preferences.soundEnabled,
             vibrationEnabled = preferences.vibrationEnabled,
             feedbackEvent = preferences.feedbackEvent,
+            frequentPlayers = frequentPlayers,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -461,6 +467,7 @@ class CounterViewModel(
             onboardingRepository: OnboardingRepository,
             feedbackSettingsRepository: FeedbackSettingsRepository,
             achievementRepository: AchievementRepository,
+            frequentPlayersRepository: FrequentPlayersRepository,
         ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -470,6 +477,7 @@ class CounterViewModel(
                         onboardingRepository,
                         feedbackSettingsRepository,
                         achievementRepository,
+                        frequentPlayersRepository,
                     ) as T
                 }
             }

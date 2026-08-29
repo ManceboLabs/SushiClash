@@ -4,6 +4,7 @@ import android.content.Context
 import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
 import com.mancebolabs.sushiclash.data.repository.AchievementRepositoryImpl
 import com.mancebolabs.sushiclash.data.repository.FeedbackSettingsRepositoryImpl
+import com.mancebolabs.sushiclash.data.repository.FrequentPlayersRepositoryImpl
 import com.mancebolabs.sushiclash.data.repository.GameRepositoryImpl
 import com.mancebolabs.sushiclash.data.repository.HistoryRepositoryImpl
 import com.mancebolabs.sushiclash.data.repository.OnboardingRepositoryImpl
@@ -11,6 +12,7 @@ import com.mancebolabs.sushiclash.data.repository.ParticipantsRepositoryImpl
 import com.mancebolabs.sushiclash.data.repository.ThemeRepositoryImpl
 import com.mancebolabs.sushiclash.domain.repository.AchievementRepository
 import com.mancebolabs.sushiclash.domain.repository.FeedbackSettingsRepository
+import com.mancebolabs.sushiclash.domain.repository.FrequentPlayersRepository
 import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import com.mancebolabs.sushiclash.domain.repository.HistoryRepository
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
@@ -46,6 +48,10 @@ object AppContainer {
 
     fun feedbackSettingsRepository(context: Context): FeedbackSettingsRepository {
         return FeedbackSettingsRepositoryImpl(dataStore(context))
+    }
+
+    fun frequentPlayersRepository(context: Context): FrequentPlayersRepository {
+        return FrequentPlayersRepositoryImpl(dataStore(context))
     }
 
     fun achievementRepository(context: Context): AchievementRepository {

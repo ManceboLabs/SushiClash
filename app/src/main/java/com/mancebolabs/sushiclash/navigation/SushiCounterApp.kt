@@ -236,6 +236,7 @@ private fun SushiCounterNavHost(
                             AppContainer.onboardingRepository(context),
                             AppContainer.feedbackSettingsRepository(context),
                             AppContainer.achievementRepository(context),
+                            AppContainer.frequentPlayersRepository(context),
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
