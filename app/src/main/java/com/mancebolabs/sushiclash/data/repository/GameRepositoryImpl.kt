@@ -49,6 +49,7 @@ class GameRepositoryImpl(
 
     override suspend fun restoreGameState(): RestoreGameResult {
         return gameMutationMutex.withLock {
+            dataStore.clearActiveGameAfterBackupRestoreIfNeeded()
             when (val result = dataStore.restoreGameState(migratedSessionId = sessionIdProvider())) {
                 is RestoreGamePersistenceResult.Restored -> RestoreGameResult.Restored(result.gameState)
                 // I/O failure is not a missing game; persistence is left untouched for a later retry.

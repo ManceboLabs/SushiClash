@@ -74,6 +74,7 @@ class GameRepositoryImplTest {
         every { dataStore.decodedGameState } returns gameStateFlow.map { gameState ->
             PersistenceReadState.Data(DecodedGameState(gameState))
         }
+        coEvery { dataStore.clearActiveGameAfterBackupRestoreIfNeeded() } just Runs
         repository = GameRepositoryImpl(
             dataStore = dataStore,
             randomRouletteLogic = RandomRouletteLogic(FakeRandomProvider().apply { enqueue(7) }),
@@ -95,8 +96,23 @@ class GameRepositoryImplTest {
         assertEquals(persistedState, restoredState)
         assertTrue(restoredState.hasActiveGame)
         assertEquals(12, restoredState.soloCount)
+        coVerify(exactly = 1) { dataStore.clearActiveGameAfterBackupRestoreIfNeeded() }
         coVerify(exactly = 1) { dataStore.restoreGameState("session-created") }
         coVerify(exactly = 0) { dataStore.clearActiveGame() }
+    }
+
+    @Test
+    fun givenRestoreRequested_whenHandlingBackupRestore_thenRunsBeforePersistedRestore() = runTest {
+        coEvery {
+            dataStore.restoreGameState("session-created")
+        } returns RestoreGamePersistenceResult.Restored(GameState())
+
+        repository.restoreGameState()
+
+        coVerify(ordering = io.mockk.Ordering.ORDERED) {
+            dataStore.clearActiveGameAfterBackupRestoreIfNeeded()
+            dataStore.restoreGameState("session-created")
+        }
     }
 
     @Test

@@ -1,13 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Legacy auto-backup rules (API 23–30). API 31+ uses data_extraction_rules.xml.
+  Only explicitly included paths are backed up.
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- User preferences, history, achievements and frequent players -->
+    <include
+        domain="file"
+        path="datastore/sushi_counter_preferences.preferences_pb" />
+
+    <!-- App language override (AppCompat per-app locales) -->
+    <include
+        domain="sharedpref"
+        path="androidx.appcompat.app.AppCompatDelegate.application_locales" />
 </full-backup-content>

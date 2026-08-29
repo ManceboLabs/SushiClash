@@ -883,6 +883,136 @@ class AppPreferencesDataStoreTest {
     }
 
     @Test
+    fun givenRestoredPreferencesWithoutInstallMarker_whenPreparingAfterBackup_thenClearsActiveGameAndCreatesMarker() =
+        runTest {
+            val root = temporaryFolder.newFolder("backup_restore")
+            val preferencesFile = File(
+                root,
+                "${AppPreferencesDataStore.PREFERENCES_DATASTORE_DIR}/${AppPreferencesDataStore.PREFERENCES_FILE_NAME}",
+            )
+            preferencesFile.parentFile?.mkdirs()
+
+            val markerFile = File(root, AppPreferencesDataStore.BACKUP_INSTALL_MARKER_RELATIVE_PATH)
+            val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStoreAt(preferencesFile)
+            val store = AppPreferencesDataStore(
+                dataStore = dataStore,
+                logger = NoOpPersistenceLogger,
+                installMarkerFile = markerFile,
+                preferencesFile = preferencesFile,
+            )
+
+            try {
+                store.saveGameState(
+                    sessionId = "restored-session",
+                    gameMode = GameMode.SOLO,
+                    players = listOf(
+                        Player(
+                            id = AppPreferencesDataStore.SOLO_PLAYER_ID,
+                            name = "",
+                            sushiCount = 4,
+                        ),
+                    ),
+                    randomRouletteEnabled = false,
+                    randomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
+                    randomRouletteFixedThreshold = GameState.DEFAULT_RANDOM_ROULETTE_THRESHOLD,
+                )
+                store.setThemeMode(AppThemeMode.DARK)
+                assertTrue(preferencesFile.exists())
+                assertTrue(preferencesFile.length() > 0L)
+
+                store.clearActiveGameAfterBackupRestoreIfNeeded()
+
+                val restored = store.decodedGameState.first()
+                assertTrue(restored is PersistenceReadState.Data<*>)
+                val gameState = (restored as PersistenceReadState.Data<DecodedGameState>).value.gameState
+                assertFalse(gameState.hasActiveGame)
+                assertEquals(AppThemeMode.DARK, store.themeMode.first())
+                assertTrue(markerFile.exists())
+            } finally {
+                dataStoreJob.cancel()
+            }
+        }
+
+    @Test
+    fun givenExistingInstallMarker_whenPreparingAfterBackup_thenLeavesActiveGameUntouched() = runTest {
+        val root = temporaryFolder.newFolder("install_marker")
+        val preferencesFile = File(
+            root,
+            "${AppPreferencesDataStore.PREFERENCES_DATASTORE_DIR}/${AppPreferencesDataStore.PREFERENCES_FILE_NAME}",
+        )
+        preferencesFile.parentFile?.mkdirs()
+
+        val markerFile = File(root, AppPreferencesDataStore.BACKUP_INSTALL_MARKER_RELATIVE_PATH)
+        markerFile.parentFile?.mkdirs()
+        markerFile.createNewFile()
+
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStoreAt(preferencesFile)
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+            installMarkerFile = markerFile,
+            preferencesFile = preferencesFile,
+        )
+
+        try {
+            store.saveGameState(
+                sessionId = "current-session",
+                gameMode = GameMode.SOLO,
+                players = listOf(
+                    Player(
+                        id = AppPreferencesDataStore.SOLO_PLAYER_ID,
+                        name = "",
+                        sushiCount = 9,
+                    ),
+                ),
+                randomRouletteEnabled = false,
+                randomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
+                randomRouletteFixedThreshold = GameState.DEFAULT_RANDOM_ROULETTE_THRESHOLD,
+            )
+
+            store.clearActiveGameAfterBackupRestoreIfNeeded()
+
+            val restored = store.decodedGameState.first()
+            assertTrue(restored is PersistenceReadState.Data<*>)
+            val gameState = (restored as PersistenceReadState.Data<DecodedGameState>).value.gameState
+            assertTrue(gameState.hasActiveGame)
+            assertEquals(9, gameState.soloCount)
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenFreshInstallWithoutPreferencesFile_whenPreparingAfterBackup_thenCreatesMarkerOnly() = runTest {
+        val root = temporaryFolder.newFolder("fresh_install")
+        val preferencesFile = File(
+            root,
+            "${AppPreferencesDataStore.PREFERENCES_DATASTORE_DIR}/${AppPreferencesDataStore.PREFERENCES_FILE_NAME}",
+        )
+        val markerFile = File(root, AppPreferencesDataStore.BACKUP_INSTALL_MARKER_RELATIVE_PATH)
+
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStoreAt(preferencesFile)
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+            installMarkerFile = markerFile,
+            preferencesFile = preferencesFile,
+        )
+
+        try {
+            store.clearActiveGameAfterBackupRestoreIfNeeded()
+
+            assertTrue(markerFile.exists())
+            val decodedState = store.decodedGameState.first()
+            assertTrue(decodedState is PersistenceReadState.Data<*>)
+            val gameState = (decodedState as PersistenceReadState.Data<DecodedGameState>).value.gameState
+            assertFalse(gameState.hasActiveGame)
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
     fun givenReadIOException_whenCollectingHistoryAndParticipants_thenEmitsUnavailableThenRecovers() =
         runTest {
             assertUnavailableThenMissing(createHistoryParticipantsStore()) { it.soloHistory }
@@ -912,6 +1042,12 @@ class AppPreferencesDataStoreTest {
 
     private fun TestScope.createTemporaryPreferencesDataStore(): Pair<DataStore<Preferences>, Job> {
         val preferencesFile = File(temporaryFolder.root, "sushi_counter_preferences.preferences_pb")
+        return createTemporaryPreferencesDataStoreAt(preferencesFile)
+    }
+
+    private fun TestScope.createTemporaryPreferencesDataStoreAt(
+        preferencesFile: File,
+    ): Pair<DataStore<Preferences>, Job> {
         val dataStoreJob = Job(coroutineContext[Job])
         val dataStore = PreferenceDataStoreFactory.create(
             scope = CoroutineScope(coroutineContext + dataStoreJob),

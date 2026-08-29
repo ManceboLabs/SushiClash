@@ -1,19 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cloud backup and device-to-device transfer rules (API 31+).
+  Only explicitly included paths are backed up or transferred.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <include
+            domain="file"
+            path="datastore/sushi_counter_preferences.preferences_pb" />
+        <include
+            domain="sharedpref"
+            path="androidx.appcompat.app.AppCompatDelegate.application_locales" />
     </cloud-backup>
-    <!--
+
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <include
+            domain="file"
+            path="datastore/sushi_counter_preferences.preferences_pb" />
+        <include
+            domain="sharedpref"
+            path="androidx.appcompat.app.AppCompatDelegate.application_locales" />
     </device-transfer>
-    -->
 </data-extraction-rules>

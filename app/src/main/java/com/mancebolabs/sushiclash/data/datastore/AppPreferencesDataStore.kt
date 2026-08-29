@@ -26,6 +26,7 @@ import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.PlayerScore
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteTriggerType
 import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
+import java.io.File
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -163,10 +164,20 @@ internal fun buildFinishedGameHistoryUpdate(
 class AppPreferencesDataStore(
     private val dataStore: DataStore<Preferences>,
     private val logger: PersistenceLogger,
+    private val installMarkerFile: File? = null,
+    private val preferencesFile: File? = null,
 ) {
     constructor(context: Context) : this(
         dataStore = context.applicationContext.sushiClashPreferences,
         logger = AndroidPersistenceLogger(),
+        installMarkerFile = File(
+            context.applicationContext.filesDir,
+            BACKUP_INSTALL_MARKER_RELATIVE_PATH,
+        ),
+        preferencesFile = File(
+            context.applicationContext.filesDir,
+            "$PREFERENCES_DATASTORE_DIR/$PREFERENCES_FILE_NAME",
+        ),
     )
 
     val decodedGameState: Flow<PersistenceReadState<DecodedGameState>> = dataStore.data
@@ -406,6 +417,23 @@ class AppPreferencesDataStore(
                 GameState.MAX_RANDOM_ROULETTE_THRESHOLD,
             )
         }
+    }
+
+    /**
+     * After backup/restore the preferences file may contain a stale in-progress game.
+     * A device-local marker (excluded from backup) detects the first launch on this install.
+     */
+    suspend fun clearActiveGameAfterBackupRestoreIfNeeded() {
+        val markerFile = installMarkerFile ?: return
+        if (markerFile.exists()) return
+
+        val restoredPreferences = preferencesFile
+        if (restoredPreferences != null && restoredPreferences.exists() && restoredPreferences.length() > 0L) {
+            clearActiveGame()
+        }
+
+        markerFile.parentFile?.mkdirs()
+        markerFile.createNewFile()
     }
 
     suspend fun restoreGameState(migratedSessionId: String): RestoreGamePersistenceResult {
@@ -716,6 +744,10 @@ class AppPreferencesDataStore(
     }
 
     companion object {
+        const val PREFERENCES_FILE_NAME = "sushi_counter_preferences.preferences_pb"
+        const val PREFERENCES_DATASTORE_DIR = "datastore"
+        const val BACKUP_INSTALL_MARKER_RELATIVE_PATH = "no_backup/install_marker"
+
         internal val HAS_ACTIVE_GAME_KEY = booleanPreferencesKey("has_active_game")
         internal val HAS_COMPLETED_SETUP_KEY = booleanPreferencesKey("has_completed_setup")
         internal val SESSION_ID_KEY = stringPreferencesKey("game_session_id")
