@@ -9,15 +9,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.mancebolabs.sushiclash.data.repository.ThemeModeHolder
 import com.mancebolabs.sushiclash.di.AppContainer
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
+import com.mancebolabs.sushiclash.domain.repository.ThemeRepository
 import com.mancebolabs.sushiclash.navigation.SushiCounterApp
 import com.mancebolabs.sushiclash.ui.theme.SushiCounterTheme
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,14 +26,27 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         val themeRepository = AppContainer.themeRepository(this)
-        val initialThemeMode = ThemeModeHolder.current ?: runBlocking {
-            themeRepository.themeMode.first()
-        }.also { ThemeModeHolder.current = it }
+        val cachedThemeMode = ThemeModeHolder.current
 
-        applyWindowBackground(initialThemeMode)
+        if (cachedThemeMode != null) {
+            applyWindowBackground(cachedThemeMode)
+            setAppContent(themeRepository, cachedThemeMode)
+        } else {
+            applyWindowBackground(AppThemeMode.LIGHT)
+            lifecycleScope.launch {
+                val themeMode = themeRepository.themeMode.first()
+                ThemeModeHolder.current = themeMode
+                applyWindowBackground(themeMode)
+                setAppContent(themeRepository, themeMode)
+            }
+        }
+    }
 
+    private fun setAppContent(
+        themeRepository: ThemeRepository,
+        initialThemeMode: AppThemeMode,
+    ) {
         setContent {
-            val context = LocalContext.current
             val themeMode by themeRepository.themeMode.collectAsStateWithLifecycle(
                 initialValue = initialThemeMode,
             )

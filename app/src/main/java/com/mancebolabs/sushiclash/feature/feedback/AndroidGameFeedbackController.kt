@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.HapticFeedbackConstants
 import android.view.View
+import com.mancebolabs.sushiclash.feature.feedback.HapticFeedbackCompat
 
 class AndroidGameFeedbackController(
     private val view: View,
@@ -32,7 +33,7 @@ class AndroidGameFeedbackController(
         vibrationEnabled: Boolean,
     ) {
         if (vibrationEnabled) {
-            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            HapticFeedbackCompat.performConfirm(view)
             view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         }
         if (soundEnabled) {
@@ -48,8 +49,8 @@ class AndroidGameFeedbackController(
         vibrationEnabled: Boolean,
     ) {
         if (vibrationEnabled) {
-            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+            HapticFeedbackCompat.performConfirm(view)
+            HapticFeedbackCompat.performReject(view)
         }
     }
 
