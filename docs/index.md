@@ -1,3 +1,3 @@
 # Sushi Clash
 
-- [Privacy Policy](PRIVACY_POLICY.md)
+- [Privacy Policy](privacy-policy.md)
