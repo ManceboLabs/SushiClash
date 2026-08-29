@@ -323,6 +323,7 @@ private fun SushiCounterNavHost(
                     val viewModel: SettingsViewModel = viewModel(
                         factory = SettingsViewModel.factory(
                             AppContainer.themeRepository(context),
+                            AppContainer.languageRepository(),
                             AppContainer.historyRepository(context),
                             AppContainer.feedbackSettingsRepository(context),
                             AppContainer.achievementRepository(context),
@@ -333,6 +334,10 @@ private fun SushiCounterNavHost(
                     SettingsScreen(
                         uiState = uiState,
                         onThemeModeSelected = viewModel::onThemeModeSelected,
+                        onLanguagePickerRequested = viewModel::onLanguagePickerRequested,
+                        onLanguagePickerDismissed = viewModel::onLanguagePickerDismissed,
+                        onLanguageSelected = viewModel::onLanguageSelected,
+                        onAppLanguageRefreshRequested = viewModel::onAppLanguageRefreshRequested,
                         onClearHistoryRequested = viewModel::onClearHistoryRequested,
                         onClearHistoryConfirmed = viewModel::onClearHistoryConfirmed,
                         onClearHistoryDismissed = viewModel::onClearHistoryDismissed,

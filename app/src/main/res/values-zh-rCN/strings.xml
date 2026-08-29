@@ -1,0 +1,238 @@
+<resources>
+    <string name="app_name">Sushi Clash</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_counter">计数</string>
+    <string name="nav_wheel">转盘</string>
+    <string name="nav_history">历史</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- Settings screen -->
+    <string name="settings_screen_title">设置</string>
+    <string name="settings_appearance_section">外观</string>
+    <string name="settings_language_section">语言</string>
+    <string name="settings_language_system">跟随系统</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_spanish">Español</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_french">Français</string>
+    <string name="settings_language_chinese_simplified">简体中文</string>
+    <string name="settings_language_japanese">日本語</string>
+    <string name="settings_language_picker_title">选择语言</string>
+    <string name="settings_language_open_picker_content_description">语言，当前为 %1$s。打开语言选择器。</string>
+    <string name="settings_language_option_content_description">%1$s</string>
+    <string name="settings_history_section">历史</string>
+    <string name="settings_clear_history">清除历史</string>
+    <string name="settings_clear_history_title">清除历史</string>
+    <string name="settings_clear_history_message">确定要删除所有已保存的对局吗？此操作无法撤销。</string>
+    <string name="settings_clear_history_confirm">清除</string>
+    <string name="settings_clear_history_description">删除历史记录中所有已保存的对局。</string>
+    <string name="settings_clear_achievements">清除成就</string>
+    <string name="settings_clear_achievements_title">清除成就</string>
+    <string name="settings_clear_achievements_message">确定要重置所有成就及其进度吗？你可以通过游戏重新解锁它们。</string>
+    <string name="settings_clear_achievements_confirm">清除</string>
+    <string name="settings_clear_achievements_description">重置所有已解锁成就和累计进度。</string>
+    <string name="settings_theme_light">浅色模式</string>
+    <string name="settings_theme_dark">深色模式</string>
+    <string name="settings_help_section">帮助</string>
+    <string name="settings_view_tutorial">查看教程</string>
+    <string name="settings_view_tutorial_description">再次观看 Sushi Clash 入门指南。</string>
+    <string name="settings_view_achievements">查看成就</string>
+    <string name="settings_view_achievements_description">查看已解锁的里程碑和待完成的进度。</string>
+    <string name="settings_about_section">关于</string>
+    <string name="settings_about_version">版本 %1$s</string>
+    <string name="settings_about_branding">Mancebo Labs</string>
+    <string name="settings_feedback_section">反馈</string>
+    <string name="settings_sound_title">声音</string>
+    <string name="settings_sound_description">在计数寿司和特殊事件时播放短音效。</string>
+    <string name="settings_vibration_title">振动</string>
+    <string name="settings_vibration_description">在计数寿司时振动，自动转盘时使用不同的振动模式。</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">跳过</string>
+    <string name="onboarding_previous">上一步</string>
+    <string name="onboarding_next">下一步</string>
+    <string name="onboarding_finish">开始</string>
+    <string name="onboarding_step_welcome_title">欢迎来到 Sushi Clash</string>
+    <string name="onboarding_step_welcome_description">独自计数寿司，或与朋友们围桌竞技。</string>
+    <string name="onboarding_step_solo_title">单人模式</string>
+    <string name="onboarding_step_solo_description">点击寿司，计数你吃的每一贯。</string>
+    <string name="onboarding_step_group_title">多人模式</string>
+    <string name="onboarding_step_group_description">最多添加 6 名玩家，将手机放在中间，方便大家点击。</string>
+    <string name="onboarding_step_random_roulette_title">随机转盘</string>
+    <string name="onboarding_step_random_roulette_description">达到特定数量时会自动触发转盘。数量可以固定或随机选择。</string>
+    <string name="onboarding_step_history_title">历史</string>
+    <string name="onboarding_step_history_description">保存对局，查看你的最佳成绩。</string>
+    <string name="onboarding_step_achievements_title">成就</string>
+    <string name="onboarding_step_achievements_description">通过游戏、吃寿司和使用转盘来解锁成就。部分成就会跨多局累积进度。成就保存在设备上，直到你在设置中重置。在成就页面查看你的进度。</string>
+    <string name="onboarding_step_responsible_use_title">适度享受 🍣</string>
+    <string name="onboarding_step_responsible_use_description">Sushi Clash 旨在为你的用餐增添一点乐趣，而不是把它变成比谁吃得更多的竞赛。\n\n倾听身体的声音，按自己的节奏享受，不要让纪录、目标或成就驱使你吃得超出意愿。\n\n玩得开心，好好享受！ 🍣</string>
+    <string name="onboarding_step_roulette_title">决策转盘</string>
+    <string name="onboarding_step_roulette_description">转动转盘，看看谁来选寿司。</string>
+
+    <!-- Counter screen -->
+    <string name="counter_screen_title">@string/app_name</string>
+    <string name="counter_sushi_eaten">已吃寿司</string>
+    <string name="counter_reset">重置</string>
+    <string name="counter_reset_title">重置计数器？</string>
+    <string name="counter_player_reset_message">要重置 %1$s 的寿司计数器吗？</string>
+    <string name="counter_reset_confirm">重置</string>
+    <string name="counter_cancel">取消</string>
+    <string name="counter_sushi_content_description">寿司</string>
+    <string name="counter_plus_one">+1</string>
+    <string name="counter_finish_game">结束对局</string>
+    <string name="counter_no_active_game_title">没有进行中的对局</string>
+    <string name="counter_no_active_game_subtitle">开始新对局以计数寿司。</string>
+    <string name="counter_start_game">开始对局</string>
+
+    <!-- Finish game -->
+    <string name="finish_game_title">结束对局</string>
+    <string name="finish_game_message">要将此对局保存到历史记录吗？</string>
+    <string name="finish_game_save">保存</string>
+    <string name="finish_game_skip_save">不保存</string>
+    <string name="finish_game_error">无法结束对局。请重试。</string>
+
+    <!-- Persistence -->
+    <string name="persistence_data_unavailable">部分数据无法加载。请重试。</string>
+    <string name="persistence_retry">重试</string>
+
+    <!-- History screen -->
+    <string name="history_screen_title">历史</string>
+    <string name="history_section_solo">单人</string>
+    <string name="history_section_group">多人</string>
+    <string name="history_solo_empty">还没有保存的单人对局。</string>
+    <string name="history_group_empty">还没有保存的多人对局。</string>
+    <string name="history_rank_position">#%1$d</string>
+    <string name="history_solo_sushi_count">%1$d 贯寿司</string>
+    <string name="history_random_roulette_chip">随机转盘</string>
+    <string name="history_group_best_score">最佳：%1$d 贯寿司</string>
+    <string name="history_group_total_score">总计：%1$d 贯寿司</string>
+    <string name="history_group_games_played">对局：%1$d</string>
+
+    <!-- Setup -->
+    <string name="setup_title">选择游戏模式</string>
+    <string name="setup_mode_section">游戏模式</string>
+    <string name="setup_players_section">玩家</string>
+    <string name="setup_roulette_section">随机转盘</string>
+    <string name="setup_solo_title">单人</string>
+    <string name="setup_solo_description">一名玩家，一个寿司计数器</string>
+    <string name="setup_group_title">多人</string>
+    <string name="setup_group_description">最多 6 名玩家围桌而坐</string>
+    <string name="setup_start">开始</string>
+    <string name="setup_player_name_hint">输入名称</string>
+    <string name="setup_min_players_hint">至少添加 2 名玩家才能继续</string>
+    <string name="setup_frequent_players_section">常用玩家</string>
+    <string name="setup_frequent_player_add_content_description">添加 %1$s</string>
+    <string name="setup_random_roulette_title">随机转盘模式</string>
+    <string name="setup_random_roulette_description">每隔一定数量的寿司自动触发转盘。</string>
+    <string name="setup_roulette_threshold_label">每达到以下数量触发转盘</string>
+    <string name="setup_roulette_threshold_value">%1$d 贯寿司</string>
+    <string name="setup_roulette_frequency_title">转盘频率</string>
+    <string name="setup_roulette_trigger_fixed">固定数量</string>
+    <string name="setup_roulette_trigger_random">随机数量</string>
+    <string name="setup_roulette_random_helper">应用会在 1 到 10 贯寿司之间随机选择触发转盘的时机。</string>
+    <string name="setup_decrease_threshold">降低阈值</string>
+    <string name="setup_increase_threshold">提高阈值</string>
+
+    <!-- Random roulette -->
+    <string name="roulette_trigger_title">转盘已触发</string>
+    <string name="roulette_trigger_solo_message">你已达到 %1$d 贯寿司。该转动转盘了！</string>
+    <string name="roulette_trigger_group_message">%1$s 已达到 %2$d 贯寿司。该转动转盘了！</string>
+    <string name="roulette_insufficient_participants_title">参与者不足</string>
+    <string name="roulette_insufficient_participants_message">至少添加 2 名参与者才能使用转盘。</string>
+
+    <!-- Wheel screen -->
+    <string name="wheel_screen_title">Sushi Roulette</string>
+    <string name="wheel_name_hint">输入名称</string>
+    <string name="wheel_add">添加</string>
+    <string name="wheel_spin">转动</string>
+    <string name="wheel_participants_title">参与者</string>
+    <string name="wheel_delete_content_description">移除 %1$s</string>
+    <string name="wheel_selected_title">选择寿司：</string>
+    <string name="wheel_ok">确定</string>
+    <string name="wheel_min_participants_hint">至少添加 2 人才能转动转盘</string>
+    <string name="wheel_empty_wheel_hint">添加更多参与者才能转动转盘</string>
+
+    <!-- Achievements -->
+    <string name="achievements_screen_title">成就</string>
+    <string name="achievements_back">返回</string>
+    <string name="achievements_progress_summary">已解锁 %1$d / %2$d 个成就</string>
+    <string name="achievements_progress_value">%1$d / %2$d</string>
+    <string name="achievements_unlocked_at">解锁时间：%1$s</string>
+    <string name="achievement_unlocked_banner">成就已解锁</string>
+    <string name="achievements_category_sushi">寿司</string>
+    <string name="achievements_category_solo_lifetime_sushi">单人累计寿司</string>
+    <string name="achievements_category_group_lifetime_sushi">多人累计寿司</string>
+    <string name="achievements_category_games">对局</string>
+    <string name="achievements_category_roulette">转盘</string>
+    <string name="achievement_sushi_10_title">初次盛宴</string>
+    <string name="achievement_sushi_10_description">单局吃掉 10 贯寿司。</string>
+    <string name="achievement_sushi_20_title">胃口渐开</string>
+    <string name="achievement_sushi_20_description">单局吃掉 20 贯寿司。</string>
+    <string name="achievement_sushi_30_title">满足之腹</string>
+    <string name="achievement_sushi_30_description">单局吃掉 30 贯寿司。</string>
+    <string name="achievement_sushi_40_title">稳定吞食者</string>
+    <string name="achievement_sushi_40_description">单局吃掉 40 贯寿司。</string>
+    <string name="achievement_sushi_50_title">板前学徒</string>
+    <string name="achievement_sushi_50_description">单局吃掉 50 贯寿司。</string>
+    <string name="achievement_sushi_100_title">寿司传奇</string>
+    <string name="achievement_sushi_100_description">单局吃掉 100 贯寿司。</string>
+    <string name="achievement_solo_total_50_title">独行食客</string>
+    <string name="achievement_solo_total_50_description">在单人模式中累计 50 贯寿司。</string>
+    <string name="achievement_solo_total_100_title">专属吧台</string>
+    <string name="achievement_solo_total_100_description">在单人模式中累计 100 贯寿司。</string>
+    <string name="achievement_solo_total_250_title">稳定份量</string>
+    <string name="achievement_solo_total_250_description">在单人模式中累计 250 贯寿司。</string>
+    <string name="achievement_solo_total_500_title">独行板前</string>
+    <string name="achievement_solo_total_500_description">在单人模式中累计 500 贯寿司。</string>
+    <string name="achievement_solo_total_1000_title">独行盛宴</string>
+    <string name="achievement_solo_total_1000_description">在单人模式中累计 1,000 贯寿司。</string>
+    <string name="achievement_solo_total_2500_title">Omakase 大师</string>
+    <string name="achievement_solo_total_2500_description">在单人模式中累计 2,500 贯寿司。</string>
+    <string name="achievement_solo_total_5000_title">榻榻米传奇</string>
+    <string name="achievement_solo_total_5000_description">在单人模式中累计 5,000 贯寿司。</string>
+    <string name="achievement_solo_total_10000_title">握寿司皇帝</string>
+    <string name="achievement_solo_total_10000_description">在单人模式中累计 10,000 贯寿司。</string>
+    <string name="achievement_group_total_50_title">首次团体盛宴</string>
+    <string name="achievement_group_total_50_description">在多人模式中累计 50 贯寿司。</string>
+    <string name="achievement_group_total_100_title">圆桌聚会</string>
+    <string name="achievement_group_total_100_description">在多人模式中累计 100 贯寿司。</string>
+    <string name="achievement_group_total_250_title">共享盛宴</string>
+    <string name="achievement_group_total_250_description">在多人模式中累计 250 贯寿司。</string>
+    <string name="achievement_group_total_500_title">团队吞食者</string>
+    <string name="achievement_group_total_500_description">在多人模式中累计 500 贯寿司。</string>
+    <string name="achievement_group_total_1000_title">无尽回转</string>
+    <string name="achievement_group_total_1000_description">在多人模式中累计 1,000 贯寿司。</string>
+    <string name="achievement_group_total_2500_title">饥饿蜂群</string>
+    <string name="achievement_group_total_2500_description">在多人模式中累计 2,500 贯寿司。</string>
+    <string name="achievement_group_total_5000_title">榻榻米节</string>
+    <string name="achievement_group_total_5000_description">在多人模式中累计 5,000 贯寿司。</string>
+    <string name="achievement_group_total_10000_title">团体寿司之龙</string>
+    <string name="achievement_group_total_10000_description">在多人模式中累计 10,000 贯寿司。</string>
+    <string name="achievement_games_1_title">首局对战</string>
+    <string name="achievement_games_1_description">完成你的第一局对战。</string>
+    <string name="achievement_games_10_title">常客</string>
+    <string name="achievement_games_10_description">完成 10 局对战。</string>
+    <string name="achievement_games_20_title">预订餐桌</string>
+    <string name="achievement_games_20_description">完成 20 局对战。</string>
+    <string name="achievement_games_30_title">榻榻米大师</string>
+    <string name="achievement_games_30_description">完成 30 局对战。</string>
+    <string name="achievement_games_50_title">道场老手</string>
+    <string name="achievement_games_50_description">完成 50 局对战。</string>
+    <string name="achievement_games_100_title">寿司皇帝</string>
+    <string name="achievement_games_100_description">完成 100 局对战。</string>
+    <string name="achievement_roulette_first_spin_title">首次转动</string>
+    <string name="achievement_roulette_first_spin_description">第一次转动转盘。</string>
+    <string name="achievement_roulette_spins_10_title">好奇转轮</string>
+    <string name="achievement_roulette_spins_10_description">转动转盘 10 次。</string>
+    <string name="achievement_roulette_spins_20_title">热情转轮</string>
+    <string name="achievement_roulette_spins_20_description">转动转盘 20 次。</string>
+    <string name="achievement_roulette_spins_30_title">转盘成瘾</string>
+    <string name="achievement_roulette_spins_30_description">转动转盘 30 次。</string>
+    <string name="achievement_roulette_spins_40_title">运气之王</string>
+    <string name="achievement_roulette_spins_40_description">转动转盘 40 次。</string>
+    <string name="achievement_roulette_spins_50_title">转动大师</string>
+    <string name="achievement_roulette_spins_50_description">转动转盘 50 次。</string>
+    <string name="achievement_roulette_auto_first_title">惊喜转盘</string>
+    <string name="achievement_roulette_auto_first_description">第一次触发自动转盘。</string>
+</resources>

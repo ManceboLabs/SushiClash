@@ -1,0 +1,238 @@
+<resources>
+    <string name="app_name">Sushi Clash</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_counter">Zähler</string>
+    <string name="nav_wheel">Roulette</string>
+    <string name="nav_history">Verlauf</string>
+    <string name="nav_settings">Einstellungen</string>
+
+    <!-- Settings screen -->
+    <string name="settings_screen_title">Einstellungen</string>
+    <string name="settings_appearance_section">Erscheinungsbild</string>
+    <string name="settings_language_section">Sprache</string>
+    <string name="settings_language_system">Systemstandard</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_spanish">Español</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_french">Français</string>
+    <string name="settings_language_chinese_simplified">简体中文</string>
+    <string name="settings_language_japanese">日本語</string>
+    <string name="settings_language_picker_title">Sprache wählen</string>
+    <string name="settings_language_open_picker_content_description">Sprache, derzeit %1$s. Sprachauswahl öffnen.</string>
+    <string name="settings_language_option_content_description">%1$s</string>
+    <string name="settings_history_section">Verlauf</string>
+    <string name="settings_clear_history">Verlauf löschen</string>
+    <string name="settings_clear_history_title">Verlauf löschen</string>
+    <string name="settings_clear_history_message">Möchtest du wirklich alle gespeicherten Spiele löschen? Diese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="settings_clear_history_confirm">Löschen</string>
+    <string name="settings_clear_history_description">Entfernt alle gespeicherten Spiele aus dem Verlauf.</string>
+    <string name="settings_clear_achievements">Erfolge löschen</string>
+    <string name="settings_clear_achievements_title">Erfolge löschen</string>
+    <string name="settings_clear_achievements_message">Möchtest du wirklich alle Erfolge und ihren Fortschritt zurücksetzen? Du kannst sie beim Spielen erneut freischalten.</string>
+    <string name="settings_clear_achievements_confirm">Löschen</string>
+    <string name="settings_clear_achievements_description">Setzt alle freigeschalteten Erfolge und den gesammelten Fortschritt zurück.</string>
+    <string name="settings_theme_light">Heller Modus</string>
+    <string name="settings_theme_dark">Dunkler Modus</string>
+    <string name="settings_help_section">Hilfe</string>
+    <string name="settings_view_tutorial">Tutorial ansehen</string>
+    <string name="settings_view_tutorial_description">Sieh dir die Einführung in Sushi Clash erneut an.</string>
+    <string name="settings_view_achievements">Erfolge ansehen</string>
+    <string name="settings_view_achievements_description">Sieh dir deine freigeschalteten Meilensteine und den ausstehenden Fortschritt an.</string>
+    <string name="settings_about_section">Über</string>
+    <string name="settings_about_version">Version %1$s</string>
+    <string name="settings_about_branding">Mancebo Labs</string>
+    <string name="settings_feedback_section">Feedback</string>
+    <string name="settings_sound_title">Ton</string>
+    <string name="settings_sound_description">Spielt einen kurzen Ton beim Sushi-Zählen und bei besonderen Ereignissen ab.</string>
+    <string name="settings_vibration_title">Vibration</string>
+    <string name="settings_vibration_description">Vibriert beim Sushi-Zählen und mit einem anderen Muster beim automatischen Roulette.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Überspringen</string>
+    <string name="onboarding_previous">Zurück</string>
+    <string name="onboarding_next">Weiter</string>
+    <string name="onboarding_finish">Los geht\'s</string>
+    <string name="onboarding_step_welcome_title">Willkommen bei Sushi Clash</string>
+    <string name="onboarding_step_welcome_description">Zähle Sushi allein oder tritt mit Freunden am Tisch an.</string>
+    <string name="onboarding_step_solo_title">Solo-Modus</string>
+    <string name="onboarding_step_solo_description">Tippe auf das Sushi, um jedes Stück zu zählen, das du isst.</string>
+    <string name="onboarding_step_group_title">Gruppenmodus</string>
+    <string name="onboarding_step_group_description">Füge bis zu 6 Spieler hinzu und lege das Handy in die Mitte, damit alle tippen können.</string>
+    <string name="onboarding_step_random_roulette_title">Zufallsroulette</string>
+    <string name="onboarding_step_random_roulette_description">Das Roulette wird automatisch ausgelöst, wenn bestimmte Punkte erreicht werden. Die Anzahl kann fest oder zufällig gewählt werden.</string>
+    <string name="onboarding_step_history_title">Verlauf</string>
+    <string name="onboarding_step_history_description">Speichere deine Spiele und sieh dir deine besten Ergebnisse an.</string>
+    <string name="onboarding_step_achievements_title">Erfolge</string>
+    <string name="onboarding_step_achievements_description">Schalte Erfolge frei, indem du spielst, Sushi isst und das Roulette nutzt. Manche machen über mehrere Spiele Fortschritt. Sie werden auf dem Gerät gespeichert, bis du sie in den Einstellungen zurücksetzt. Sieh dir deinen Fortschritt auf dem Erfolge-Bildschirm an.</string>
+    <string name="onboarding_step_responsible_use_title">Genieße es in Balance 🍣</string>
+    <string name="onboarding_step_responsible_use_description">Sushi Clash soll deinen Mahlzeiten ein bisschen mehr Spaß verleihen, nicht sie in einen Wettbewerb ums Mehr-Essen verwandeln.\n\nHör auf deinen Körper, genieße in deinem Tempo und lass dich von einem Rekord, Ziel oder Erfolg nicht dazu bringen, mehr zu essen, als du möchtest.\n\nViel Spaß und guten Appetit! 🍣</string>
+    <string name="onboarding_step_roulette_title">Entscheidungsroulette</string>
+    <string name="onboarding_step_roulette_description">Drehe das Roulette, um zu sehen, wer das Sushi auswählt.</string>
+
+    <!-- Counter screen -->
+    <string name="counter_screen_title">@string/app_name</string>
+    <string name="counter_sushi_eaten">Sushi Verschlingt</string>
+    <string name="counter_reset">Zurücksetzen</string>
+    <string name="counter_reset_title">Zähler zurücksetzen?</string>
+    <string name="counter_player_reset_message">Möchtest du den Sushi-Zähler von %1$s zurücksetzen?</string>
+    <string name="counter_reset_confirm">Zurücksetzen</string>
+    <string name="counter_cancel">Abbrechen</string>
+    <string name="counter_sushi_content_description">Sushi</string>
+    <string name="counter_plus_one">+1</string>
+    <string name="counter_finish_game">Spiel beenden</string>
+    <string name="counter_no_active_game_title">Kein aktives Spiel</string>
+    <string name="counter_no_active_game_subtitle">Starte ein neues Spiel, um Sushi zu zählen.</string>
+    <string name="counter_start_game">Spiel starten</string>
+
+    <!-- Finish game -->
+    <string name="finish_game_title">Spiel beenden</string>
+    <string name="finish_game_message">Möchtest du dieses Spiel im Verlauf speichern?</string>
+    <string name="finish_game_save">Speichern</string>
+    <string name="finish_game_skip_save">Nicht speichern</string>
+    <string name="finish_game_error">Das Spiel konnte nicht beendet werden. Bitte versuche es erneut.</string>
+
+    <!-- Persistence -->
+    <string name="persistence_data_unavailable">Einige Daten konnten nicht geladen werden. Bitte versuche es erneut.</string>
+    <string name="persistence_retry">Erneut versuchen</string>
+
+    <!-- History screen -->
+    <string name="history_screen_title">Verlauf</string>
+    <string name="history_section_solo">Solo</string>
+    <string name="history_section_group">Gruppe</string>
+    <string name="history_solo_empty">Noch keine Solo-Spiele gespeichert.</string>
+    <string name="history_group_empty">Noch keine Gruppenspiele gespeichert.</string>
+    <string name="history_rank_position">#%1$d</string>
+    <string name="history_solo_sushi_count">%1$d Sushi</string>
+    <string name="history_random_roulette_chip">Zufallsroulette</string>
+    <string name="history_group_best_score">Beste: %1$d Sushi</string>
+    <string name="history_group_total_score">Gesamt: %1$d Sushi</string>
+    <string name="history_group_games_played">Spiele: %1$d</string>
+
+    <!-- Setup -->
+    <string name="setup_title">Spielmodus wählen</string>
+    <string name="setup_mode_section">Spielmodus</string>
+    <string name="setup_players_section">Spieler</string>
+    <string name="setup_roulette_section">Zufallsroulette</string>
+    <string name="setup_solo_title">Solo</string>
+    <string name="setup_solo_description">Ein Spieler, ein Sushi-Zähler</string>
+    <string name="setup_group_title">Gruppe</string>
+    <string name="setup_group_description">Bis zu 6 Spieler am Tisch</string>
+    <string name="setup_start">Starten</string>
+    <string name="setup_player_name_hint">Name eingeben</string>
+    <string name="setup_min_players_hint">Füge mindestens 2 Spieler hinzu, um fortzufahren</string>
+    <string name="setup_frequent_players_section">Häufige Spieler</string>
+    <string name="setup_frequent_player_add_content_description">%1$s hinzufügen</string>
+    <string name="setup_random_roulette_title">Zufallsroulette-Modus</string>
+    <string name="setup_random_roulette_description">Löst automatisch ein Roulette nach einer bestimmten Anzahl Sushi aus.</string>
+    <string name="setup_roulette_threshold_label">Roulette auslösen alle</string>
+    <string name="setup_roulette_threshold_value">%1$d Sushi</string>
+    <string name="setup_roulette_frequency_title">Roulette-Häufigkeit</string>
+    <string name="setup_roulette_trigger_fixed">Feste Zahl</string>
+    <string name="setup_roulette_trigger_random">Zufällige Zahl</string>
+    <string name="setup_roulette_random_helper">Die App wählt zufällig aus, wann das Roulette zwischen 1 und 10 Sushi ausgelöst wird.</string>
+    <string name="setup_decrease_threshold">Schwellenwert verringern</string>
+    <string name="setup_increase_threshold">Schwellenwert erhöhen</string>
+
+    <!-- Random roulette -->
+    <string name="roulette_trigger_title">Roulette ausgelöst</string>
+    <string name="roulette_trigger_solo_message">Du hast %1$d Sushi erreicht. Zeit, das Roulette zu drehen!</string>
+    <string name="roulette_trigger_group_message">%1$s hat %2$d Sushi erreicht. Zeit, das Roulette zu drehen!</string>
+    <string name="roulette_insufficient_participants_title">Zu wenige Teilnehmer</string>
+    <string name="roulette_insufficient_participants_message">Füge mindestens 2 Teilnehmer hinzu, um das Roulette zu nutzen.</string>
+
+    <!-- Wheel screen -->
+    <string name="wheel_screen_title">Sushi Roulette</string>
+    <string name="wheel_name_hint">Name eingeben</string>
+    <string name="wheel_add">Hinzufügen</string>
+    <string name="wheel_spin">Drehen</string>
+    <string name="wheel_participants_title">Teilnehmer</string>
+    <string name="wheel_delete_content_description">%1$s entfernen</string>
+    <string name="wheel_selected_title">Sushi auswählen:</string>
+    <string name="wheel_ok">OK</string>
+    <string name="wheel_min_participants_hint">Füge mindestens 2 Personen hinzu, um das Roulette zu drehen</string>
+    <string name="wheel_empty_wheel_hint">Füge mehr Teilnehmer hinzu, um das Roulette zu drehen</string>
+
+    <!-- Achievements -->
+    <string name="achievements_screen_title">Erfolge</string>
+    <string name="achievements_back">Zurück</string>
+    <string name="achievements_progress_summary">%1$d von %2$d Erfolgen freigeschaltet</string>
+    <string name="achievements_progress_value">%1$d / %2$d</string>
+    <string name="achievements_unlocked_at">Freigeschaltet: %1$s</string>
+    <string name="achievement_unlocked_banner">Erfolg freigeschaltet</string>
+    <string name="achievements_category_sushi">Sushi</string>
+    <string name="achievements_category_solo_lifetime_sushi">Gesamt-Sushi im Solo-Modus</string>
+    <string name="achievements_category_group_lifetime_sushi">Gesamt-Sushi im Gruppenmodus</string>
+    <string name="achievements_category_games">Spiele</string>
+    <string name="achievements_category_roulette">Roulette</string>
+    <string name="achievement_sushi_10_title">Erstes Festmahl</string>
+    <string name="achievement_sushi_10_description">Iss 10 Sushi in einem einzigen Spiel.</string>
+    <string name="achievement_sushi_20_title">Wachsender Appetit</string>
+    <string name="achievement_sushi_20_description">Iss 20 Sushi in einem einzigen Spiel.</string>
+    <string name="achievement_sushi_30_title">Glücklicher Magen</string>
+    <string name="achievement_sushi_30_description">Iss 30 Sushi in einem einzigen Spiel.</string>
+    <string name="achievement_sushi_40_title">Stetiger Verschlinger</string>
+    <string name="achievement_sushi_40_description">Iss 40 Sushi in einem einzigen Spiel.</string>
+    <string name="achievement_sushi_50_title">Itamae in Ausbildung</string>
+    <string name="achievement_sushi_50_description">Iss 50 Sushi in einem einzigen Spiel.</string>
+    <string name="achievement_sushi_100_title">Sushi-Legende</string>
+    <string name="achievement_sushi_100_description">Iss 100 Sushi in einem einzigen Spiel.</string>
+    <string name="achievement_solo_total_50_title">Einsamer Gast</string>
+    <string name="achievement_solo_total_50_description">Sammle 50 Sushi in Solo-Spielen.</string>
+    <string name="achievement_solo_total_100_title">Persönliche Theke</string>
+    <string name="achievement_solo_total_100_description">Sammle 100 Sushi in Solo-Spielen.</string>
+    <string name="achievement_solo_total_250_title">Stetige Portionen</string>
+    <string name="achievement_solo_total_250_description">Sammle 250 Sushi in Solo-Spielen.</string>
+    <string name="achievement_solo_total_500_title">Solo-Itamae</string>
+    <string name="achievement_solo_total_500_description">Sammle 500 Sushi in Solo-Spielen.</string>
+    <string name="achievement_solo_total_1000_title">Solo-Bankett</string>
+    <string name="achievement_solo_total_1000_description">Sammle 1.000 Sushi in Solo-Spielen.</string>
+    <string name="achievement_solo_total_2500_title">Omakase-Meister</string>
+    <string name="achievement_solo_total_2500_description">Sammle 2.500 Sushi in Solo-Spielen.</string>
+    <string name="achievement_solo_total_5000_title">Tatami-Legende</string>
+    <string name="achievement_solo_total_5000_description">Sammle 5.000 Sushi in Solo-Spielen.</string>
+    <string name="achievement_solo_total_10000_title">Nigiri-Kaiser</string>
+    <string name="achievement_solo_total_10000_description">Sammle 10.000 Sushi in Solo-Spielen.</string>
+    <string name="achievement_group_total_50_title">Erstes Gruppenfest</string>
+    <string name="achievement_group_total_50_description">Sammle 50 Sushi in Gruppenspielen.</string>
+    <string name="achievement_group_total_100_title">Runder Tisch</string>
+    <string name="achievement_group_total_100_description">Sammle 100 Sushi in Gruppenspielen.</string>
+    <string name="achievement_group_total_250_title">Gemeinsames Bankett</string>
+    <string name="achievement_group_total_250_description">Sammle 250 Sushi in Gruppenspielen.</string>
+    <string name="achievement_group_total_500_title">Team-Verschlinger</string>
+    <string name="achievement_group_total_500_description">Sammle 500 Sushi in Gruppenspielen.</string>
+    <string name="achievement_group_total_1000_title">Endloses Laufband</string>
+    <string name="achievement_group_total_1000_description">Sammle 1.000 Sushi in Gruppenspielen.</string>
+    <string name="achievement_group_total_2500_title">Hungriger Schwarm</string>
+    <string name="achievement_group_total_2500_description">Sammle 2.500 Sushi in Gruppenspielen.</string>
+    <string name="achievement_group_total_5000_title">Tatami-Festival</string>
+    <string name="achievement_group_total_5000_description">Sammle 5.000 Sushi in Gruppenspielen.</string>
+    <string name="achievement_group_total_10000_title">Gruppen-Sushi-Drache</string>
+    <string name="achievement_group_total_10000_description">Sammle 10.000 Sushi in Gruppenspielen.</string>
+    <string name="achievement_games_1_title">Erstes Spiel</string>
+    <string name="achievement_games_1_description">Schließe dein erstes Spiel ab.</string>
+    <string name="achievement_games_10_title">Stammgast</string>
+    <string name="achievement_games_10_description">Schließe 10 Spiele ab.</string>
+    <string name="achievement_games_20_title">Tisch reserviert</string>
+    <string name="achievement_games_20_description">Schließe 20 Spiele ab.</string>
+    <string name="achievement_games_30_title">Tatami-Meister</string>
+    <string name="achievement_games_30_description">Schließe 30 Spiele ab.</string>
+    <string name="achievement_games_50_title">Dojo-Veteran</string>
+    <string name="achievement_games_50_description">Schließe 50 Spiele ab.</string>
+    <string name="achievement_games_100_title">Sushi-Kaiser</string>
+    <string name="achievement_games_100_description">Schließe 100 Spiele ab.</string>
+    <string name="achievement_roulette_first_spin_title">Erster Dreh</string>
+    <string name="achievement_roulette_first_spin_description">Drehe das Roulette zum ersten Mal.</string>
+    <string name="achievement_roulette_spins_10_title">Neugieriger Dreher</string>
+    <string name="achievement_roulette_spins_10_description">Drehe das Roulette 10 Mal.</string>
+    <string name="achievement_roulette_spins_20_title">Begeisterter Dreher</string>
+    <string name="achievement_roulette_spins_20_description">Drehe das Roulette 20 Mal.</string>
+    <string name="achievement_roulette_spins_30_title">Roulette-Süchtiger</string>
+    <string name="achievement_roulette_spins_30_description">Drehe das Roulette 30 Mal.</string>
+    <string name="achievement_roulette_spins_40_title">König des Zufalls</string>
+    <string name="achievement_roulette_spins_40_description">Drehe das Roulette 40 Mal.</string>
+    <string name="achievement_roulette_spins_50_title">Dreh-Meister</string>
+    <string name="achievement_roulette_spins_50_description">Drehe das Roulette 50 Mal.</string>
+    <string name="achievement_roulette_auto_first_title">Überraschungsroulette</string>
+    <string name="achievement_roulette_auto_first_description">Löse das automatische Roulette zum ersten Mal aus.</string>
+</resources>

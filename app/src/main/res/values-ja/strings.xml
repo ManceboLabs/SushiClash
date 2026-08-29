@@ -1,0 +1,238 @@
+<resources>
+    <string name="app_name">Sushi Clash</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_counter">カウンター</string>
+    <string name="nav_wheel">ルーレット</string>
+    <string name="nav_history">履歴</string>
+    <string name="nav_settings">設定</string>
+
+    <!-- Settings screen -->
+    <string name="settings_screen_title">設定</string>
+    <string name="settings_appearance_section">外観</string>
+    <string name="settings_language_section">言語</string>
+    <string name="settings_language_system">システムのデフォルト</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_spanish">Español</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_french">Français</string>
+    <string name="settings_language_chinese_simplified">简体中文</string>
+    <string name="settings_language_japanese">日本語</string>
+    <string name="settings_language_picker_title">言語を選択</string>
+    <string name="settings_language_open_picker_content_description">言語、現在は%1$s。言語ピッカーを開く。</string>
+    <string name="settings_language_option_content_description">%1$s</string>
+    <string name="settings_history_section">履歴</string>
+    <string name="settings_clear_history">履歴を消去</string>
+    <string name="settings_clear_history_title">履歴を消去</string>
+    <string name="settings_clear_history_message">保存されたすべての対局を削除しますか？この操作は元に戻せません。</string>
+    <string name="settings_clear_history_confirm">消去</string>
+    <string name="settings_clear_history_description">履歴から保存されたすべての対局を削除します。</string>
+    <string name="settings_clear_achievements">実績を消去</string>
+    <string name="settings_clear_achievements_title">実績を消去</string>
+    <string name="settings_clear_achievements_message">すべての実績とその進捗をリセットしますか？プレイすることで再度解除できます。</string>
+    <string name="settings_clear_achievements_confirm">消去</string>
+    <string name="settings_clear_achievements_description">解除済みの実績と累計の進捗をすべてリセットします。</string>
+    <string name="settings_theme_light">ライトモード</string>
+    <string name="settings_theme_dark">ダークモード</string>
+    <string name="settings_help_section">ヘルプ</string>
+    <string name="settings_view_tutorial">チュートリアルを見る</string>
+    <string name="settings_view_tutorial_description">Sushi Clash のはじめてガイドをもう一度見る。</string>
+    <string name="settings_view_achievements">実績を見る</string>
+    <string name="settings_view_achievements_description">解除済みのマイルストーンと残りの進捗を確認できます。</string>
+    <string name="settings_about_section">このアプリについて</string>
+    <string name="settings_about_version">バージョン %1$s</string>
+    <string name="settings_about_branding">Mancebo Labs</string>
+    <string name="settings_feedback_section">フィードバック</string>
+    <string name="settings_sound_title">サウンド</string>
+    <string name="settings_sound_description">寿司をカウントしたり、特別なイベントが発生したりしたときに短い音を再生します。</string>
+    <string name="settings_vibration_title">バイブレーション</string>
+    <string name="settings_vibration_description">寿司をカウントしたときに振動し、自動ルーレットでは別のパターンで振動します。</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">スキップ</string>
+    <string name="onboarding_previous">前へ</string>
+    <string name="onboarding_next">次へ</string>
+    <string name="onboarding_finish">はじめる</string>
+    <string name="onboarding_step_welcome_title">Sushi Clash へようこそ</string>
+    <string name="onboarding_step_welcome_description">ひとりで寿司を数えたり、友だちとテーブルで競い合ったりできます。</string>
+    <string name="onboarding_step_solo_title">ソロモード</string>
+    <string name="onboarding_step_solo_description">寿司をタップして、食べた一貫ずつカウントしましょう。</string>
+    <string name="onboarding_step_group_title">グループモード</string>
+    <string name="onboarding_step_group_description">最大6人のプレイヤーを追加し、スマホを中央に置いて全員がタップできるようにします。</string>
+    <string name="onboarding_step_random_roulette_title">ランダムルーレット</string>
+    <string name="onboarding_step_random_roulette_description">特定の数に達すると自動的にルーレットが作動します。回数は固定またはランダムに選べます。</string>
+    <string name="onboarding_step_history_title">履歴</string>
+    <string name="onboarding_step_history_description">対局を保存して、ベストスコアを確認できます。</string>
+    <string name="onboarding_step_achievements_title">実績</string>
+    <string name="onboarding_step_achievements_description">プレイしたり、寿司を食べたり、ルーレットを使ったりして実績を解除しましょう。複数の対局にわたって進むものもあります。設定でリセットするまでデバイスに保存されます。実績画面で進捗を確認できます。</string>
+    <string name="onboarding_step_responsible_use_title">バランスよく楽しもう 🍣</string>
+    <string name="onboarding_step_responsible_use_description">Sushi Clash は食事にもう少し楽しさを加えるためのアプリであり、誰がより多く食べるかの競争にするためのものではありません。\n\n体の声を聞き、自分のペースで楽しみ、記録や目標、実績のために食べたい以上に食べないようにしましょう。\n\n楽しんで、美味しく召し上がれ！ 🍣</string>
+    <string name="onboarding_step_roulette_title">決定ルーレット</string>
+    <string name="onboarding_step_roulette_description">ルーレットを回して、誰が寿司を選ぶか決めましょう。</string>
+
+    <!-- Counter screen -->
+    <string name="counter_screen_title">@string/app_name</string>
+    <string name="counter_sushi_eaten">食べた寿司</string>
+    <string name="counter_reset">リセット</string>
+    <string name="counter_reset_title">カウンターをリセットしますか？</string>
+    <string name="counter_player_reset_message">%1$s の寿司カウンターをリセットしますか？</string>
+    <string name="counter_reset_confirm">リセット</string>
+    <string name="counter_cancel">キャンセル</string>
+    <string name="counter_sushi_content_description">寿司</string>
+    <string name="counter_plus_one">+1</string>
+    <string name="counter_finish_game">対局を終了</string>
+    <string name="counter_no_active_game_title">進行中の対局がありません</string>
+    <string name="counter_no_active_game_subtitle">新しい対局を始めて寿司をカウントしましょう。</string>
+    <string name="counter_start_game">対局を開始</string>
+
+    <!-- Finish game -->
+    <string name="finish_game_title">対局を終了</string>
+    <string name="finish_game_message">この対局を履歴に保存しますか？</string>
+    <string name="finish_game_save">保存</string>
+    <string name="finish_game_skip_save">保存しない</string>
+    <string name="finish_game_error">対局を終了できませんでした。もう一度お試しください。</string>
+
+    <!-- Persistence -->
+    <string name="persistence_data_unavailable">一部のデータを読み込めませんでした。もう一度お試しください。</string>
+    <string name="persistence_retry">再試行</string>
+
+    <!-- History screen -->
+    <string name="history_screen_title">履歴</string>
+    <string name="history_section_solo">ソロ</string>
+    <string name="history_section_group">グループ</string>
+    <string name="history_solo_empty">保存されたソロ対局はまだありません。</string>
+    <string name="history_group_empty">保存されたグループ対局はまだありません。</string>
+    <string name="history_rank_position">#%1$d</string>
+    <string name="history_solo_sushi_count">%1$d 貫</string>
+    <string name="history_random_roulette_chip">ランダムルーレット</string>
+    <string name="history_group_best_score">最高：%1$d 貫</string>
+    <string name="history_group_total_score">合計：%1$d 貫</string>
+    <string name="history_group_games_played">対局数：%1$d</string>
+
+    <!-- Setup -->
+    <string name="setup_title">ゲームモードを選ぶ</string>
+    <string name="setup_mode_section">ゲームモード</string>
+    <string name="setup_players_section">プレイヤー</string>
+    <string name="setup_roulette_section">ランダムルーレット</string>
+    <string name="setup_solo_title">ソロ</string>
+    <string name="setup_solo_description">1人のプレイヤー、1つの寿司カウンター</string>
+    <string name="setup_group_title">グループ</string>
+    <string name="setup_group_description">テーブルを囲む最大6人のプレイヤー</string>
+    <string name="setup_start">開始</string>
+    <string name="setup_player_name_hint">名前を入力</string>
+    <string name="setup_min_players_hint">続けるには最低2人のプレイヤーを追加してください</string>
+    <string name="setup_frequent_players_section">よく遊ぶプレイヤー</string>
+    <string name="setup_frequent_player_add_content_description">%1$s を追加</string>
+    <string name="setup_random_roulette_title">ランダムルーレットモード</string>
+    <string name="setup_random_roulette_description">一定数の寿司ごとに自動的にルーレットを作動させます。</string>
+    <string name="setup_roulette_threshold_label">ルーレットを作動する間隔</string>
+    <string name="setup_roulette_threshold_value">%1$d 貫</string>
+    <string name="setup_roulette_frequency_title">ルーレットの頻度</string>
+    <string name="setup_roulette_trigger_fixed">固定の数</string>
+    <string name="setup_roulette_trigger_random">ランダムな数</string>
+    <string name="setup_roulette_random_helper">1〜10貫の間で、ルーレットを作動するタイミングをアプリがランダムに選びます。</string>
+    <string name="setup_decrease_threshold">しきい値を下げる</string>
+    <string name="setup_increase_threshold">しきい値を上げる</string>
+
+    <!-- Random roulette -->
+    <string name="roulette_trigger_title">ルーレット作動</string>
+    <string name="roulette_trigger_solo_message">%1$d 貫に達しました。ルーレットを回しましょう！</string>
+    <string name="roulette_trigger_group_message">%1$s が %2$d 貫に達しました。ルーレットを回しましょう！</string>
+    <string name="roulette_insufficient_participants_title">参加者が不足しています</string>
+    <string name="roulette_insufficient_participants_message">ルーレットを使うには、最低2人の参加者を追加してください。</string>
+
+    <!-- Wheel screen -->
+    <string name="wheel_screen_title">Sushi Roulette</string>
+    <string name="wheel_name_hint">名前を入力</string>
+    <string name="wheel_add">追加</string>
+    <string name="wheel_spin">回す</string>
+    <string name="wheel_participants_title">参加者</string>
+    <string name="wheel_delete_content_description">%1$s を削除</string>
+    <string name="wheel_selected_title">寿司を選ぶ：</string>
+    <string name="wheel_ok">OK</string>
+    <string name="wheel_min_participants_hint">ルーレットを回すには最低2人追加してください</string>
+    <string name="wheel_empty_wheel_hint">ルーレットを回すには参加者をもっと追加してください</string>
+
+    <!-- Achievements -->
+    <string name="achievements_screen_title">実績</string>
+    <string name="achievements_back">戻る</string>
+    <string name="achievements_progress_summary">%2$d 件中 %1$d 件の実績を解除</string>
+    <string name="achievements_progress_value">%1$d / %2$d</string>
+    <string name="achievements_unlocked_at">解除日：%1$s</string>
+    <string name="achievement_unlocked_banner">実績解除</string>
+    <string name="achievements_category_sushi">寿司</string>
+    <string name="achievements_category_solo_lifetime_sushi">ソロ累計寿司</string>
+    <string name="achievements_category_group_lifetime_sushi">グループ累計寿司</string>
+    <string name="achievements_category_games">対局</string>
+    <string name="achievements_category_roulette">ルーレット</string>
+    <string name="achievement_sushi_10_title">初めての宴</string>
+    <string name="achievement_sushi_10_description">1対局で10貫の寿司を食べる。</string>
+    <string name="achievement_sushi_20_title">食欲旺盛</string>
+    <string name="achievement_sushi_20_description">1対局で20貫の寿司を食べる。</string>
+    <string name="achievement_sushi_30_title">満足のお腹</string>
+    <string name="achievement_sushi_30_description">1対局で30貫の寿司を食べる。</string>
+    <string name="achievement_sushi_40_title">着実な食いしん坊</string>
+    <string name="achievement_sushi_40_description">1対局で40貫の寿司を食べる。</string>
+    <string name="achievement_sushi_50_title">板前見習い</string>
+    <string name="achievement_sushi_50_description">1対局で50貫の寿司を食べる。</string>
+    <string name="achievement_sushi_100_title">寿司の伝説</string>
+    <string name="achievement_sushi_100_description">1対局で100貫の寿司を食べる。</string>
+    <string name="achievement_solo_total_50_title">ひとり客</string>
+    <string name="achievement_solo_total_50_description">ソロ対局で50貫の寿司を累計する。</string>
+    <string name="achievement_solo_total_100_title">マイカウンター</string>
+    <string name="achievement_solo_total_100_description">ソロ対局で100貫の寿司を累計する。</string>
+    <string name="achievement_solo_total_250_title">安定の一膳</string>
+    <string name="achievement_solo_total_250_description">ソロ対局で250貫の寿司を累計する。</string>
+    <string name="achievement_solo_total_500_title">ソロ板前</string>
+    <string name="achievement_solo_total_500_description">ソロ対局で500貫の寿司を累計する。</string>
+    <string name="achievement_solo_total_1000_title">ソロの宴</string>
+    <string name="achievement_solo_total_1000_description">ソロ対局で1,000貫の寿司を累計する。</string>
+    <string name="achievement_solo_total_2500_title">おまかせマスター</string>
+    <string name="achievement_solo_total_2500_description">ソロ対局で2,500貫の寿司を累計する。</string>
+    <string name="achievement_solo_total_5000_title">畳の伝説</string>
+    <string name="achievement_solo_total_5000_description">ソロ対局で5,000貫の寿司を累計する。</string>
+    <string name="achievement_solo_total_10000_title">握り寿司の皇帝</string>
+    <string name="achievement_solo_total_10000_description">ソロ対局で10,000貫の寿司を累計する。</string>
+    <string name="achievement_group_total_50_title">初めてのグループ宴</string>
+    <string name="achievement_group_total_50_description">グループ対局で50貫の寿司を累計する。</string>
+    <string name="achievement_group_total_100_title">円卓</string>
+    <string name="achievement_group_total_100_description">グループ対局で100貫の寿司を累計する。</string>
+    <string name="achievement_group_total_250_title">みんなで宴</string>
+    <string name="achievement_group_total_250_description">グループ対局で250貫の寿司を累計する。</string>
+    <string name="achievement_group_total_500_title">チーム食いしん坊</string>
+    <string name="achievement_group_total_500_description">グループ対局で500貫の寿司を累計する。</string>
+    <string name="achievement_group_total_1000_title">終わらない回転寿司</string>
+    <string name="achievement_group_total_1000_description">グループ対局で1,000貫の寿司を累計する。</string>
+    <string name="achievement_group_total_2500_title">空腹の群れ</string>
+    <string name="achievement_group_total_2500_description">グループ対局で2,500貫の寿司を累計する。</string>
+    <string name="achievement_group_total_5000_title">畳祭り</string>
+    <string name="achievement_group_total_5000_description">グループ対局で5,000貫の寿司を累計する。</string>
+    <string name="achievement_group_total_10000_title">グループ寿司の龍</string>
+    <string name="achievement_group_total_10000_description">グループ対局で10,000貫の寿司を累計する。</string>
+    <string name="achievement_games_1_title">初対局</string>
+    <string name="achievement_games_1_description">最初の対局を完了する。</string>
+    <string name="achievement_games_10_title">常連客</string>
+    <string name="achievement_games_10_description">10対局を完了する。</string>
+    <string name="achievement_games_20_title">席予約済み</string>
+    <string name="achievement_games_20_description">20対局を完了する。</string>
+    <string name="achievement_games_30_title">畳の達人</string>
+    <string name="achievement_games_30_description">30対局を完了する。</string>
+    <string name="achievement_games_50_title">道場のベテラン</string>
+    <string name="achievement_games_50_description">50対局を完了する。</string>
+    <string name="achievement_games_100_title">寿司の皇帝</string>
+    <string name="achievement_games_100_description">100対局を完了する。</string>
+    <string name="achievement_roulette_first_spin_title">初めての一転</string>
+    <string name="achievement_roulette_first_spin_description">初めてルーレットを回す。</string>
+    <string name="achievement_roulette_spins_10_title">ルーレット好き</string>
+    <string name="achievement_roulette_spins_10_description">ルーレットを10回回す。</string>
+    <string name="achievement_roulette_spins_20_title">熱心なスピナー</string>
+    <string name="achievement_roulette_spins_20_description">ルーレットを20回回す。</string>
+    <string name="achievement_roulette_spins_30_title">ルーレット中毒</string>
+    <string name="achievement_roulette_spins_30_description">ルーレットを30回回す。</string>
+    <string name="achievement_roulette_spins_40_title">運の王</string>
+    <string name="achievement_roulette_spins_40_description">ルーレットを40回回す。</string>
+    <string name="achievement_roulette_spins_50_title">スピンマスター</string>
+    <string name="achievement_roulette_spins_50_description">ルーレットを50回回す。</string>
+    <string name="achievement_roulette_auto_first_title">サプライズルーレット</string>
+    <string name="achievement_roulette_auto_first_description">初めて自動ルーレットを作動させる。</string>
+</resources>

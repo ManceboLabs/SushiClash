@@ -3,10 +3,12 @@ package com.mancebolabs.sushiclash.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.mancebolabs.sushiclash.domain.model.AppLanguage
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.domain.repository.AchievementRepository
 import com.mancebolabs.sushiclash.domain.repository.FeedbackSettingsRepository
 import com.mancebolabs.sushiclash.domain.repository.HistoryRepository
+import com.mancebolabs.sushiclash.domain.repository.LanguageRepository
 import com.mancebolabs.sushiclash.domain.repository.ThemeRepository
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
@@ -19,6 +21,8 @@ import kotlinx.coroutines.launch
 
 data class SettingsUiState(
     val themeMode: AppThemeMode = AppThemeMode.LIGHT,
+    val activeAppLanguage: AppLanguage = AppLanguage.SYSTEM,
+    val showLanguagePickerDialog: Boolean = false,
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
     val showClearHistoryDialog: Boolean = false,
@@ -29,10 +33,13 @@ data class SettingsUiState(
 
 class SettingsViewModel(
     private val themeRepository: ThemeRepository,
+    private val languageRepository: LanguageRepository,
     private val historyRepository: HistoryRepository,
     private val feedbackSettingsRepository: FeedbackSettingsRepository,
     private val achievementRepository: AchievementRepository,
 ) : ViewModel() {
+
+    private val showLanguagePickerDialog = MutableStateFlow(false)
 
     private val showClearHistoryDialog = MutableStateFlow(false)
     private val showClearAchievementsDialog = MutableStateFlow(false)
@@ -42,41 +49,74 @@ class SettingsViewModel(
 
     val uiState: StateFlow<SettingsUiState> = combine(
         themeRepository.themeMode,
-        feedbackSettingsRepository.soundEnabled,
-        feedbackSettingsRepository.vibrationEnabled,
+        languageRepository.appLanguage,
+        showLanguagePickerDialog,
         combine(
-            showClearHistoryDialog,
-            showClearAchievementsDialog,
-            persistenceError,
-            isPersistenceRetrying,
-        ) { clearHistoryDialog, clearAchievementsDialog, hasError, isRetrying ->
-            SettingsPersistenceUiState(
-                showClearHistoryDialog = clearHistoryDialog,
-                showClearAchievementsDialog = clearAchievementsDialog,
-                persistenceError = hasError,
-                isPersistenceRetrying = isRetrying,
+            feedbackSettingsRepository.soundEnabled,
+            feedbackSettingsRepository.vibrationEnabled,
+            combine(
+                showClearHistoryDialog,
+                showClearAchievementsDialog,
+                persistenceError,
+                isPersistenceRetrying,
+            ) { clearHistoryDialog, clearAchievementsDialog, hasError, isRetrying ->
+                SettingsPersistenceUiState(
+                    showClearHistoryDialog = clearHistoryDialog,
+                    showClearAchievementsDialog = clearAchievementsDialog,
+                    persistenceError = hasError,
+                    isPersistenceRetrying = isRetrying,
+                )
+            },
+        ) { soundEnabled, vibrationEnabled, persistence ->
+            SettingsPreferencesUiState(
+                soundEnabled = soundEnabled,
+                vibrationEnabled = vibrationEnabled,
+                persistence = persistence,
             )
         },
-    ) { themeMode, soundEnabled, vibrationEnabled, persistence ->
+    ) { themeMode, activeLanguage, languageDialogVisible, preferences ->
         SettingsUiState(
             themeMode = themeMode,
-            soundEnabled = soundEnabled,
-            vibrationEnabled = vibrationEnabled,
-            showClearHistoryDialog = persistence.showClearHistoryDialog,
-            showClearAchievementsDialog = persistence.showClearAchievementsDialog,
-            persistenceError = persistence.persistenceError,
-            isPersistenceRetrying = persistence.isPersistenceRetrying,
+            activeAppLanguage = activeLanguage,
+            showLanguagePickerDialog = languageDialogVisible,
+            soundEnabled = preferences.soundEnabled,
+            vibrationEnabled = preferences.vibrationEnabled,
+            showClearHistoryDialog = preferences.persistence.showClearHistoryDialog,
+            showClearAchievementsDialog = preferences.persistence.showClearAchievementsDialog,
+            persistenceError = preferences.persistence.persistenceError,
+            isPersistenceRetrying = preferences.persistence.isPersistenceRetrying,
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = SettingsUiState(),
+        initialValue = SettingsUiState(
+            activeAppLanguage = languageRepository.getAppLanguage(),
+        ),
     )
 
     fun onThemeModeSelected(themeMode: AppThemeMode) {
         viewModelScope.launch {
             persistThemeMode(themeMode)
         }
+    }
+
+    fun onLanguagePickerRequested() {
+        showLanguagePickerDialog.value = true
+    }
+
+    fun onLanguagePickerDismissed() {
+        showLanguagePickerDialog.value = false
+    }
+
+    fun onLanguageSelected(language: AppLanguage) {
+        showLanguagePickerDialog.value = false
+        if (language == languageRepository.getAppLanguage()) return
+
+        languageRepository.setAppLanguage(language)
+    }
+
+    fun onAppLanguageRefreshRequested() {
+        languageRepository.refreshAppLanguage()
     }
 
     fun onSoundEnabledChanged(enabled: Boolean) {
@@ -139,8 +179,6 @@ class SettingsViewModel(
 
     private suspend fun persistClearHistory() {
         try {
-            // Only persisted history lists are cleared. Active game, theme, and onboarding
-            // completion live in separate preferences and are intentionally untouched here.
             historyRepository.clearHistory()
             pendingSettingsWrite = null
             showClearHistoryDialog.value = false
@@ -155,8 +193,6 @@ class SettingsViewModel(
 
     private suspend fun persistClearAchievements() {
         try {
-            // Only achievement progress is cleared. History, active game, theme, feedback
-            // settings, and onboarding live in separate preferences and stay untouched.
             achievementRepository.clearAchievements()
             pendingSettingsWrite = null
             showClearAchievementsDialog.value = false
@@ -211,6 +247,7 @@ class SettingsViewModel(
     companion object {
         fun factory(
             themeRepository: ThemeRepository,
+            languageRepository: LanguageRepository,
             historyRepository: HistoryRepository,
             feedbackSettingsRepository: FeedbackSettingsRepository,
             achievementRepository: AchievementRepository,
@@ -220,6 +257,7 @@ class SettingsViewModel(
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return SettingsViewModel(
                         themeRepository,
+                        languageRepository,
                         historyRepository,
                         feedbackSettingsRepository,
                         achievementRepository,
@@ -237,6 +275,12 @@ private sealed interface PendingSettingsWrite {
     data object ClearHistory : PendingSettingsWrite
     data object ClearAchievements : PendingSettingsWrite
 }
+
+private data class SettingsPreferencesUiState(
+    val soundEnabled: Boolean,
+    val vibrationEnabled: Boolean,
+    val persistence: SettingsPersistenceUiState,
+)
 
 private data class SettingsPersistenceUiState(
     val showClearHistoryDialog: Boolean,

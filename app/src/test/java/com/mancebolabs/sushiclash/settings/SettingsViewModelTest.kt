@@ -3,6 +3,7 @@ package com.mancebolabs.sushiclash.settings
 import app.cash.turbine.test
 import com.mancebolabs.sushiclash.domain.model.achievement.AchievementId
 import com.mancebolabs.sushiclash.domain.model.achievement.AchievementPersistenceState
+import com.mancebolabs.sushiclash.domain.model.AppLanguage
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.domain.model.GroupGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
@@ -13,6 +14,7 @@ import com.mancebolabs.sushiclash.navigation.SushiDestination
 import com.mancebolabs.sushiclash.testutil.FakeAchievementRepository
 import com.mancebolabs.sushiclash.testutil.FakeFeedbackSettingsRepository
 import com.mancebolabs.sushiclash.testutil.FakeHistoryRepository
+import com.mancebolabs.sushiclash.testutil.FakeLanguageRepository
 import com.mancebolabs.sushiclash.testutil.FakeThemeRepository
 import com.mancebolabs.sushiclash.testutil.MainDispatcherRule
 import java.io.IOException
@@ -35,6 +37,7 @@ class SettingsViewModelTest {
     fun givenPersistedLightTheme_whenObservingState_thenThemeModeIsLight() = runTest {
         val viewModel = SettingsViewModel(
             themeRepository = FakeThemeRepository(AppThemeMode.LIGHT),
+            languageRepository = FakeLanguageRepository(),
             historyRepository = FakeHistoryRepository(),
             feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
             achievementRepository = FakeAchievementRepository(),
@@ -47,9 +50,79 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun givenDifferentLanguageSelected_whenLanguageSelected_thenAppliesImmediatelyAndClosesDialog() = runTest {
+        val languageRepository = FakeLanguageRepository(AppLanguage.ENGLISH)
+        val viewModel = SettingsViewModel(
+            themeRepository = FakeThemeRepository(),
+            languageRepository = languageRepository,
+            historyRepository = FakeHistoryRepository(),
+            feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
+            achievementRepository = FakeAchievementRepository(),
+        )
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onLanguagePickerRequested()
+            assertTrue(awaitItem().showLanguagePickerDialog)
+
+            viewModel.onLanguageSelected(AppLanguage.FRENCH)
+            val state = awaitItem()
+            assertFalse(state.showLanguagePickerDialog)
+            assertEquals(1, languageRepository.setAppLanguageCallCount)
+            assertEquals(AppLanguage.FRENCH, languageRepository.lastSetLanguage)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenSameLanguageSelected_whenLanguageSelected_thenClosesDialogWithoutCallingRepository() = runTest {
+        val languageRepository = FakeLanguageRepository(AppLanguage.SPANISH)
+        val viewModel = SettingsViewModel(
+            themeRepository = FakeThemeRepository(),
+            languageRepository = languageRepository,
+            historyRepository = FakeHistoryRepository(),
+            feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
+            achievementRepository = FakeAchievementRepository(),
+        )
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onLanguagePickerRequested()
+            assertTrue(awaitItem().showLanguagePickerDialog)
+
+            viewModel.onLanguageSelected(AppLanguage.SPANISH)
+            val state = awaitItem()
+            assertFalse(state.showLanguagePickerDialog)
+            assertEquals(0, languageRepository.setAppLanguageCallCount)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenRepositoryLanguageChanged_whenRefreshRequested_thenActiveLanguageUpdates() = runTest {
+        val languageRepository = FakeLanguageRepository(AppLanguage.SPANISH)
+        val viewModel = SettingsViewModel(
+            themeRepository = FakeThemeRepository(),
+            languageRepository = languageRepository,
+            historyRepository = FakeHistoryRepository(),
+            feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
+            achievementRepository = FakeAchievementRepository(),
+        )
+
+        viewModel.uiState.test {
+            assertEquals(AppLanguage.SPANISH, awaitItem().activeAppLanguage)
+
+            languageRepository.setCurrentLanguage(AppLanguage.GERMAN)
+            viewModel.onAppLanguageRefreshRequested()
+            assertEquals(AppLanguage.GERMAN, awaitItem().activeAppLanguage)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun givenDarkThemeSelected_whenUpdatingTheme_thenStateReflectsDarkMode() = runTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT)
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeLanguageRepository(), FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -84,7 +157,7 @@ class SettingsViewModelTest {
                 ),
             ),
         )
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), FakeLanguageRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.onClearHistoryRequested()
         viewModel.onClearHistoryConfirmed()
@@ -97,7 +170,7 @@ class SettingsViewModelTest {
     @Test
     fun givenClearHistoryRequested_whenConfirmed_thenDialogIsDismissed() = runTest {
         val historyRepository = FakeHistoryRepository()
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), FakeLanguageRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -113,7 +186,7 @@ class SettingsViewModelTest {
     @Test
     fun givenClearHistoryRequested_whenDismissed_thenHistoryIsNotCleared() = runTest {
         val historyRepository = FakeHistoryRepository()
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), FakeLanguageRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -130,7 +203,7 @@ class SettingsViewModelTest {
     @Test
     fun givenClearHistoryConfirmed_whenThemeWasDark_thenThemeRemainsDark() = runTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.DARK)
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeLanguageRepository(), FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.onClearHistoryConfirmed()
 
@@ -141,6 +214,7 @@ class SettingsViewModelTest {
     fun givenDefaultFeedbackSettings_whenObservingState_thenSoundAndVibrationEnabled() = runTest {
         val viewModel = SettingsViewModel(
             themeRepository = FakeThemeRepository(),
+            languageRepository = FakeLanguageRepository(),
             historyRepository = FakeHistoryRepository(),
             feedbackSettingsRepository = FakeFeedbackSettingsRepository(),
             achievementRepository = FakeAchievementRepository(),
@@ -159,6 +233,7 @@ class SettingsViewModelTest {
         val feedbackSettingsRepository = FakeFeedbackSettingsRepository()
         val viewModel = SettingsViewModel(
             FakeThemeRepository(),
+            FakeLanguageRepository(),
             FakeHistoryRepository(),
             feedbackSettingsRepository,
             FakeAchievementRepository(),
@@ -179,6 +254,7 @@ class SettingsViewModelTest {
         }
         val viewModel = SettingsViewModel(
             FakeThemeRepository(),
+            FakeLanguageRepository(),
             FakeHistoryRepository(),
             feedbackSettingsRepository,
             FakeAchievementRepository(),
@@ -201,6 +277,7 @@ class SettingsViewModelTest {
         }
         val viewModel = SettingsViewModel(
             FakeThemeRepository(),
+            FakeLanguageRepository(),
             FakeHistoryRepository(),
             feedbackSettingsRepository,
             FakeAchievementRepository(),
@@ -232,7 +309,7 @@ class SettingsViewModelTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT).apply {
             setThemeModeThrow = IOException("disk")
         }
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeLanguageRepository(), FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             assertEquals(AppThemeMode.LIGHT, awaitItem().themeMode)
@@ -249,7 +326,7 @@ class SettingsViewModelTest {
         val themeRepository = FakeThemeRepository(AppThemeMode.LIGHT).apply {
             setThemeModeThrow = IOException("disk")
         }
-        val viewModel = SettingsViewModel(themeRepository, FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = SettingsViewModel(themeRepository, FakeLanguageRepository(), FakeHistoryRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -277,7 +354,7 @@ class SettingsViewModelTest {
         )
         historyRepository.setSoloHistory(listOf(soloEntry))
         historyRepository.clearHistoryThrowable = IOException("disk")
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), FakeLanguageRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -309,7 +386,7 @@ class SettingsViewModelTest {
         )
         historyRepository.setSoloHistory(listOf(soloEntry))
         historyRepository.clearHistoryThrowable = IOException("disk")
-        val viewModel = SettingsViewModel(FakeThemeRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
+        val viewModel = SettingsViewModel(FakeThemeRepository(), FakeLanguageRepository(), historyRepository, FakeFeedbackSettingsRepository(), FakeAchievementRepository())
 
         viewModel.uiState.test {
             awaitItem()
@@ -352,6 +429,7 @@ class SettingsViewModelTest {
         )
         val viewModel = SettingsViewModel(
             FakeThemeRepository(),
+            FakeLanguageRepository(),
             FakeHistoryRepository(),
             FakeFeedbackSettingsRepository(),
             achievementRepository,
@@ -368,6 +446,7 @@ class SettingsViewModelTest {
     fun givenClearAchievementsRequested_whenConfirmed_thenDialogIsDismissed() = runTest {
         val viewModel = SettingsViewModel(
             FakeThemeRepository(),
+            FakeLanguageRepository(),
             FakeHistoryRepository(),
             FakeFeedbackSettingsRepository(),
             FakeAchievementRepository(),
@@ -393,6 +472,7 @@ class SettingsViewModelTest {
         )
         val viewModel = SettingsViewModel(
             FakeThemeRepository(),
+            FakeLanguageRepository(),
             FakeHistoryRepository(),
             FakeFeedbackSettingsRepository(),
             achievementRepository,
@@ -433,6 +513,7 @@ class SettingsViewModelTest {
         )
         val viewModel = SettingsViewModel(
             FakeThemeRepository(),
+            FakeLanguageRepository(),
             historyRepository,
             FakeFeedbackSettingsRepository(),
             achievementRepository,
@@ -468,6 +549,7 @@ class SettingsViewModelTest {
         }
         val viewModel = SettingsViewModel(
             FakeThemeRepository(),
+            FakeLanguageRepository(),
             FakeHistoryRepository(),
             FakeFeedbackSettingsRepository(),
             achievementRepository,

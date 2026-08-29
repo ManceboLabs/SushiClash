@@ -7,4 +7,6 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="itamae_background">#FFF9F9F9</color>
+    <color name="itamae_dark_background">#FF1A1C1E</color>
 </resources>

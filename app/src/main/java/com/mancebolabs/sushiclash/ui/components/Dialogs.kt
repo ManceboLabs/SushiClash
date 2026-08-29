@@ -236,10 +236,10 @@ private fun FinishGameDialogLoadingPreview() {
 private fun ConfirmationDialogPreview() {
     ItamaePreviewTheme {
         ConfirmationDialog(
-            title = "Ruleta activada",
-            message = "Has alcanzado 5 sushi. Vamos a girar la ruleta.",
-            confirmLabel = "OK",
-            dismissLabel = "Cancelar",
+            title = stringResource(R.string.roulette_trigger_title),
+            message = stringResource(R.string.roulette_trigger_solo_message, 5),
+            confirmLabel = stringResource(R.string.wheel_ok),
+            dismissLabel = stringResource(R.string.counter_cancel),
             onConfirm = {},
             onDismiss = {},
         )

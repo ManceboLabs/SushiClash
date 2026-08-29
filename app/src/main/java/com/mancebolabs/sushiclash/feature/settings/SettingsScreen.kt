@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Vibration
@@ -33,15 +34,20 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushiclash.R
+import com.mancebolabs.sushiclash.domain.model.AppLanguage
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.ui.components.ConfirmationDialog
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
@@ -57,6 +63,10 @@ import com.mancebolabs.sushiclash.ui.theme.rememberItamaeBottomContentPadding
 fun SettingsScreen(
     uiState: SettingsUiState,
     onThemeModeSelected: (AppThemeMode) -> Unit,
+    onLanguagePickerRequested: () -> Unit,
+    onLanguagePickerDismissed: () -> Unit,
+    onLanguageSelected: (AppLanguage) -> Unit,
+    onAppLanguageRefreshRequested: () -> Unit,
     onSoundEnabledChanged: (Boolean) -> Unit,
     onVibrationEnabledChanged: (Boolean) -> Unit,
     onClearHistoryRequested: () -> Unit,
@@ -73,6 +83,19 @@ fun SettingsScreen(
 ) {
     val scrollState = rememberScrollState()
     val bottomContentPadding = rememberItamaeBottomContentPadding(scrollable = true)
+    val configuration = LocalConfiguration.current
+
+    LaunchedEffect(configuration) {
+        onAppLanguageRefreshRequested()
+    }
+
+    if (uiState.showLanguagePickerDialog) {
+        LanguagePickerDialog(
+            selectedLanguage = uiState.activeAppLanguage,
+            onLanguageSelected = onLanguageSelected,
+            onDismiss = onLanguagePickerDismissed,
+        )
+    }
 
     if (uiState.showClearHistoryDialog) {
         ConfirmationDialog(
@@ -112,6 +135,26 @@ fun SettingsScreen(
             PersistenceErrorMessage(
                 isRetrying = uiState.isPersistenceRetrying,
                 onRetry = onPersistenceRetry,
+            )
+        }
+
+        SettingsSectionCard(
+            title = stringResource(R.string.settings_language_section),
+            icon = Icons.Outlined.Language,
+        ) {
+            val displayLanguage = AppLanguage.resolveEffectiveDisplayLanguage(uiState.activeAppLanguage)
+            val activeLanguageLabel = stringResource(displayLanguage.labelRes())
+            val languageRowDescription = stringResource(
+                R.string.settings_language_open_picker_content_description,
+                activeLanguageLabel,
+            )
+            SettingsActionRow(
+                icon = Icons.Outlined.Language,
+                title = stringResource(R.string.settings_language_section),
+                description = activeLanguageLabel,
+                trailing = SettingsTrailing.Chevron,
+                onClick = onLanguagePickerRequested,
+                contentDescription = languageRowDescription,
             )
         }
 
@@ -255,6 +298,7 @@ private fun SettingsActionRow(
     trailing: SettingsTrailing,
     onClick: () -> Unit,
     destructive: Boolean = false,
+    contentDescription: String? = null,
 ) {
     val iconTint = if (destructive) {
         MaterialTheme.colorScheme.error
@@ -271,6 +315,13 @@ private fun SettingsActionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .then(
+                if (contentDescription != null) {
+                    Modifier.semantics { this.contentDescription = contentDescription }
+                } else {
+                    Modifier
+                },
+            )
             .then(
                 if (rowClickable) {
                     Modifier.clickable(
@@ -481,6 +532,49 @@ private fun ThemeOptionCard(
     }
 }
 
+@Preview(name = "Settings language picker open – Light", showBackground = true)
+@Composable
+private fun SettingsLanguagePickerOpenPreview() {
+    ItamaePreviewTheme(darkTheme = false) {
+        SettingsScreen(
+            uiState = SettingsUiState(
+                themeMode = AppThemeMode.LIGHT,
+                activeAppLanguage = AppLanguage.ENGLISH,
+                showLanguagePickerDialog = true,
+            ),
+            onThemeModeSelected = {},
+            onLanguagePickerRequested = {},
+            onLanguagePickerDismissed = {},
+            onLanguageSelected = {},
+            onAppLanguageRefreshRequested = {},
+            onSoundEnabledChanged = {},
+            onVibrationEnabledChanged = {},
+            onClearHistoryRequested = {},
+            onClearHistoryConfirmed = {},
+            onClearHistoryDismissed = {},
+            onClearAchievementsRequested = {},
+            onClearAchievementsConfirmed = {},
+            onClearAchievementsDismissed = {},
+            onViewTutorialRequested = {},
+            onViewAchievementsRequested = {},
+            onPersistenceRetry = {},
+            appVersion = "1.0",
+        )
+    }
+}
+
+@Preview(name = "Language picker dialog", showBackground = true)
+@Composable
+private fun LanguagePickerDialogPreview() {
+    ItamaePreviewTheme {
+        LanguagePickerDialog(
+            selectedLanguage = AppLanguage.SPANISH,
+            onLanguageSelected = {},
+            onDismiss = {},
+        )
+    }
+}
+
 @Preview(name = "Settings – Light", showBackground = true)
 @Composable
 private fun SettingsLightPreview() {
@@ -488,6 +582,10 @@ private fun SettingsLightPreview() {
         SettingsScreen(
             uiState = SettingsUiState(themeMode = AppThemeMode.LIGHT),
             onThemeModeSelected = {},
+            onLanguagePickerRequested = {},
+            onLanguagePickerDismissed = {},
+            onLanguageSelected = {},
+            onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
@@ -511,6 +609,10 @@ private fun SettingsDarkPreview() {
         SettingsScreen(
             uiState = SettingsUiState(themeMode = AppThemeMode.DARK),
             onThemeModeSelected = {},
+            onLanguagePickerRequested = {},
+            onLanguagePickerDismissed = {},
+            onLanguageSelected = {},
+            onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
@@ -537,6 +639,10 @@ private fun SettingsClearHistoryDialogPreview() {
                 showClearHistoryDialog = true,
             ),
             onThemeModeSelected = {},
+            onLanguagePickerRequested = {},
+            onLanguagePickerDismissed = {},
+            onLanguageSelected = {},
+            onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
@@ -563,6 +669,10 @@ private fun SettingsPersistenceErrorLightPreview() {
                 persistenceError = true,
             ),
             onThemeModeSelected = {},
+            onLanguagePickerRequested = {},
+            onLanguagePickerDismissed = {},
+            onLanguageSelected = {},
+            onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
@@ -589,6 +699,10 @@ private fun SettingsPersistenceErrorDarkPreview() {
                 persistenceError = true,
             ),
             onThemeModeSelected = {},
+            onLanguagePickerRequested = {},
+            onLanguagePickerDismissed = {},
+            onLanguageSelected = {},
+            onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
             onClearHistoryRequested = {},
