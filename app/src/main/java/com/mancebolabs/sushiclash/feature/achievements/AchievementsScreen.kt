@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,6 +35,7 @@ import com.mancebolabs.sushiclash.domain.model.achievement.AchievementId
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
 import com.mancebolabs.sushiclash.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
+import com.mancebolabs.sushiclash.ui.components.SushiIcon
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushiclash.ui.theme.itamaeScreenTopInsets
@@ -206,11 +206,9 @@ private fun AchievementIcon(
                 AchievementCategory.SOLO_LIFETIME_SUSHI,
                 AchievementCategory.GROUP_LIFETIME_SUSHI,
                 -> {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_sushi),
+                    SushiIcon(
                         contentDescription = null,
                         modifier = Modifier.size(ItamaeSpacing.lg),
-                        tint = iconTint,
                     )
                 }
                 AchievementCategory.GAMES -> {

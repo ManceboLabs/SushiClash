@@ -1,6 +1,5 @@
 package com.mancebolabs.sushiclash.feature.onboarding
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,8 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
+import com.mancebolabs.sushiclash.ui.components.SushiIcon
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
@@ -198,11 +196,9 @@ private fun OnboardingIllustration(
     ) {
         when (illustration) {
             is OnboardingIllustration.DrawableResource -> {
-                Image(
-                    painter = painterResource(illustration.resId),
+                SushiIcon(
                     contentDescription = null,
                     modifier = Modifier.size(140.dp),
-                    contentScale = ContentScale.Fit,
                 )
             }
             is OnboardingIllustration.VectorIcon -> {
