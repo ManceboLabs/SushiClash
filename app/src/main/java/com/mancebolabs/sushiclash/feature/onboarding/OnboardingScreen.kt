@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -27,13 +29,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +47,9 @@ import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushiclash.ui.theme.itamaeScreenTopInsets
+import kotlinx.coroutines.launch
+
+internal const val ONBOARDING_PAGER_TEST_TAG = "onboarding_pager"
 
 private val OnboardingIllustrationMaxSize = 220.dp
 private val OnboardingIllustrationMinSize = 120.dp
@@ -110,10 +113,13 @@ fun OnboardingScreen(
     modifier: Modifier = Modifier,
     initialStepIndex: Int = 0,
 ) {
-    var currentStepIndex by remember(steps, initialStepIndex) {
-        mutableIntStateOf(initialStepIndex.coerceIn(0, (steps.size - 1).coerceAtLeast(0)))
-    }
-    val currentStep = steps[currentStepIndex]
+    val safeInitialIndex = initialStepIndex.coerceIn(0, (steps.size - 1).coerceAtLeast(0))
+    val pagerState = rememberPagerState(
+        initialPage = safeInitialIndex,
+        pageCount = { steps.size },
+    )
+    val scope = rememberCoroutineScope()
+    val currentStepIndex = pagerState.currentPage
     val isFirstStep = currentStepIndex == 0
     val isLastStep = currentStepIndex == steps.lastIndex
 
@@ -138,13 +144,16 @@ fun OnboardingScreen(
 
         Spacer(modifier = Modifier.height(ItamaeSpacing.md))
 
-        Box(
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
-        ) {
+                .fillMaxWidth()
+                .testTag(ONBOARDING_PAGER_TEST_TAG),
+            beyondViewportPageCount = 0,
+        ) { page ->
             OnboardingStepContent(
-                step = currentStep,
+                step = steps[page],
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -163,8 +172,16 @@ fun OnboardingScreen(
             showPrevious = !isFirstStep,
             showNext = !isLastStep,
             finishLabel = stringResource(R.string.onboarding_finish),
-            onPrevious = { currentStepIndex -= 1 },
-            onNext = { currentStepIndex += 1 },
+            onPrevious = {
+                scope.launch {
+                    pagerState.animateScrollToPage(currentStepIndex - 1)
+                }
+            },
+            onNext = {
+                scope.launch {
+                    pagerState.animateScrollToPage(currentStepIndex + 1)
+                }
+            },
             onFinish = onFinish,
         )
     }
