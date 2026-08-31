@@ -2,9 +2,13 @@ package com.mancebolabs.sushiclash.ui.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.ui.graphics.Color
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +16,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -31,20 +36,31 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushiclash.R
+import com.mancebolabs.sushiclash.ui.theme.FloatingNavBarMetrics
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.itamaeFloatingNavBarShadow
-import com.mancebolabs.sushiclash.ui.theme.itamaeWasabiAccent
+import com.mancebolabs.sushiclash.ui.theme.itamaeFloatingNavBarSurfaceColor
+import com.mancebolabs.sushiclash.ui.theme.itamaeNavInactiveIconColor
+import com.mancebolabs.sushiclash.ui.theme.itamaeNavSelectedIndicatorColor
+import com.mancebolabs.sushiclash.ui.theme.itamaeNavSelectedIndicatorShadow
+import com.mancebolabs.sushiclash.ui.theme.rememberItamaeNigiriBorderBrush
 
-private val NavBarBorderWidth = 1.5.dp
-private val NavItemSize = 64.dp
-private val NavIconSize = 32.dp
-private val NavIndicatorSize = 56.dp
-private val NavItemSpacing = 12.dp
-private val NavContainerHorizontalPadding = 12.dp
-private val NavContainerVerticalPadding = 8.dp
+private val navFloatAnimationSpec = tween<Float>(
+    durationMillis = FloatingNavBarMetrics.indicatorAnimationMillis,
+    easing = FastOutSlowInEasing,
+)
+
+private val navColorAnimationSpec: AnimationSpec<Color> = tween(
+    durationMillis = FloatingNavBarMetrics.indicatorAnimationMillis,
+    easing = FastOutSlowInEasing,
+)
+
+private val navDpAnimationSpec: AnimationSpec<Dp> = tween(
+    durationMillis = FloatingNavBarMetrics.indicatorAnimationMillis,
+    easing = FastOutSlowInEasing,
+)
 
 data class ItamaeNavItem(
     val route: String,
@@ -66,29 +82,50 @@ fun ItamaeFloatingNavBar(
     onItemSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    val selectedIndex = items.indexOfFirst { it.route == selectedRoute }.coerceAtLeast(0)
+    val indicatorOffset by animateDpAsState(
+        targetValue = FloatingNavBarMetrics.indicatorOffsetForIndex(selectedIndex),
+        animationSpec = navDpAnimationSpec,
+        label = "navIndicatorOffset",
+    )
+    val nigiriBorderBrush = rememberItamaeNigiriBorderBrush()
+
+    Box(
         modifier = modifier
             .itamaeFloatingNavBarShadow(shape = ItamaeShapes.extraLarge)
             .clip(ItamaeShapes.extraLarge)
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.95f))
+            .background(itamaeFloatingNavBarSurfaceColor())
             .border(
-                width = NavBarBorderWidth,
-                color = itamaeWasabiAccent(alpha = 0.85f),
+                width = FloatingNavBarMetrics.borderWidth,
+                brush = nigiriBorderBrush,
                 shape = ItamaeShapes.extraLarge,
             )
             .padding(
-                horizontal = NavContainerHorizontalPadding,
-                vertical = NavContainerVerticalPadding,
+                horizontal = FloatingNavBarMetrics.containerHorizontalPadding,
+                vertical = FloatingNavBarMetrics.containerVerticalPadding,
             ),
-        horizontalArrangement = Arrangement.spacedBy(NavItemSpacing),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        items.forEach { item ->
-            ItamaeFloatingNavBarItem(
-                item = item,
-                selected = item.route == selectedRoute,
-                onClick = { onItemSelected(item.route) },
-            )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .offset(x = indicatorOffset)
+                .size(FloatingNavBarMetrics.indicatorSize)
+                .itamaeNavSelectedIndicatorShadow()
+                .clip(CircleShape)
+                .background(itamaeNavSelectedIndicatorColor()),
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(FloatingNavBarMetrics.itemSpacing),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            items.forEach { item ->
+                ItamaeFloatingNavBarItem(
+                    item = item,
+                    selected = item.route == selectedRoute,
+                    onClick = { onItemSelected(item.route) },
+                )
+            }
         }
     }
 }
@@ -100,53 +137,28 @@ private fun ItamaeFloatingNavBarItem(
     onClick: () -> Unit,
 ) {
     val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.25f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium,
-        ),
+        targetValue = if (selected) 1.2f else 1f,
+        animationSpec = navFloatAnimationSpec,
         label = "navIconScale",
     )
     val iconTint by animateColorAsState(
         targetValue = if (selected) {
             MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
+            itamaeNavInactiveIconColor()
         },
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium,
-        ),
+        animationSpec = navColorAnimationSpec,
         label = "navIconTint",
     )
     val iconAlpha by animateFloatAsState(
-        targetValue = if (selected) 1f else 0.72f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium,
-        ),
+        targetValue = if (selected) 1f else 0.78f,
+        animationSpec = navFloatAnimationSpec,
         label = "navIconAlpha",
-    )
-    val indicatorScale by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium,
-        ),
-        label = "navIndicatorScale",
-    )
-    val indicatorAlpha by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium,
-        ),
-        label = "navIndicatorAlpha",
     )
 
     Box(
         modifier = Modifier
-            .size(NavItemSize)
+            .size(FloatingNavBarMetrics.itemSize)
             .clip(CircleShape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -155,22 +167,13 @@ private fun ItamaeFloatingNavBarItem(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .size(NavIndicatorSize)
-                .scale(indicatorScale)
-                .alpha(indicatorAlpha)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)),
-        )
-
         when {
             item.icon != null -> {
                 Icon(
                     imageVector = item.icon,
                     contentDescription = item.contentDescription,
                     modifier = Modifier
-                        .size(NavIconSize)
+                        .size(FloatingNavBarMetrics.iconSize)
                         .scale(iconScale)
                         .alpha(iconAlpha),
                     tint = iconTint,
@@ -180,7 +183,7 @@ private fun ItamaeFloatingNavBarItem(
                 SushiIcon(
                     contentDescription = item.contentDescription,
                     modifier = Modifier
-                        .size(NavIconSize)
+                        .size(FloatingNavBarMetrics.iconSize)
                         .scale(iconScale)
                         .alpha(iconAlpha),
                 )
@@ -212,9 +215,9 @@ private val previewNavItems = listOf(
     ),
 )
 
-@Preview(name = "Floating nav bar – Counter selected", showBackground = true)
+@Preview(name = "Floating nav bar – Counter selected (Light)", showBackground = true)
 @Composable
-private fun FloatingNavBarCounterSelectedPreview() {
+private fun FloatingNavBarCounterSelectedLightPreview() {
     ItamaePreviewTheme {
         ItamaeFloatingNavBar(
             items = previewNavItems,
@@ -224,13 +227,37 @@ private fun FloatingNavBarCounterSelectedPreview() {
     }
 }
 
-@Preview(name = "Floating nav bar – Wheel selected", showBackground = true)
+@Preview(name = "Floating nav bar – Wheel selected (Dark)", showBackground = true, backgroundColor = 0xFF1A1C1E)
 @Composable
-private fun FloatingNavBarWheelSelectedPreview() {
+private fun FloatingNavBarWheelSelectedDarkPreview() {
     ItamaePreviewTheme(darkTheme = true) {
         ItamaeFloatingNavBar(
             items = previewNavItems,
             selectedRoute = "wheel",
+            onItemSelected = {},
+        )
+    }
+}
+
+@Preview(name = "Floating nav bar – History selected (Light)", showBackground = true)
+@Composable
+private fun FloatingNavBarHistorySelectedLightPreview() {
+    ItamaePreviewTheme {
+        ItamaeFloatingNavBar(
+            items = previewNavItems,
+            selectedRoute = "history",
+            onItemSelected = {},
+        )
+    }
+}
+
+@Preview(name = "Floating nav bar – Settings selected (Dark)", showBackground = true, backgroundColor = 0xFF1A1C1E)
+@Composable
+private fun FloatingNavBarSettingsSelectedDarkPreview() {
+    ItamaePreviewTheme(darkTheme = true) {
+        ItamaeFloatingNavBar(
+            items = previewNavItems,
+            selectedRoute = "settings",
             onItemSelected = {},
         )
     }

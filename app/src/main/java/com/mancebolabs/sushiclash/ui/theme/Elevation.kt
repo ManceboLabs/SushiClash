@@ -29,17 +29,6 @@ fun itamaeWasabiAccent(alpha: Float = 0.85f): Color {
 }
 
 @Composable
-fun Modifier.itamaeFloatingNavBarShadow(
-    elevation: Dp = 4.dp,
-    shape: Shape = ItamaeShapes.extraLarge,
-): Modifier = shadow(
-    elevation = elevation,
-    shape = shape,
-    spotColor = itamaeWasabiAccent(alpha = 0.22f),
-    ambientColor = itamaeWasabiAccent(alpha = 0.12f),
-)
-
-@Composable
 fun Modifier.itamaeCardShadow(
     elevation: Dp = 1.dp,
     shape: Shape = ItamaeShapes.large,
