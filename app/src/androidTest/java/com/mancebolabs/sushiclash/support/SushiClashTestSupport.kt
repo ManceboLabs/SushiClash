@@ -86,7 +86,7 @@ fun SushiClashComposeTestRule.skipOnboardingIfShown() {
 }
 
 fun SushiClashComposeTestRule.completeOnboarding() {
-    waitForText(R.string.onboarding_step_welcome_title)
+    waitForText(R.string.onboarding_step_welcome_dialogue)
 
     while (
         onAllNodesWithText(string(R.string.onboarding_next), useUnmergedTree = true)
@@ -102,7 +102,7 @@ fun SushiClashComposeTestRule.completeOnboarding() {
 }
 
 fun SushiClashComposeTestRule.navigateToLastOnboardingStep() {
-    waitForText(R.string.onboarding_step_welcome_title)
+    waitForText(R.string.onboarding_step_welcome_dialogue)
 
     repeat(defaultOnboardingSteps().lastIndex) {
         clickText(R.string.onboarding_next)

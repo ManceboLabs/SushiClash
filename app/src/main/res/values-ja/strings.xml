@@ -53,22 +53,30 @@
     <string name="onboarding_previous">前へ</string>
     <string name="onboarding_next">次へ</string>
     <string name="onboarding_finish">はじめる</string>
+    <string name="onboarding_step_welcome_dialogue">Sushi Clash へようこそ！ひとりで寿司を数えたり、友だちとテーブルで競い合ったりできます。</string>
+    <string name="onboarding_step_solo_dialogue">寿司をタップして、食べた一貫ずつカウントしましょう。</string>
+    <string name="onboarding_step_group_dialogue">最大6人のプレイヤーを追加し、スマホを中央に置いて全員がタップできるようにします。</string>
+    <string name="onboarding_step_roulette_dialogue">ルーレットを回して、誰が寿司を選ぶか決めましょう。</string>
+    <string name="onboarding_step_random_roulette_dialogue">特定の数に達すると、ルーレットが自動的に作動します！</string>
+    <string name="onboarding_step_history_dialogue">対局を保存して、ベストスコアを確認できます。</string>
+    <string name="onboarding_step_achievements_dialogue">プレイしたり、寿司を食べたり、ルーレットを使ったりして実績を解除しましょう！</string>
+    <string name="onboarding_step_responsible_use_dialogue">体の声を聞き、自分のペースで楽しんで、楽しみましょう！</string>
     <string name="onboarding_step_welcome_title">Sushi Clash へようこそ</string>
     <string name="onboarding_step_welcome_description">ひとりで寿司を数えたり、友だちとテーブルで競い合ったりできます。</string>
     <string name="onboarding_step_solo_title">ソロモード</string>
-    <string name="onboarding_step_solo_description">寿司をタップして、食べた一貫ずつカウントしましょう。</string>
+    <string name="onboarding_step_solo_description">対局中に食べた寿司を、かんたんに一貫ずつ数えられます。</string>
     <string name="onboarding_step_group_title">グループモード</string>
-    <string name="onboarding_step_group_description">最大6人のプレイヤーを追加し、スマホを中央に置いて全員がタップできるようにします。</string>
+    <string name="onboarding_step_group_description">友だちと遊びながら、参加者ごとに寿司のカウントを分けて記録できます。</string>
     <string name="onboarding_step_random_roulette_title">ランダムルーレット</string>
     <string name="onboarding_step_random_roulette_description">特定の数に達すると自動的にルーレットが作動します。回数は固定またはランダムに選べます。</string>
     <string name="onboarding_step_history_title">履歴</string>
-    <string name="onboarding_step_history_description">対局を保存して、ベストスコアを確認できます。</string>
+    <string name="onboarding_step_history_description">過去の対局を振り返り、ベストスコアを確認できます。</string>
     <string name="onboarding_step_achievements_title">実績</string>
     <string name="onboarding_step_achievements_description">プレイしたり、寿司を食べたり、ルーレットを使ったりして実績を解除しましょう。複数の対局にわたって進むものもあります。設定でリセットするまでデバイスに保存されます。実績画面で進捗を確認できます。</string>
     <string name="onboarding_step_responsible_use_title">バランスよく楽しもう 🍣</string>
     <string name="onboarding_step_responsible_use_description">Sushi Clash は食事にもう少し楽しさを加えるためのアプリであり、誰がより多く食べるかの競争にするためのものではありません。\n\n体の声を聞き、自分のペースで楽しみ、記録や目標、実績のために食べたい以上に食べないようにしましょう。\n\n楽しんで、美味しく召し上がれ！ 🍣</string>
     <string name="onboarding_step_roulette_title">決定ルーレット</string>
-    <string name="onboarding_step_roulette_description">ルーレットを回して、誰が寿司を選ぶか決めましょう。</string>
+    <string name="onboarding_step_roulette_description">参加者を追加し、ルーレットで次の決定者を選びましょう。</string>
 
     <!-- Counter screen -->
     <string name="counter_screen_title">@string/app_name</string>
@@ -84,6 +92,17 @@
     <string name="counter_no_active_game_title">進行中の対局がありません</string>
     <string name="counter_no_active_game_subtitle">新しい対局を始めて寿司をカウントしましょう。</string>
     <string name="counter_start_game">対局を開始</string>
+    <string name="game_start_speech">さあ、宴を始めよう！</string>
+    <string name="game_start_celebration_content_description">新しい対局を迎えるシェフ</string>
+    <string name="game_finish_speech">もう無理…！</string>
+    <string name="game_finish_celebration_content_description">対局の終わりを祝うシェフ</string>
+    <string name="chef_event_devouring_content_description">寿司をむさぼるシェフ</string>
+    <string name="chef_event_giant_sushi_content_description">巨大寿司とシェフ</string>
+    <string name="chef_event_coma_content_description">食べ過ぎで倒れたシェフ</string>
+    <string name="chef_event_attack_content_description">寿司に襲いかかるシェフ</string>
+    <string name="chef_event_spicy_content_description">辛い寿司を食べるシェフ</string>
+    <string name="chef_event_ninja_content_description">忍者シェフ</string>
+    <string name="chef_event_monster_content_description">モンスターになったシェフ</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">対局を終了</string>
@@ -148,7 +167,8 @@
     <string name="wheel_spin">回す</string>
     <string name="wheel_participants_title">参加者</string>
     <string name="wheel_delete_content_description">%1$s を削除</string>
-    <string name="wheel_selected_title">寿司を選ぶ：</string>
+    <string name="wheel_winner_speech">%1$s、選んで！</string>
+    <string name="wheel_winner_celebration_content_description">%1$s のお祝いアニメーション</string>
     <string name="wheel_ok">OK</string>
     <string name="wheel_min_participants_hint">ルーレットを回すには最低2人追加してください</string>
     <string name="wheel_empty_wheel_hint">ルーレットを回すには参加者をもっと追加してください</string>

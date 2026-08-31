@@ -53,22 +53,30 @@
     <string name="onboarding_previous">Précédent</string>
     <string name="onboarding_next">Suivant</string>
     <string name="onboarding_finish">Commencer</string>
+    <string name="onboarding_step_welcome_dialogue">Bienvenue dans Sushi Clash ! Comptez les sushi en solo ou affrontez vos amis autour de la table.</string>
+    <string name="onboarding_step_solo_dialogue">Touchez le sushi pour compter chaque pièce que vous mangez.</string>
+    <string name="onboarding_step_group_dialogue">Ajoutez jusqu\'à 6 joueurs et placez le téléphone au centre pour que tout le monde puisse appuyer.</string>
+    <string name="onboarding_step_roulette_dialogue">Lancez la roulette pour voir qui choisit le sushi.</string>
+    <string name="onboarding_step_random_roulette_dialogue">La roulette se déclenche automatiquement à certains seuils !</string>
+    <string name="onboarding_step_history_dialogue">Enregistrez vos parties et consultez vos meilleurs résultats.</string>
+    <string name="onboarding_step_achievements_dialogue">Débloquez des succès en jouant, en mangeant des sushi et en utilisant la roulette !</string>
+    <string name="onboarding_step_responsible_use_dialogue">Écoutez votre corps, profitez à votre rythme et amusez-vous !</string>
     <string name="onboarding_step_welcome_title">Bienvenue dans Sushi Clash</string>
     <string name="onboarding_step_welcome_description">Comptez les sushi en solo ou affrontez vos amis autour de la table.</string>
     <string name="onboarding_step_solo_title">Mode Solo</string>
-    <string name="onboarding_step_solo_description">Touchez le sushi pour compter chaque pièce que vous mangez.</string>
+    <string name="onboarding_step_solo_description">Comptez facilement chaque pièce de sushi que vous mangez pendant votre partie.</string>
     <string name="onboarding_step_group_title">Mode Groupe</string>
-    <string name="onboarding_step_group_description">Ajoutez jusqu\'à 6 joueurs et placez le téléphone au centre pour que tout le monde puisse appuyer.</string>
+    <string name="onboarding_step_group_description">Jouez entre amis et suivez le compteur de sushi de chaque participant séparément.</string>
     <string name="onboarding_step_random_roulette_title">Roulette aléatoire</string>
     <string name="onboarding_step_random_roulette_description">La roulette se déclenchera automatiquement à certains seuils. Ce nombre peut être choisi ou aléatoire.</string>
     <string name="onboarding_step_history_title">Historique</string>
-    <string name="onboarding_step_history_description">Enregistrez vos parties et consultez vos meilleurs résultats.</string>
+    <string name="onboarding_step_history_description">Consultez vos parties précédentes et découvrez vos meilleurs résultats.</string>
     <string name="onboarding_step_achievements_title">Succès</string>
     <string name="onboarding_step_achievements_description">Débloquez des succès en jouant, en mangeant des sushi et en utilisant la roulette. Certains progressent sur plusieurs parties. Ils sont enregistrés sur l\'appareil jusqu\'à ce que vous les réinitialisiez dans les Réglages. Consultez votre progression sur l\'écran Succès.</string>
     <string name="onboarding_step_responsible_use_title">Profitez avec modération 🍣</string>
     <string name="onboarding_step_responsible_use_description">Sushi Clash est là pour ajouter un peu plus de fun à vos repas, pas pour les transformer en compétition pour manger davantage.\n\nÉcoutez votre corps, profitez à votre rythme et ne laissez pas un record, un objectif ou un succès vous pousser à manger plus que vous le souhaitez.\n\nAmusez-vous bien et bon appétit ! 🍣</string>
     <string name="onboarding_step_roulette_title">Roulette de décision</string>
-    <string name="onboarding_step_roulette_description">Lancez la roulette pour voir qui choisit le sushi.</string>
+    <string name="onboarding_step_roulette_description">Ajoutez des participants et laissez la roulette choisir qui prend la prochaine décision.</string>
 
     <!-- Counter screen -->
     <string name="counter_screen_title">@string/app_name</string>
@@ -84,6 +92,17 @@
     <string name="counter_no_active_game_title">Aucune partie en cours</string>
     <string name="counter_no_active_game_subtitle">Commencez une nouvelle partie pour compter les sushi.</string>
     <string name="counter_start_game">Commencer une partie</string>
+    <string name="game_start_speech">Que la fête commence !</string>
+    <string name="game_start_celebration_content_description">Chef accueillant une nouvelle partie</string>
+    <string name="game_finish_speech">Je n\'en peux plus... !</string>
+    <string name="game_finish_celebration_content_description">Chef célébrant la fin d\'une partie</string>
+    <string name="chef_event_devouring_content_description">Chef dévorant des sushi</string>
+    <string name="chef_event_giant_sushi_content_description">Chef avec un sushi géant</string>
+    <string name="chef_event_coma_content_description">Chef en coma alimentaire</string>
+    <string name="chef_event_attack_content_description">Chef attaquant des sushi</string>
+    <string name="chef_event_spicy_content_description">Chef mangeant des sushi épicés</string>
+    <string name="chef_event_ninja_content_description">Chef ninja</string>
+    <string name="chef_event_monster_content_description">Chef transformé en monstre</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">Terminer la partie</string>
@@ -148,7 +167,8 @@
     <string name="wheel_spin">Tourner</string>
     <string name="wheel_participants_title">Participants</string>
     <string name="wheel_delete_content_description">Supprimer %1$s</string>
-    <string name="wheel_selected_title">Choisissez le sushi :</string>
+    <string name="wheel_winner_speech">%1$s, c\'est à toi de choisir !</string>
+    <string name="wheel_winner_celebration_content_description">Animation de célébration pour %1$s</string>
     <string name="wheel_ok">OK</string>
     <string name="wheel_min_participants_hint">Ajoutez au moins 2 personnes pour faire tourner la roulette</string>
     <string name="wheel_empty_wheel_hint">Ajoutez plus de participants pour faire tourner la roulette</string>

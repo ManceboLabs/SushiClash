@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.preferencesOf
 import app.cash.turbine.test
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
+import com.mancebolabs.sushiclash.domain.model.ChefEventAnimation
 import com.mancebolabs.sushiclash.domain.model.FeedbackSettingsDefaults
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameState
@@ -321,6 +322,82 @@ class AppPreferencesDataStoreTest {
 
             assertEquals(AppThemeMode.LIGHT, store.themeMode.first())
             assertEquals(PersistenceReadState.Corrupted, store.themeModeState.first())
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenLegacyPersistedPlayersWithoutChefFields_whenRestoring_thenGameRemainsValid() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            val players = listOf(
+                Player(
+                    id = AppPreferencesDataStore.SOLO_PLAYER_ID,
+                    name = "",
+                    sushiCount = 6,
+                    nextRandomRouletteTarget = null,
+                    lastRandomRouletteTrigger = 0,
+                ),
+            )
+            store.saveGameState(
+                sessionId = "legacy-session",
+                gameMode = GameMode.SOLO,
+                players = players,
+                randomRouletteEnabled = false,
+                randomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
+                randomRouletteFixedThreshold = 5,
+            )
+
+            val result = store.restoreGameState(migratedSessionId = "unused")
+            val restored = (result as RestoreGamePersistenceResult.Restored).gameState
+
+            assertTrue(GameStateValidator.isValid(restored))
+            assertEquals(6, restored.soloCount)
+            assertNull(restored.players.first().nextChefAnimationTarget)
+        } finally {
+            dataStoreJob.cancel()
+        }
+    }
+
+    @Test
+    fun givenChefAnimationSchedule_whenSavingAndRestoring_thenTargetsArePreserved() = runTest {
+        val (dataStore, dataStoreJob) = createTemporaryPreferencesDataStore()
+        val store = AppPreferencesDataStore(
+            dataStore = dataStore,
+            logger = NoOpPersistenceLogger,
+        )
+
+        try {
+            val players = listOf(
+                Player(
+                    id = AppPreferencesDataStore.SOLO_PLAYER_ID,
+                    name = "",
+                    sushiCount = 4,
+                    nextChefAnimationTarget = 7,
+                    lastChefAnimationTrigger = 4,
+                    lastChefEventAnimation = ChefEventAnimation.NINJA,
+                ),
+            )
+            store.saveGameState(
+                sessionId = "chef-session",
+                gameMode = GameMode.SOLO,
+                players = players,
+                randomRouletteEnabled = false,
+                randomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
+                randomRouletteFixedThreshold = 5,
+            )
+
+            val restored = (store.restoreGameState("unused") as RestoreGamePersistenceResult.Restored).gameState
+
+            assertEquals(7, restored.players.first().nextChefAnimationTarget)
+            assertEquals(4, restored.players.first().lastChefAnimationTrigger)
+            assertEquals(ChefEventAnimation.NINJA, restored.players.first().lastChefEventAnimation)
         } finally {
             dataStoreJob.cancel()
         }

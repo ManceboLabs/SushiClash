@@ -154,41 +154,6 @@ fun ConfirmationDialog(
     )
 }
 
-@Composable
-fun WinnerDialog(
-    winnerName: String,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = ItamaeShapes.large,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-        title = {
-            Text(
-                text = stringResource(R.string.wheel_selected_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        },
-        text = {
-            Text(
-                text = winnerName,
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = stringResource(R.string.wheel_ok),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-        },
-    )
-}
-
 @Preview(name = "Finish game dialog", showBackground = true)
 @Composable
 private fun FinishGameDialogPreview() {
@@ -241,17 +206,6 @@ private fun ConfirmationDialogPreview() {
             confirmLabel = stringResource(R.string.wheel_ok),
             dismissLabel = stringResource(R.string.counter_cancel),
             onConfirm = {},
-            onDismiss = {},
-        )
-    }
-}
-
-@Preview(name = "Winner dialog", showBackground = true)
-@Composable
-private fun WinnerDialogPreview() {
-    ItamaePreviewTheme {
-        WinnerDialog(
-            winnerName = "Marta",
             onDismiss = {},
         )
     }

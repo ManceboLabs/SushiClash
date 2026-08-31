@@ -76,7 +76,7 @@ android {
         applicationId = "com.mancebolabs.sushiclash"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
+        versionCode = 5
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -156,6 +156,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.text.google.fonts)
     implementation(libs.androidx.compose.ui.tooling.preview)

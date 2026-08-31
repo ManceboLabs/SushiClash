@@ -32,7 +32,7 @@ import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushiclash.ui.components.ItamaeTextField
 import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
 import com.mancebolabs.sushiclash.ui.components.RouletteWheel
-import com.mancebolabs.sushiclash.ui.components.WinnerDialog
+import com.mancebolabs.sushiclash.ui.components.RouletteWinnerCelebrationOverlay
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
@@ -54,7 +54,7 @@ fun WheelScreen(
     modifier: Modifier = Modifier,
 ) {
     uiState.selectedWinner?.let { winner ->
-        WinnerDialog(
+        RouletteWinnerCelebrationOverlay(
             winnerName = winner,
             onDismiss = onWinnerDialogDismissed,
         )
@@ -282,7 +282,7 @@ private fun WheelWithParticipantsDarkPreview() {
     }
 }
 
-@Preview(name = "Wheel winner dialog", showBackground = true, widthDp = 360, heightDp = 780)
+@Preview(name = "Wheel winner celebration", showBackground = true, widthDp = 360, heightDp = 780)
 @Composable
 private fun WheelWinnerDialogPreview() {
     ItamaePreviewTheme {
