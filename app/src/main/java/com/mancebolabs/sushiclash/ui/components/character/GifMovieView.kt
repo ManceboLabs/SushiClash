@@ -21,12 +21,17 @@ internal class GifMovieView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     private var movie: Movie? = null
+    private var loadedRawResId: Int = 0
     private var movieStartMillis: Long = 0L
     private var isPlaying: Boolean = false
     private var hasReportedCycleComplete: Boolean = false
     var onSingleCycleComplete: (() -> Unit)? = null
 
     fun setGifResource(@RawRes rawResId: Int) {
+        if (rawResId == loadedRawResId && movie != null) {
+            return
+        }
+        loadedRawResId = rawResId
         stop()
         context.resources.openRawResource(rawResId).use { input ->
             movie = Movie.decodeStream(input)
