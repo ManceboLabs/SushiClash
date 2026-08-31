@@ -268,6 +268,7 @@ private fun SushiCounterNavHost(
                             }
                         },
                         onRouletteTriggerDismissed = viewModel::onRouletteTriggerDismissed,
+                        onChefCelebrationDismissed = viewModel::onChefCelebrationDismissed,
                         onPersistenceRetry = viewModel::onPersistenceRetry,
                         onFeedbackConsumed = viewModel::onFeedbackConsumed,
                     )

@@ -27,6 +27,7 @@ import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.Player
+import com.mancebolabs.sushiclash.ui.components.ChefCharacterCelebrationOverlay
 import com.mancebolabs.sushiclash.ui.components.ConfirmationDialog
 import com.mancebolabs.sushiclash.ui.components.FinishGameDialog
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
@@ -35,6 +36,7 @@ import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
 import com.mancebolabs.sushiclash.ui.components.SushiClickerButton
+import com.mancebolabs.sushiclash.ui.components.character.SushiClashCharacterAnimations
 import com.mancebolabs.sushiclash.feature.feedback.CounterFeedbackEffect
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
@@ -59,6 +61,7 @@ fun CounterScreen(
     onSetupDismissed: () -> Unit,
     onRouletteTriggerAccepted: () -> Unit,
     onRouletteTriggerDismissed: () -> Unit,
+    onChefCelebrationDismissed: () -> Unit,
     onPersistenceRetry: () -> Unit,
     onFeedbackConsumed: () -> Unit,
     modifier: Modifier = Modifier,
@@ -75,6 +78,11 @@ fun CounterScreen(
         onFinishGameCancelled = onFinishGameCancelled,
         onFinishGameWithoutSaving = onFinishGameWithoutSaving,
         onFinishGameWithSaving = onFinishGameWithSaving,
+    )
+
+    ChefCelebrationOverlay(
+        celebration = uiState.chefCelebration,
+        onDismiss = onChefCelebrationDismissed,
     )
 
     if (uiState.showSetupDialog) {
@@ -115,6 +123,32 @@ fun CounterScreen(
                 modifier = modifier,
             )
         }
+    }
+}
+
+@Composable
+private fun ChefCelebrationOverlay(
+    celebration: ChefCelebrationMoment?,
+    onDismiss: () -> Unit,
+) {
+    when (celebration) {
+        ChefCelebrationMoment.GameStart -> {
+            ChefCharacterCelebrationOverlay(
+                speechMessage = stringResource(R.string.game_start_speech),
+                rawResId = SushiClashCharacterAnimations.GameStart,
+                contentDescription = stringResource(R.string.game_start_celebration_content_description),
+                onDismiss = onDismiss,
+            )
+        }
+        ChefCelebrationMoment.GameFinish -> {
+            ChefCharacterCelebrationOverlay(
+                speechMessage = stringResource(R.string.game_finish_speech),
+                rawResId = SushiClashCharacterAnimations.GameFinish,
+                contentDescription = stringResource(R.string.game_finish_celebration_content_description),
+                onDismiss = onDismiss,
+            )
+        }
+        null -> Unit
     }
 }
 
@@ -382,6 +416,7 @@ private fun PreviewCounterScreen(uiState: CounterUiState) {
         onSetupDismissed = {},
         onRouletteTriggerAccepted = {},
         onRouletteTriggerDismissed = {},
+        onChefCelebrationDismissed = {},
         onPersistenceRetry = {},
         onFeedbackConsumed = {},
     )

@@ -84,6 +84,10 @@
     <string name="counter_no_active_game_title">進行中の対局がありません</string>
     <string name="counter_no_active_game_subtitle">新しい対局を始めて寿司をカウントしましょう。</string>
     <string name="counter_start_game">対局を開始</string>
+    <string name="game_start_speech">さあ、宴を始めよう！</string>
+    <string name="game_start_celebration_content_description">新しい対局を迎えるシェフ</string>
+    <string name="game_finish_speech">もう無理…！</string>
+    <string name="game_finish_celebration_content_description">対局の終わりを祝うシェフ</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">対局を終了</string>

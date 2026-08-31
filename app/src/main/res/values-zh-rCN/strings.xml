@@ -84,6 +84,10 @@
     <string name="counter_no_active_game_title">没有进行中的对局</string>
     <string name="counter_no_active_game_subtitle">开始新对局以计数寿司。</string>
     <string name="counter_start_game">开始对局</string>
+    <string name="game_start_speech">盛宴开始吧！</string>
+    <string name="game_start_celebration_content_description">厨师欢迎新对局</string>
+    <string name="game_finish_speech">我吃不下了……！</string>
+    <string name="game_finish_celebration_content_description">厨师庆祝对局结束</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">结束对局</string>

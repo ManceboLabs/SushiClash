@@ -8,6 +8,7 @@ import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.RestoreGameResult
 import com.mancebolabs.sushiclash.feature.counter.AppStartupState
+import com.mancebolabs.sushiclash.feature.counter.ChefCelebrationMoment
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
 import com.mancebolabs.sushiclash.feature.counter.RouletteTriggerEvent
 import com.mancebolabs.sushiclash.feature.feedback.CounterFeedbackEvent
@@ -148,6 +149,122 @@ class CounterViewModelTest {
         assertEquals(AppStartupState.ActiveGame, state.startupState)
         assertFalse(state.showSetupDialog)
         assertEquals(GameMode.SOLO, state.gameMode)
+        assertEquals(ChefCelebrationMoment.GameStart, state.chefCelebration)
+    }
+
+    @Test
+    fun givenActiveGameOnLaunch_whenInitialized_thenDoesNotShowGameStartCelebration() = runTest {
+        val viewModel = createViewModel(initialState = TestGameStates.soloActive(count = 3))
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.chefCelebration)
+    }
+
+    @Test
+    fun givenGameStartCelebration_whenDismissed_thenClearsCelebrationAndKeepsActiveGame() = runTest {
+        val gameRepository = FakeGameRepository(GameState(hasActiveGame = false))
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
+        advanceUntilIdle()
+
+        viewModel.onSetupConfirmed(GameSetupConfig(gameMode = GameMode.SOLO))
+        advanceUntilIdle()
+        assertEquals(ChefCelebrationMoment.GameStart, viewModel.uiState.value.chefCelebration)
+
+        viewModel.onChefCelebrationDismissed()
+
+        val state = viewModel.uiState.value
+        assertNull(state.chefCelebration)
+        assertEquals(AppStartupState.ActiveGame, state.startupState)
+        assertTrue(state.gameState.hasActiveGame)
+        assertEquals(1, gameRepository.completeSetupCallCount)
+    }
+
+    @Test
+    fun givenFinishDialog_whenCancelled_thenDoesNotShowGameFinishCelebration() = runTest {
+        val viewModel = createViewModel(initialState = TestGameStates.soloActive(count = 9))
+        advanceUntilIdle()
+
+        viewModel.onFinishGameRequested()
+        viewModel.onFinishGameCancelled()
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.chefCelebration)
+    }
+
+    @Test
+    fun givenFinishDialog_whenSavingSucceeds_thenShowsGameFinishCelebration() = runTest {
+        val viewModel = createViewModel(initialState = TestGameStates.soloActive(count = 9))
+        advanceUntilIdle()
+
+        viewModel.onFinishGameRequested()
+        viewModel.onFinishGameWithSaving()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(AppStartupState.NoActiveGame, state.startupState)
+        assertEquals(ChefCelebrationMoment.GameFinish, state.chefCelebration)
+        assertFalse(state.showFinishGameDialog)
+    }
+
+    @Test
+    fun givenFinishDialog_whenNotSavingSucceeds_thenShowsGameFinishCelebration() = runTest {
+        val viewModel = createViewModel(initialState = TestGameStates.soloActive(count = 9))
+        advanceUntilIdle()
+
+        viewModel.onFinishGameRequested()
+        viewModel.onFinishGameWithoutSaving()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(AppStartupState.NoActiveGame, state.startupState)
+        assertEquals(ChefCelebrationMoment.GameFinish, state.chefCelebration)
+    }
+
+    @Test
+    fun givenFinishDialog_whenSavingFails_thenDoesNotShowGameFinishCelebration() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9)).apply {
+            finishGameWithSavingResults += FinishGameResult.Failure(IllegalStateException("test"))
+        }
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
+        advanceUntilIdle()
+
+        viewModel.onFinishGameRequested()
+        viewModel.onFinishGameWithSaving()
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.chefCelebration)
+        assertTrue(viewModel.uiState.value.showFinishGameDialog)
+    }
+
+    @Test
+    fun givenGameFinishCelebration_whenDismissed_thenClearsCelebrationWithoutRefinishing() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 9))
+        val viewModel = CounterViewModel(gameRepository, FakeOnboardingRepository(), FakeFeedbackSettingsRepository(), FakeAchievementRepository(), FakeFrequentPlayersRepository())
+        advanceUntilIdle()
+
+        viewModel.onFinishGameWithSaving()
+        advanceUntilIdle()
+        assertEquals(ChefCelebrationMoment.GameFinish, viewModel.uiState.value.chefCelebration)
+        val finishCallsBeforeDismiss = gameRepository.finishGameWithSavingCallCount
+
+        viewModel.onChefCelebrationDismissed()
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.chefCelebration)
+        assertEquals(finishCallsBeforeDismiss, gameRepository.finishGameWithSavingCallCount)
+        assertEquals(AppStartupState.NoActiveGame, viewModel.uiState.value.startupState)
+    }
+
+    @Test
+    fun givenFinishRequested_whenDialogOpens_thenDoesNotShowGameFinishCelebration() = runTest {
+        val viewModel = createViewModel(initialState = TestGameStates.soloActive(count = 9))
+        advanceUntilIdle()
+
+        viewModel.onFinishGameRequested()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.showFinishGameDialog)
+        assertNull(viewModel.uiState.value.chefCelebration)
     }
 
     @Test

@@ -55,6 +55,7 @@ data class CounterUiState(
     val isFinishGameSaving: Boolean = false,
     val finishGameSaveError: Boolean = false,
     val showSetupDialog: Boolean = false,
+    val chefCelebration: ChefCelebrationMoment? = null,
     val persistenceError: Boolean = false,
     val isPersistenceRetrying: Boolean = false,
     val soundEnabled: Boolean = true,
@@ -87,6 +88,7 @@ class CounterViewModel(
     private val isFinishGameSaving = MutableStateFlow(false)
     private val finishGameSaveError = MutableStateFlow(false)
     private val showSetupDialog = MutableStateFlow(false)
+    private val chefCelebration = MutableStateFlow<ChefCelebrationMoment?>(null)
     private val persistenceError = MutableStateFlow(false)
     private val isPersistenceRetrying = MutableStateFlow(false)
     private val feedbackEvent = MutableStateFlow<CounterFeedbackEvent?>(null)
@@ -163,6 +165,7 @@ class CounterViewModel(
         val rouletteTriggerEvent: RouletteTriggerEvent?,
         val finishGame: FinishGameUiState,
         val showSetupDialog: Boolean,
+        val chefCelebration: ChefCelebrationMoment?,
     )
 
     private data class CounterPreferencesUiState(
@@ -203,19 +206,25 @@ class CounterViewModel(
     val uiState: StateFlow<CounterUiState> = combine(
         gameRepository.gameState,
         combine(
-            startupState,
-            playerResetRequest,
-            rouletteTriggerEvent,
-            finishGameUiState,
-            showSetupDialog,
-        ) { startup, resetRequest, rouletteEvent, finishGame, setupDialog ->
-            CounterScreenState(
-                startupState = startup,
-                playerResetRequest = resetRequest,
-                rouletteTriggerEvent = rouletteEvent,
-                finishGame = finishGame,
-                showSetupDialog = setupDialog,
-            )
+            combine(
+                startupState,
+                playerResetRequest,
+                rouletteTriggerEvent,
+                finishGameUiState,
+                showSetupDialog,
+            ) { startup, resetRequest, rouletteEvent, finishGame, setupDialog ->
+                CounterScreenState(
+                    startupState = startup,
+                    playerResetRequest = resetRequest,
+                    rouletteTriggerEvent = rouletteEvent,
+                    finishGame = finishGame,
+                    showSetupDialog = setupDialog,
+                    chefCelebration = null,
+                )
+            },
+            chefCelebration,
+        ) { screenState, celebration ->
+            screenState.copy(chefCelebration = celebration)
         },
         combine(
             persistenceError,
@@ -243,6 +252,7 @@ class CounterViewModel(
             isFinishGameSaving = screenState.finishGame.isSaving,
             finishGameSaveError = screenState.finishGame.hasError,
             showSetupDialog = screenState.showSetupDialog,
+            chefCelebration = screenState.chefCelebration,
             persistenceError = preferences.persistenceError,
             isPersistenceRetrying = preferences.isPersistenceRetrying,
             soundEnabled = preferences.soundEnabled,
@@ -391,11 +401,13 @@ class CounterViewModel(
                         showFinishGameDialog.value = false
                         finishGameSaveError.value = false
                         startupState.value = AppStartupState.NoActiveGame
+                        chefCelebration.value = ChefCelebrationMoment.GameFinish
                     }
                     FinishGameResult.NoActiveGame -> {
                         showFinishGameDialog.value = false
                         finishGameSaveError.value = false
                         startupState.value = AppStartupState.NoActiveGame
+                        chefCelebration.value = ChefCelebrationMoment.GameFinish
                     }
                     is FinishGameResult.Failure -> {
                         finishGameSaveError.value = true
@@ -422,6 +434,7 @@ class CounterViewModel(
             gameRepository.completeSetup(config)
             showSetupDialog.value = false
             startupState.value = AppStartupState.ActiveGame
+            chefCelebration.value = ChefCelebrationMoment.GameStart
             lastFailedPersistenceAction = null
             persistenceError.value = false
         } catch (cancellation: CancellationException) {
@@ -439,6 +452,10 @@ class CounterViewModel(
 
     fun onRouletteTriggerConfirmed() {
         rouletteTriggerEvent.value = null
+    }
+
+    fun onChefCelebrationDismissed() {
+        chefCelebration.value = null
     }
 
     private fun emitRouletteTriggerIfNeeded(

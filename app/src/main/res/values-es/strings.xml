@@ -84,6 +84,10 @@
     <string name="counter_no_active_game_title">No hay partida activa</string>
     <string name="counter_no_active_game_subtitle">Empieza una nueva partida para comenzar a contar sushi.</string>
     <string name="counter_start_game">Empezar partida</string>
+    <string name="game_start_speech">¡Que empiece el festín!</string>
+    <string name="game_start_celebration_content_description">Chef dando la bienvenida a una nueva partida</string>
+    <string name="game_finish_speech">¡No puedo más…!</string>
+    <string name="game_finish_celebration_content_description">Chef celebrando el final de una partida</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">Finalizar partida</string>

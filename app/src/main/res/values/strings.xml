@@ -84,6 +84,10 @@
     <string name="counter_no_active_game_title">No active game</string>
     <string name="counter_no_active_game_subtitle">Start a new game to begin counting sushi.</string>
     <string name="counter_start_game">Start game</string>
+    <string name="game_start_speech">Let the feast begin!</string>
+    <string name="game_start_celebration_content_description">Chef welcoming a new game</string>
+    <string name="game_finish_speech">I can\'t take any more...!</string>
+    <string name="game_finish_celebration_content_description">Chef celebrating the end of a game</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">Finish game</string>
