@@ -53,22 +53,30 @@
     <string name="onboarding_previous">Previous</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_finish">Get started</string>
+    <string name="onboarding_step_welcome_dialogue">Welcome to Sushi Clash! Count sushi solo or compete with friends around the table.</string>
+    <string name="onboarding_step_solo_dialogue">Tap the sushi to count every piece you eat.</string>
+    <string name="onboarding_step_group_dialogue">Add up to 6 players and place the phone in the center so everyone can tap.</string>
+    <string name="onboarding_step_roulette_dialogue">Spin the roulette to see who picks the sushi.</string>
+    <string name="onboarding_step_random_roulette_dialogue">The roulette triggers automatically when you hit certain counts!</string>
+    <string name="onboarding_step_history_dialogue">Save your games and check your best results.</string>
+    <string name="onboarding_step_achievements_dialogue">Unlock achievements as you play, eat sushi, and spin the roulette!</string>
+    <string name="onboarding_step_responsible_use_dialogue">Listen to your body, enjoy at your own pace, and have fun!</string>
     <string name="onboarding_step_welcome_title">Welcome to Sushi Clash</string>
     <string name="onboarding_step_welcome_description">Count sushi solo or compete with friends around the table.</string>
     <string name="onboarding_step_solo_title">Solo Mode</string>
-    <string name="onboarding_step_solo_description">Tap the sushi to count every piece you eat.</string>
+    <string name="onboarding_step_solo_description">Easily count every piece of sushi you eat during your game.</string>
     <string name="onboarding_step_group_title">Group Mode</string>
-    <string name="onboarding_step_group_description">Add up to 6 players and place the phone in the center so everyone can tap.</string>
+    <string name="onboarding_step_group_description">Play with friends and keep a separate sushi count for each participant.</string>
     <string name="onboarding_step_random_roulette_title">Random roulette</string>
     <string name="onboarding_step_random_roulette_description">The roulette will trigger automatically when you hit certain counts. You can choose the amount or leave it random.</string>
     <string name="onboarding_step_history_title">History</string>
-    <string name="onboarding_step_history_description">Save your games and check your best results.</string>
+    <string name="onboarding_step_history_description">Browse your past games and discover your best results.</string>
     <string name="onboarding_step_achievements_title">Achievements</string>
     <string name="onboarding_step_achievements_description">Unlock achievements by playing, eating sushi, and using the roulette. Some progress across multiple games. They are saved on your device until you reset them in Settings. Check your progress on the Achievements screen.</string>
     <string name="onboarding_step_responsible_use_title">Enjoy with balance 🍣</string>
     <string name="onboarding_step_responsible_use_description">Sushi Clash is here to add a little extra fun to your meals, not to turn them into a competition to eat more.\n\nListen to your body, enjoy at your own pace, and do not let a record, goal, or achievement push you to eat more than you want.\n\nHave fun and enjoy! 🍣</string>
     <string name="onboarding_step_roulette_title">Decision roulette</string>
-    <string name="onboarding_step_roulette_description">Spin the roulette to see who picks the sushi.</string>
+    <string name="onboarding_step_roulette_description">Add participants and let the roulette choose who makes the next decision.</string>
 
     <!-- Counter screen -->
     <string name="counter_screen_title">@string/app_name</string>

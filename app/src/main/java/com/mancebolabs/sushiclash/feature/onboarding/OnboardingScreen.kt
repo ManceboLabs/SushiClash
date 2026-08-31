@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -24,7 +26,6 @@ import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Casino
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -40,9 +42,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushiclash.R
+import com.mancebolabs.sushiclash.ui.components.ComicSpeechBubble
 import com.mancebolabs.sushiclash.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushiclash.ui.components.SushiIcon
+import com.mancebolabs.sushiclash.ui.components.character.AnimatedCharacterGif
+import com.mancebolabs.sushiclash.ui.components.character.SushiClashCharacterAnimations
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
@@ -51,9 +56,13 @@ import kotlinx.coroutines.launch
 
 internal const val ONBOARDING_PAGER_TEST_TAG = "onboarding_pager"
 
-private val OnboardingIllustrationMaxSize = 220.dp
-private val OnboardingIllustrationMinSize = 120.dp
-private const val OnboardingIllustrationMaxHeightFraction = 0.30f
+private val OnboardingIllustrationMaxSize = 160.dp
+private val OnboardingIllustrationMinSize = 96.dp
+private const val OnboardingIllustrationMaxHeightFraction = 0.22f
+
+private val OnboardingChefMaxSize = 200.dp
+private val OnboardingChefMinSize = 100.dp
+private const val OnboardingChefMaxHeightFraction = 0.26f
 
 internal fun resolveOnboardingIllustrationSize(maxHeight: Dp): Dp {
     return minOf(
@@ -62,46 +71,73 @@ internal fun resolveOnboardingIllustrationSize(maxHeight: Dp): Dp {
     ).coerceIn(OnboardingIllustrationMinSize, OnboardingIllustrationMaxSize)
 }
 
+internal fun resolveOnboardingChefSize(maxHeight: Dp): Dp {
+    return minOf(
+        OnboardingChefMaxSize,
+        maxHeight * OnboardingChefMaxHeightFraction,
+    ).coerceIn(OnboardingChefMinSize, OnboardingChefMaxSize)
+}
+
 fun defaultOnboardingSteps(): List<OnboardingStep> = listOf(
     OnboardingStep(
-        titleRes = R.string.onboarding_step_welcome_title,
-        descriptionRes = R.string.onboarding_step_welcome_description,
-        illustration = OnboardingIllustration.DrawableResource(R.drawable.ic_sushi),
+        dialogueRes = R.string.onboarding_step_welcome_dialogue,
+        chefRole = OnboardingChefRole.Greeting,
+        chefPointToward = OnboardingChefPointToward.Center,
     ),
     OnboardingStep(
+        dialogueRes = R.string.onboarding_step_solo_dialogue,
+        chefRole = OnboardingChefRole.Tutorial,
         titleRes = R.string.onboarding_step_solo_title,
         descriptionRes = R.string.onboarding_step_solo_description,
         illustration = OnboardingIllustration.DrawableResource(R.drawable.ic_sushi),
+        chefPointToward = OnboardingChefPointToward.FeatureIllustration,
     ),
     OnboardingStep(
+        dialogueRes = R.string.onboarding_step_group_dialogue,
+        chefRole = OnboardingChefRole.Tutorial,
         titleRes = R.string.onboarding_step_group_title,
         descriptionRes = R.string.onboarding_step_group_description,
         illustration = OnboardingIllustration.VectorIcon(Icons.Outlined.Groups),
+        chefPointToward = OnboardingChefPointToward.FeatureIllustration,
     ),
     OnboardingStep(
+        dialogueRes = R.string.onboarding_step_roulette_dialogue,
+        chefRole = OnboardingChefRole.Tutorial,
         titleRes = R.string.onboarding_step_roulette_title,
         descriptionRes = R.string.onboarding_step_roulette_description,
         illustration = OnboardingIllustration.VectorIcon(Icons.Outlined.Casino),
+        chefPointToward = OnboardingChefPointToward.FeatureIllustration,
     ),
     OnboardingStep(
+        dialogueRes = R.string.onboarding_step_random_roulette_dialogue,
+        chefRole = OnboardingChefRole.Tutorial,
         titleRes = R.string.onboarding_step_random_roulette_title,
         descriptionRes = R.string.onboarding_step_random_roulette_description,
         illustration = OnboardingIllustration.VectorIcon(Icons.Outlined.Autorenew),
+        chefPointToward = OnboardingChefPointToward.FeatureIllustrationStart,
     ),
     OnboardingStep(
+        dialogueRes = R.string.onboarding_step_history_dialogue,
+        chefRole = OnboardingChefRole.Tutorial,
         titleRes = R.string.onboarding_step_history_title,
         descriptionRes = R.string.onboarding_step_history_description,
         illustration = OnboardingIllustration.VectorIcon(Icons.Outlined.History),
+        chefPointToward = OnboardingChefPointToward.FeatureIllustration,
     ),
     OnboardingStep(
+        dialogueRes = R.string.onboarding_step_achievements_dialogue,
+        chefRole = OnboardingChefRole.Tutorial,
         titleRes = R.string.onboarding_step_achievements_title,
         descriptionRes = R.string.onboarding_step_achievements_description,
         illustration = OnboardingIllustration.VectorIcon(Icons.Filled.EmojiEvents),
+        chefPointToward = OnboardingChefPointToward.FeatureIllustration,
     ),
     OnboardingStep(
+        dialogueRes = R.string.onboarding_step_responsible_use_dialogue,
+        chefRole = OnboardingChefRole.Greeting,
         titleRes = R.string.onboarding_step_responsible_use_title,
         descriptionRes = R.string.onboarding_step_responsible_use_description,
-        illustration = OnboardingIllustration.DrawableResource(R.drawable.ic_sushi),
+        chefPointToward = OnboardingChefPointToward.Center,
     ),
 )
 
@@ -142,7 +178,7 @@ fun OnboardingScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(ItamaeSpacing.md))
+        Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
 
         HorizontalPager(
             state = pagerState,
@@ -193,47 +229,171 @@ fun OnboardingStepContent(
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
+    val dialogue = stringResource(step.dialogueRes)
+    val isWelcomeStep = step.chefRole == OnboardingChefRole.Greeting &&
+        step.titleRes == null &&
+        step.descriptionRes == null &&
+        step.illustration == null
 
     BoxWithConstraints(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxSize(),
     ) {
+        val chefSize = resolveOnboardingChefSize(maxHeight)
         val illustrationSize = resolveOnboardingIllustrationSize(maxHeight)
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState),
+                .fillMaxWidth()
+                .then(
+                    if (isWelcomeStep) {
+                        Modifier
+                            .heightIn(min = maxHeight)
+                            .verticalScroll(scrollState)
+                    } else {
+                        Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                    },
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = if (isWelcomeStep) Arrangement.Center else Arrangement.Top,
         ) {
-            OnboardingIllustration(
-                illustration = step.illustration,
-                containerSize = illustrationSize,
-            )
+            if (!isWelcomeStep) {
+                Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
+            }
 
-            Spacer(modifier = Modifier.height(ItamaeSpacing.lg))
-
-            Text(
-                text = stringResource(step.titleRes),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
+            ComicSpeechBubble(
+                message = dialogue,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 320.dp),
+                textStyle = MaterialTheme.typography.titleMedium,
             )
 
             Spacer(modifier = Modifier.height(ItamaeSpacing.md))
 
-            Text(
-                text = stringResource(step.descriptionRes),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = ItamaeSpacing.sm),
-            )
+            when (step.chefRole) {
+                OnboardingChefRole.Greeting -> {
+                    OnboardingGreetingChef(
+                        chefSize = chefSize,
+                    )
+                }
+                OnboardingChefRole.Tutorial -> {
+                    OnboardingTutorialChefSection(
+                        step = step,
+                        chefSize = chefSize,
+                        illustrationSize = illustrationSize,
+                    )
+                }
+            }
+
+            step.titleRes?.let { titleRes ->
+                Spacer(modifier = Modifier.height(ItamaeSpacing.lg))
+                Text(
+                    text = stringResource(titleRes),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            step.descriptionRes?.let { descriptionRes ->
+                Spacer(modifier = Modifier.height(ItamaeSpacing.md))
+                Text(
+                    text = stringResource(descriptionRes),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = ItamaeSpacing.sm),
+                )
+            }
 
             Spacer(modifier = Modifier.height(ItamaeSpacing.md))
         }
     }
+}
+
+@Composable
+private fun OnboardingGreetingChef(
+    chefSize: Dp,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedCharacterGif(
+        rawResId = SushiClashCharacterAnimations.OnboardingGreeting,
+        modifier = modifier.size(chefSize),
+        contentDescription = null,
+    )
+}
+
+@Composable
+private fun OnboardingTutorialChefSection(
+    step: OnboardingStep,
+    chefSize: Dp,
+    illustrationSize: Dp,
+    modifier: Modifier = Modifier,
+) {
+    when (step.chefPointToward) {
+        OnboardingChefPointToward.Center -> {
+            OnboardingGreetingChef(chefSize = chefSize, modifier = modifier)
+        }
+        OnboardingChefPointToward.FeatureIllustration,
+        OnboardingChefPointToward.FeatureIllustrationStart,
+        -> {
+            val mirrorChef = step.chefPointToward == OnboardingChefPointToward.FeatureIllustrationStart
+            Row(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = ItamaeSpacing.sm),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (mirrorChef) {
+                    step.illustration?.let { illustration ->
+                        OnboardingIllustration(
+                            illustration = illustration,
+                            containerSize = illustrationSize,
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                    OnboardingTutorialChef(
+                        chefSize = chefSize,
+                        mirrorHorizontally = true,
+                    )
+                } else {
+                    OnboardingTutorialChef(
+                        chefSize = chefSize,
+                        mirrorHorizontally = false,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    step.illustration?.let { illustration ->
+                        OnboardingIllustration(
+                            illustration = illustration,
+                            containerSize = illustrationSize,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OnboardingTutorialChef(
+    chefSize: Dp,
+    mirrorHorizontally: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedCharacterGif(
+        rawResId = SushiClashCharacterAnimations.OnboardingTutorial,
+        modifier = modifier
+            .size(chefSize)
+            .graphicsLayer {
+                scaleX = if (mirrorHorizontally) -1f else 1f
+            },
+        contentDescription = null,
+    )
 }
 
 @Composable
@@ -369,29 +529,27 @@ private fun OnboardingDarkPreview() {
     }
 }
 
-@Preview(name = "Onboarding – First step", showBackground = true, heightDp = 780)
+@Preview(name = "Onboarding – Welcome", showBackground = true, heightDp = 780)
 @Composable
-private fun OnboardingFirstStepPreview() {
+private fun OnboardingWelcomePreview() {
     ItamaePreviewTheme {
-        OnboardingScreen(
-            steps = previewSteps,
-            initialStepIndex = 0,
-            onSkip = {},
-            onFinish = {},
-        )
+        OnboardingStepContent(step = previewSteps.first())
     }
 }
 
-@Preview(name = "Onboarding – Middle step", showBackground = true, heightDp = 780)
+@Preview(name = "Onboarding – Solo tutorial", showBackground = true, heightDp = 780)
 @Composable
-private fun OnboardingMiddleStepPreview() {
+private fun OnboardingSoloTutorialPreview() {
     ItamaePreviewTheme {
-        OnboardingScreen(
-            steps = previewSteps,
-            initialStepIndex = 2,
-            onSkip = {},
-            onFinish = {},
-        )
+        OnboardingStepContent(step = previewSteps[1])
+    }
+}
+
+@Preview(name = "Onboarding – Random roulette tutorial", showBackground = true, heightDp = 780)
+@Composable
+private fun OnboardingRandomRouletteTutorialPreview() {
+    ItamaePreviewTheme {
+        OnboardingStepContent(step = previewSteps[4])
     }
 }
 
@@ -457,9 +615,7 @@ private fun OnboardingAchievementsStepSmallPhonePreview() {
 @Composable
 private fun OnboardingAchievementsStepContentPreview() {
     ItamaePreviewTheme {
-        OnboardingStepContent(
-            step = defaultOnboardingSteps()[6],
-        )
+        OnboardingStepContent(step = previewSteps[6])
     }
 }
 
@@ -467,23 +623,7 @@ private fun OnboardingAchievementsStepContentPreview() {
 @Composable
 private fun OnboardingResponsibleUseStepContentPreview() {
     ItamaePreviewTheme {
-        OnboardingStepContent(
-            step = defaultOnboardingSteps().last(),
-        )
-    }
-}
-
-@Preview(name = "Onboarding step content", showBackground = true)
-@Composable
-private fun OnboardingStepContentPreview() {
-    ItamaePreviewTheme {
-        OnboardingStepContent(
-            step = OnboardingStep(
-                titleRes = R.string.onboarding_step_solo_title,
-                descriptionRes = R.string.onboarding_step_solo_description,
-                illustration = OnboardingIllustration.VectorIcon(Icons.Outlined.TouchApp),
-            ),
-        )
+        OnboardingStepContent(step = previewSteps.last())
     }
 }
 
@@ -491,6 +631,6 @@ private fun OnboardingStepContentPreview() {
 @Composable
 private fun OnboardingProgressDotsPreview() {
     ItamaePreviewTheme {
-        OnboardingProgressDots(stepCount = defaultOnboardingSteps().size, currentStepIndex = 2)
+        OnboardingProgressDots(stepCount = previewSteps.size, currentStepIndex = 2)
     }
 }

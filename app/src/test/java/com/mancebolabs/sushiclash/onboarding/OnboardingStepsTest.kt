@@ -1,9 +1,11 @@
 package com.mancebolabs.sushiclash.onboarding
 
 import com.mancebolabs.sushiclash.R
+import com.mancebolabs.sushiclash.feature.onboarding.OnboardingChefRole
 import com.mancebolabs.sushiclash.feature.onboarding.OnboardingIllustration
 import com.mancebolabs.sushiclash.feature.onboarding.defaultOnboardingSteps
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -38,6 +40,27 @@ class OnboardingStepsTest {
 
         assertEquals(R.string.onboarding_step_responsible_use_title, lastStep.titleRes)
         assertEquals(R.string.onboarding_step_responsible_use_description, lastStep.descriptionRes)
-        assertTrue(lastStep.illustration is OnboardingIllustration.DrawableResource)
+        assertEquals(OnboardingChefRole.Greeting, lastStep.chefRole)
+    }
+
+    @Test
+    fun givenDefaultSteps_whenLoaded_thenWelcomeUsesChefDialogueWithoutDuplicateTitle() {
+        val welcome = defaultOnboardingSteps().first()
+
+        assertEquals(R.string.onboarding_step_welcome_dialogue, welcome.dialogueRes)
+        assertEquals(OnboardingChefRole.Greeting, welcome.chefRole)
+        assertNull(welcome.titleRes)
+        assertNull(welcome.descriptionRes)
+        assertNull(welcome.illustration)
+    }
+
+    @Test
+    fun givenDefaultSteps_whenLoaded_thenTutorialStepsKeepFeatureIllustrations() {
+        val solo = defaultOnboardingSteps()[1]
+
+        assertEquals(OnboardingChefRole.Tutorial, solo.chefRole)
+        assertEquals(R.string.onboarding_step_solo_title, solo.titleRes)
+        assertTrue(solo.illustration is OnboardingIllustration.DrawableResource)
+        assertEquals(R.string.onboarding_step_solo_description, solo.descriptionRes)
     }
 }

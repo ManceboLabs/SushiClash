@@ -53,22 +53,30 @@
     <string name="onboarding_previous">Anterior</string>
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_finish">Empezar</string>
+    <string name="onboarding_step_welcome_dialogue">¡Bienvenido a Sushi Clash! Cuenta sushi en solitario o compite con tus amigos en la mesa.</string>
+    <string name="onboarding_step_solo_dialogue">Toca el sushi para contar cada pieza que comes.</string>
+    <string name="onboarding_step_group_dialogue">Añade hasta 6 jugadores y coloca el móvil en el centro para que todos puedan pulsar.</string>
+    <string name="onboarding_step_roulette_dialogue">Activa la ruleta para ver quién elige el sushi.</string>
+    <string name="onboarding_step_random_roulette_dialogue">¡La ruleta se activa sola al alcanzar ciertos puntos!</string>
+    <string name="onboarding_step_history_dialogue">Guarda tus partidas y consulta tus mejores resultados.</string>
+    <string name="onboarding_step_achievements_dialogue">¡Desbloquea logros jugando, comiendo sushi y usando la ruleta!</string>
+    <string name="onboarding_step_responsible_use_dialogue">Escucha a tu cuerpo, disfruta a tu ritmo y diviértete.</string>
     <string name="onboarding_step_welcome_title">Bienvenido a Sushi Clash</string>
     <string name="onboarding_step_welcome_description">Cuenta sushi en solitario o compite con tus amigos en la mesa.</string>
     <string name="onboarding_step_solo_title">Modo Solo</string>
-    <string name="onboarding_step_solo_description">Toca el sushi para contar cada pieza que comes.</string>
+    <string name="onboarding_step_solo_description">Cuenta fácilmente cada pieza de sushi que comes durante tu partida.</string>
     <string name="onboarding_step_group_title">Modo Grupo</string>
-    <string name="onboarding_step_group_description">Añade hasta 6 jugadores y coloca el móvil en el centro para que todos puedan pulsar.</string>
+    <string name="onboarding_step_group_description">Juega con amigos y lleva el contador de sushi de cada participante por separado.</string>
     <string name="onboarding_step_random_roulette_title">Ruleta aleatoria</string>
     <string name="onboarding_step_random_roulette_description">Se activará automáticamente la ruleta al alcanzar ciertos puntos. Esta cantidad podrá ser elegida o aleatoria.</string>
     <string name="onboarding_step_history_title">Histórico</string>
-    <string name="onboarding_step_history_description">Guarda tus partidas y consulta tus mejores resultados.</string>
+    <string name="onboarding_step_history_description">Consulta tus partidas anteriores y descubre tus mejores resultados.</string>
     <string name="onboarding_step_achievements_title">Logros</string>
     <string name="onboarding_step_achievements_description">Desbloquea logros jugando, comiendo sushi y usando la ruleta. Algunos avanzan en varias partidas. Se guardan en el dispositivo hasta que los restablezcas en Ajustes. Consulta tu progreso en la pantalla Logros.</string>
     <string name="onboarding_step_responsible_use_title">Disfruta con equilibrio 🍣</string>
     <string name="onboarding_step_responsible_use_description">Sushi Clash está hecha para añadir un poco más de diversión a tus comidas, no para convertirlas en una competición por comer más.\n\nEscucha a tu cuerpo, disfruta a tu ritmo y no dejes que un récord, objetivo o logro te anime a comer más de lo que te apetece.\n\n¡Diviértete y disfruta! 🍣</string>
     <string name="onboarding_step_roulette_title">Ruleta de decisión</string>
-    <string name="onboarding_step_roulette_description">Activa la ruleta para ver quien elige el sushi.</string>
+    <string name="onboarding_step_roulette_description">Añade participantes y deja que la ruleta elija quién toma la siguiente decisión.</string>
 
     <!-- Counter screen -->
     <string name="counter_screen_title">@string/app_name</string>

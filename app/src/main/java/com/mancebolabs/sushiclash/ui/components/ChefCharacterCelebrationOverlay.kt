@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -96,6 +97,7 @@ fun ChefCharacterCelebrationOverlay(
 internal fun ComicSpeechBubble(
     message: String,
     modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.titleLarge,
 ) {
     val bubbleColor = MaterialTheme.colorScheme.surfaceContainerLowest
     val borderColor = MaterialTheme.colorScheme.primary
@@ -122,7 +124,7 @@ internal fun ComicSpeechBubble(
                     horizontal = ItamaeSpacing.lg,
                     vertical = ItamaeSpacing.md,
                 ),
-                style = MaterialTheme.typography.titleLarge,
+                style = textStyle,
                 color = textColor,
                 textAlign = TextAlign.Center,
             )

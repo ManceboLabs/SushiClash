@@ -22,7 +22,7 @@ class OnboardingFlowInstrumentedTest : SushiClashInstrumentedTestCase() {
 
     @Test
     fun givenFreshInstall_whenAppLaunches_thenShowsOnboarding() {
-        composeTestRule.waitForText(R.string.onboarding_step_welcome_title)
+        composeTestRule.waitForText(R.string.onboarding_step_welcome_dialogue)
         composeTestRule.waitForText(R.string.onboarding_skip)
     }
 
@@ -51,7 +51,7 @@ class OnboardingFlowInstrumentedTest : SushiClashInstrumentedTestCase() {
 
     @Test
     fun givenOnboarding_whenSwipedLeft_thenShowsNextStep() {
-        composeTestRule.waitForText(R.string.onboarding_step_welcome_title)
+        composeTestRule.waitForText(R.string.onboarding_step_welcome_dialogue)
         composeTestRule.onNodeWithTag(ONBOARDING_PAGER_TEST_TAG)
             .performTouchInput {
                 val y = center.y
@@ -64,7 +64,7 @@ class OnboardingFlowInstrumentedTest : SushiClashInstrumentedTestCase() {
 
     @Test
     fun givenSecondOnboardingStep_whenSwipedRight_thenShowsPreviousStep() {
-        composeTestRule.waitForText(R.string.onboarding_step_welcome_title)
+        composeTestRule.waitForText(R.string.onboarding_step_welcome_dialogue)
         composeTestRule.onText(R.string.onboarding_next).performClick()
         composeTestRule.waitForText(R.string.onboarding_step_solo_title)
         composeTestRule.onNodeWithTag(ONBOARDING_PAGER_TEST_TAG)
@@ -74,7 +74,7 @@ class OnboardingFlowInstrumentedTest : SushiClashInstrumentedTestCase() {
                 moveTo(Offset(right - 1f, y), 200)
                 up()
             }
-        composeTestRule.waitForText(R.string.onboarding_step_welcome_title)
+        composeTestRule.waitForText(R.string.onboarding_step_welcome_dialogue)
     }
 
     @Test

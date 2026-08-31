@@ -53,22 +53,30 @@
     <string name="onboarding_previous">上一步</string>
     <string name="onboarding_next">下一步</string>
     <string name="onboarding_finish">开始</string>
+    <string name="onboarding_step_welcome_dialogue">欢迎来到 Sushi Clash！独自计数寿司，或与朋友们围桌竞技。</string>
+    <string name="onboarding_step_solo_dialogue">点击寿司，计数你吃的每一贯。</string>
+    <string name="onboarding_step_group_dialogue">最多添加 6 名玩家，将手机放在中间，方便大家点击。</string>
+    <string name="onboarding_step_roulette_dialogue">转动转盘，看看谁来选寿司。</string>
+    <string name="onboarding_step_random_roulette_dialogue">达到特定数量时会自动触发转盘！</string>
+    <string name="onboarding_step_history_dialogue">保存对局，查看你的最佳成绩。</string>
+    <string name="onboarding_step_achievements_dialogue">通过游戏、吃寿司和使用转盘来解锁成就！</string>
+    <string name="onboarding_step_responsible_use_dialogue">倾听身体的声音，按自己的节奏享受，玩得开心！</string>
     <string name="onboarding_step_welcome_title">欢迎来到 Sushi Clash</string>
     <string name="onboarding_step_welcome_description">独自计数寿司，或与朋友们围桌竞技。</string>
     <string name="onboarding_step_solo_title">单人模式</string>
-    <string name="onboarding_step_solo_description">点击寿司，计数你吃的每一贯。</string>
+    <string name="onboarding_step_solo_description">轻松记录你在本局游戏中吃的每一贯寿司。</string>
     <string name="onboarding_step_group_title">多人模式</string>
-    <string name="onboarding_step_group_description">最多添加 6 名玩家，将手机放在中间，方便大家点击。</string>
+    <string name="onboarding_step_group_description">与好友同玩，为每位参与者单独记录寿司数量。</string>
     <string name="onboarding_step_random_roulette_title">随机转盘</string>
     <string name="onboarding_step_random_roulette_description">达到特定数量时会自动触发转盘。数量可以固定或随机选择。</string>
     <string name="onboarding_step_history_title">历史</string>
-    <string name="onboarding_step_history_description">保存对局，查看你的最佳成绩。</string>
+    <string name="onboarding_step_history_description">查看以往对局，发现你的最佳成绩。</string>
     <string name="onboarding_step_achievements_title">成就</string>
     <string name="onboarding_step_achievements_description">通过游戏、吃寿司和使用转盘来解锁成就。部分成就会跨多局累积进度。成就保存在设备上，直到你在设置中重置。在成就页面查看你的进度。</string>
     <string name="onboarding_step_responsible_use_title">适度享受 🍣</string>
     <string name="onboarding_step_responsible_use_description">Sushi Clash 旨在为你的用餐增添一点乐趣，而不是把它变成比谁吃得更多的竞赛。\n\n倾听身体的声音，按自己的节奏享受，不要让纪录、目标或成就驱使你吃得超出意愿。\n\n玩得开心，好好享受！ 🍣</string>
     <string name="onboarding_step_roulette_title">决策转盘</string>
-    <string name="onboarding_step_roulette_description">转动转盘，看看谁来选寿司。</string>
+    <string name="onboarding_step_roulette_description">添加参与者，让转盘决定谁来做下一个选择。</string>
 
     <!-- Counter screen -->
     <string name="counter_screen_title">@string/app_name</string>

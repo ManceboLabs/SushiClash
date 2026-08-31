@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Movie
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.RawRes
 import kotlin.math.min
@@ -83,4 +84,6 @@ internal class GifMovieView @JvmOverloads constructor(
         stop()
         super.onDetachedFromWindow()
     }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean = false
 }

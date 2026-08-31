@@ -15,6 +15,12 @@ object SushiClashCharacterAnimations {
     @RawRes
     val GameFinish: Int = R.raw.chef_final
 
+    @RawRes
+    val OnboardingGreeting: Int = R.raw.chef_saludo
+
+    @RawRes
+    val OnboardingTutorial: Int = R.raw.chef_tutorial
+
     val RandomEventPool: List<ChefEventAnimation> = ChefEventAnimation.entries
 
     @RawRes
