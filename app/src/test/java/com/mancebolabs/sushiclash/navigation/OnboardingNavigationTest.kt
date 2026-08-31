@@ -9,13 +9,6 @@ class OnboardingNavigationTest {
 
     @Test
     fun givenMainTabRoutes_whenChecked_thenOnboardingIsExcluded() {
-        val mainTabRoutes = setOf(
-            SushiDestination.Counter.route,
-            SushiDestination.Wheel.route,
-            SushiDestination.History.route,
-            SushiDestination.Settings.route,
-        )
-
         assertFalse(SushiDestination.Onboarding.route(OnboardingSource.FIRST_LAUNCH) in mainTabRoutes)
         assertFalse(SushiDestination.Onboarding.route(OnboardingSource.SETTINGS) in mainTabRoutes)
         assertTrue(SushiDestination.Settings.route in mainTabRoutes)

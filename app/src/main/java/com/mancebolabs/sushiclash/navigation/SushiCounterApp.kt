@@ -84,13 +84,6 @@ sealed class SushiDestination(
     }
 }
 
-private val mainTabRoutes = setOf(
-    SushiDestination.Counter.route,
-    SushiDestination.Wheel.route,
-    SushiDestination.History.route,
-    SushiDestination.Settings.route,
-)
-
 internal fun resolveOnboardingCompleted(
     previous: Boolean?,
     state: PersistenceReadState<Boolean>,
@@ -235,7 +228,7 @@ private fun SushiCounterNavHost(
                         },
                     )
                 }
-                composable(SushiDestination.Counter.route) {
+                mainTabComposable(SushiDestination.Counter.route) {
                     val viewModel: CounterViewModel = viewModel(
                         factory = CounterViewModel.factory(
                             AppContainer.gameRepository(context),
@@ -280,7 +273,7 @@ private fun SushiCounterNavHost(
                         onFeedbackConsumed = viewModel::onFeedbackConsumed,
                     )
                 }
-                composable(SushiDestination.Wheel.route) {
+                mainTabComposable(SushiDestination.Wheel.route) {
                     val viewModel: WheelViewModel = viewModel(
                         factory = WheelViewModel.factory(
                             AppContainer.participantsRepository(context),
@@ -309,7 +302,7 @@ private fun SushiCounterNavHost(
                         onPersistenceRetry = viewModel::onPersistenceRetry,
                     )
                 }
-                composable(SushiDestination.History.route) {
+                mainTabComposable(SushiDestination.History.route) {
                     val viewModel: HistoryViewModel = viewModel(
                         factory = HistoryViewModel.factory(
                             AppContainer.historyRepository(context),
@@ -323,7 +316,7 @@ private fun SushiCounterNavHost(
                         onPersistenceRetry = viewModel::onPersistenceRetry,
                     )
                 }
-                composable(SushiDestination.Settings.route) {
+                mainTabComposable(SushiDestination.Settings.route) {
                     val appVersion = remember(context) {
                         runCatching {
                             context.packageManager
