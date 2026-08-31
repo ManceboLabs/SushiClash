@@ -148,7 +148,8 @@
     <string name="wheel_spin">Spin</string>
     <string name="wheel_participants_title">Participants</string>
     <string name="wheel_delete_content_description">Remove %1$s</string>
-    <string name="wheel_selected_title">Pick the sushi:</string>
+    <string name="wheel_winner_speech">%1$s, your turn to choose!</string>
+    <string name="wheel_winner_celebration_content_description">Celebration animation for %1$s</string>
     <string name="wheel_ok">OK</string>
     <string name="wheel_min_participants_hint">Add at least 2 people to spin the roulette</string>
     <string name="wheel_empty_wheel_hint">Add more participants to spin the roulette</string>

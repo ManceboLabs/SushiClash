@@ -148,7 +148,8 @@
     <string name="wheel_spin">Girar</string>
     <string name="wheel_participants_title">Participantes</string>
     <string name="wheel_delete_content_description">Eliminar %1$s</string>
-    <string name="wheel_selected_title">Elige el sushi:</string>
+    <string name="wheel_winner_speech">¡%1$s, te toca elegir!</string>
+    <string name="wheel_winner_celebration_content_description">Animación de celebración para %1$s</string>
     <string name="wheel_ok">OK</string>
     <string name="wheel_min_participants_hint">Añade mínimo 2 personas para girar la ruleta</string>
     <string name="wheel_empty_wheel_hint">Añade más participantes para girar la ruleta</string>

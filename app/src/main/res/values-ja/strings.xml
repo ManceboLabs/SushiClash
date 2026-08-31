@@ -148,7 +148,8 @@
     <string name="wheel_spin">回す</string>
     <string name="wheel_participants_title">参加者</string>
     <string name="wheel_delete_content_description">%1$s を削除</string>
-    <string name="wheel_selected_title">寿司を選ぶ：</string>
+    <string name="wheel_winner_speech">%1$s、選んで！</string>
+    <string name="wheel_winner_celebration_content_description">%1$s のお祝いアニメーション</string>
     <string name="wheel_ok">OK</string>
     <string name="wheel_min_participants_hint">ルーレットを回すには最低2人追加してください</string>
     <string name="wheel_empty_wheel_hint">ルーレットを回すには参加者をもっと追加してください</string>

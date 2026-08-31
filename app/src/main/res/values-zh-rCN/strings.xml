@@ -148,7 +148,8 @@
     <string name="wheel_spin">转动</string>
     <string name="wheel_participants_title">参与者</string>
     <string name="wheel_delete_content_description">移除 %1$s</string>
-    <string name="wheel_selected_title">选择寿司：</string>
+    <string name="wheel_winner_speech">%1$s，该你选了！</string>
+    <string name="wheel_winner_celebration_content_description">%1$s 的庆祝动画</string>
     <string name="wheel_ok">确定</string>
     <string name="wheel_min_participants_hint">至少添加 2 人才能转动转盘</string>
     <string name="wheel_empty_wheel_hint">添加更多参与者才能转动转盘</string>

@@ -148,7 +148,8 @@
     <string name="wheel_spin">Drehen</string>
     <string name="wheel_participants_title">Teilnehmer</string>
     <string name="wheel_delete_content_description">%1$s entfernen</string>
-    <string name="wheel_selected_title">Sushi auswählen:</string>
+    <string name="wheel_winner_speech">%1$s, du bist dran!</string>
+    <string name="wheel_winner_celebration_content_description">Feieranimation für %1$s</string>
     <string name="wheel_ok">OK</string>
     <string name="wheel_min_participants_hint">Füge mindestens 2 Personen hinzu, um das Roulette zu drehen</string>
     <string name="wheel_empty_wheel_hint">Füge mehr Teilnehmer hinzu, um das Roulette zu drehen</string>
