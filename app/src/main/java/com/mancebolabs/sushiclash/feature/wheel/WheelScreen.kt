@@ -175,14 +175,6 @@ fun WheelScreen(
             }
         }
 
-        if (uiState.participants.size < 2) {
-            Text(
-                text = stringResource(R.string.wheel_min_participants_hint),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
         ItamaePrimaryButton(
             text = stringResource(R.string.wheel_spin),
             onClick = onSpin,

@@ -9,13 +9,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.mancebolabs.sushiclash.domain.model.ChefEventAnimation
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.components.character.AnimatedCharacterGif
 import com.mancebolabs.sushiclash.ui.components.character.SushiClashCharacterAnimations
-import androidx.compose.ui.platform.testTag
-import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 
 @Composable

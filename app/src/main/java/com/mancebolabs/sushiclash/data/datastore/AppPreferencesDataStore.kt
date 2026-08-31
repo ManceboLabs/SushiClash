@@ -30,6 +30,7 @@ import java.io.File
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
@@ -606,6 +607,10 @@ class AppPreferencesDataStore(
             preferences.remove(SOLO_HISTORY_KEY)
             preferences.remove(GROUP_HISTORY_KEY)
         }
+    }
+
+    suspend fun refreshPreferencesRead() {
+        dataStore.data.first()
     }
 
     private fun encodePlayers(players: List<Player>): String {

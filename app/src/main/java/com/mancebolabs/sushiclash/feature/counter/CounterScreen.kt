@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +29,6 @@ import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.ui.components.ChefCharacterCelebrationOverlay
-import com.mancebolabs.sushiclash.ui.components.ChefRandomEventOverlay
 import com.mancebolabs.sushiclash.ui.components.ConfirmationDialog
 import com.mancebolabs.sushiclash.ui.components.FinishGameDialog
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
@@ -124,19 +124,11 @@ fun CounterScreen(
         }
     }
 
-    // Start/finish celebrations use Dialog windows; random events use an in-tree overlay that
-    // must compose after the screen content or ActiveGameContent will draw on top of it.
+    // Start/finish celebrations use Dialog windows at the screen level.
     ChefCelebrationOverlay(
         celebration = uiState.chefCelebration,
         onDismiss = onChefCelebrationDismissed,
     )
-
-    uiState.chefRandomEvent?.let { animation ->
-        ChefRandomEventOverlay(
-            animation = animation,
-            onPlaybackComplete = onChefRandomEventDismissed,
-        )
-    }
 }
 
 @Composable
@@ -193,7 +185,10 @@ private fun StartupLoadingScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-    )
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+    }
 }
 
 @Composable

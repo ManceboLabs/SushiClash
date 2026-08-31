@@ -12,7 +12,6 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +36,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -45,6 +45,7 @@ import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
+import com.mancebolabs.sushiclash.ui.theme.rememberItamaeIsDarkTheme
 import com.mancebolabs.sushiclash.ui.theme.itamaeInteractionShadow
 import com.mancebolabs.sushiclash.ui.theme.itamaePressedShadow
 import com.mancebolabs.sushiclash.ui.theme.sushiButtonBorder
@@ -73,7 +74,7 @@ fun SushiClickerButton(
     buttonSize: Dp = 220.dp,
     imageSize: Dp = 148.dp,
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = rememberItamaeIsDarkTheme()
     val scope = rememberCoroutineScope()
     val scale = remember { Animatable(RESTING_SCALE) }
     var isPressed by remember { mutableStateOf(false) }
@@ -143,6 +144,7 @@ fun SushiClickerButton(
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }

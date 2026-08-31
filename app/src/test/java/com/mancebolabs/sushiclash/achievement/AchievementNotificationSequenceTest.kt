@@ -5,10 +5,12 @@ import com.mancebolabs.sushiclash.domain.model.achievement.AchievementUnlock
 import com.mancebolabs.sushiclash.feature.achievements.AchievementNotificationDisplayState
 import com.mancebolabs.sushiclash.feature.achievements.AchievementNotificationSequenceProcessor
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -87,5 +89,37 @@ class AchievementNotificationSequenceTest {
             ),
             stateTimeline,
         )
+    }
+
+    @Test
+    fun givenBlockingChefPresentation_whenUnlockArrives_thenNotificationIsDeferredUntilBlockingEnds() = runTest {
+        val blockingPresentations = MutableStateFlow(true)
+        val processor = AchievementNotificationSequenceProcessor(
+            displayDurationMs = 100,
+            exitAnimationDurationMs = 50,
+        )
+        val feedbackEvents = mutableListOf<AchievementUnlock>()
+        val stateTimeline = mutableListOf<AchievementNotificationDisplayState>()
+        val unlock = AchievementUnlock(AchievementId.SUSHI_10, unlockedAtEpochMillis = 1L)
+
+        val job = launch {
+            processor.process(
+                events = flowOf(unlock),
+                blockingPresentations = blockingPresentations,
+                onFeedback = { feedbackEvents.add(it) },
+                onStateChange = { stateTimeline.add(it) },
+            )
+        }
+
+        testScheduler.advanceTimeBy(500)
+        assertTrue(feedbackEvents.isEmpty())
+        assertTrue(stateTimeline.isEmpty())
+
+        blockingPresentations.value = false
+        testScheduler.advanceTimeBy(200)
+        job.join()
+
+        assertEquals(listOf(unlock), feedbackEvents)
+        assertTrue(stateTimeline.any { it.unlock == unlock && it.visible })
     }
 }

@@ -16,6 +16,21 @@ val LocalFloatingNavBarHeight = staticCompositionLocalOf { ItamaeSpacing.floatin
 /**
  * Calculates bottom padding so content clears the floating navigation bar and system navigation area.
  */
+/**
+ * Bottom padding for secondary routes that do not reserve space for the floating nav bar.
+ */
+@Composable
+fun rememberItamaeSecondaryScreenBottomPadding(
+    scrollable: Boolean = false,
+): Dp {
+    val systemNavigationPadding = WindowInsets.navigationBars
+        .asPaddingValues()
+        .calculateBottomPadding()
+    val contentSpacing = if (scrollable) ItamaeSpacing.md else ItamaeSpacing.lg
+
+    return systemNavigationPadding + contentSpacing
+}
+
 @Composable
 fun rememberItamaeBottomContentPadding(
     scrollable: Boolean = false,

@@ -14,6 +14,7 @@ object SushiClashTestTags {
     const val SETTINGS_VIEW_TUTORIAL_ROW = "settings_view_tutorial_row"
     const val HISTORY_SECTION_SOLO = "history_section_solo"
     const val HISTORY_SECTION_GROUP = "history_section_group"
+    const val HISTORY_UNABLE_TO_LOAD = "history_unable_to_load"
 
     fun onboardingProgressDot(index: Int): String = "${ONBOARDING_PROGRESS_DOT}_$index"
 

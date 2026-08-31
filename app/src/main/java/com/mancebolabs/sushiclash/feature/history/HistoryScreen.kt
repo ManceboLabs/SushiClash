@@ -2,30 +2,28 @@ package com.mancebolabs.sushiclash.feature.history
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,6 +52,7 @@ internal fun shouldShowHistoryEmptyCopy(
 fun HistoryScreen(
     uiState: HistoryUiState,
     onSectionSelected: (HistorySection) -> Unit,
+    onPersistenceRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -72,7 +71,10 @@ fun HistoryScreen(
         ItamaeScreenTitle(title = stringResource(R.string.history_screen_title))
 
         if (uiState.persistenceError) {
-            PersistenceErrorMessage(isRetrying = uiState.isPersistenceRetrying)
+            PersistenceErrorMessage(
+                isRetrying = uiState.isPersistenceRetrying,
+                onRetry = onPersistenceRetry,
+            )
         }
 
         HistorySectionSelector(
@@ -142,15 +144,15 @@ private fun HistorySectionChip(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = 48.dp)
             .clip(ItamaeShapes.small)
             .border(width = 1.dp, color = borderColor, shape = ItamaeShapes.small)
             .background(containerColor)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+            .selectable(
+                selected = selected,
                 onClick = onClick,
+                role = Role.Tab,
             )
-            .semantics { this.selected = selected }
             .padding(vertical = ItamaeSpacing.sm),
         contentAlignment = Alignment.Center,
     ) {
@@ -173,6 +175,10 @@ private fun SoloHistoryContent(
 ) {
     if (shouldShowHistoryEmptyCopy(persistenceError = persistenceError, hasItems = items.isNotEmpty())) {
         HistoryEmptyState(message = stringResource(R.string.history_solo_empty))
+        return
+    }
+    if (persistenceError && items.isEmpty()) {
+        HistoryUnableToLoadState()
         return
     }
     if (items.isEmpty()) return
@@ -225,6 +231,10 @@ private fun GroupHistoryContent(
 ) {
     if (shouldShowHistoryEmptyCopy(persistenceError = persistenceError, hasItems = items.isNotEmpty())) {
         HistoryEmptyState(message = stringResource(R.string.history_group_empty))
+        return
+    }
+    if (persistenceError && items.isEmpty()) {
+        HistoryUnableToLoadState()
         return
     }
     if (items.isEmpty()) return
@@ -321,6 +331,21 @@ private fun HistoryFeatureChip(
 }
 
 @Composable
+private fun HistoryUnableToLoadState(
+    modifier: Modifier = Modifier,
+) {
+    ItamaeCard(
+        modifier = modifier.testTag(SushiClashTestTags.HISTORY_UNABLE_TO_LOAD),
+    ) {
+        Text(
+            text = stringResource(R.string.history_unable_to_load),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
 private fun HistoryEmptyState(
     message: String,
 ) {
@@ -368,7 +393,7 @@ private val previewGroupHistory = HistoryUiState(
 @Composable
 private fun HistorySoloLightPreview() {
     ItamaePreviewTheme(darkTheme = false) {
-        HistoryScreen(uiState = previewSoloHistory, onSectionSelected = {})
+        HistoryScreen(uiState = previewSoloHistory, onSectionSelected = {}, onPersistenceRetry = {})
     }
 }
 
@@ -376,7 +401,7 @@ private fun HistorySoloLightPreview() {
 @Composable
 private fun HistorySoloDarkPreview() {
     ItamaePreviewTheme(darkTheme = true) {
-        HistoryScreen(uiState = previewSoloHistory, onSectionSelected = {})
+        HistoryScreen(uiState = previewSoloHistory, onSectionSelected = {}, onPersistenceRetry = {})
     }
 }
 
@@ -384,7 +409,7 @@ private fun HistorySoloDarkPreview() {
 @Composable
 private fun HistoryGroupLightPreview() {
     ItamaePreviewTheme(darkTheme = false) {
-        HistoryScreen(uiState = previewGroupHistory, onSectionSelected = {})
+        HistoryScreen(uiState = previewGroupHistory, onSectionSelected = {}, onPersistenceRetry = {})
     }
 }
 
@@ -392,7 +417,7 @@ private fun HistoryGroupLightPreview() {
 @Composable
 private fun HistoryGroupDarkPreview() {
     ItamaePreviewTheme(darkTheme = true) {
-        HistoryScreen(uiState = previewGroupHistory, onSectionSelected = {})
+        HistoryScreen(uiState = previewGroupHistory, onSectionSelected = {}, onPersistenceRetry = {})
     }
 }
 
@@ -403,6 +428,7 @@ private fun HistorySoloEmptyPreview() {
         HistoryScreen(
             uiState = HistoryUiState(selectedSection = HistorySection.SOLO),
             onSectionSelected = {},
+            onPersistenceRetry = {},
         )
     }
 }
@@ -414,6 +440,7 @@ private fun HistoryPersistenceErrorLightPreview() {
         HistoryScreen(
             uiState = HistoryUiState(persistenceError = true),
             onSectionSelected = {},
+            onPersistenceRetry = {},
         )
     }
 }
@@ -425,6 +452,7 @@ private fun HistoryPersistenceErrorDarkPreview() {
         HistoryScreen(
             uiState = HistoryUiState(persistenceError = true),
             onSectionSelected = {},
+            onPersistenceRetry = {},
         )
     }
 }

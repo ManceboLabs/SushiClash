@@ -127,6 +127,7 @@
     <string name="history_group_best_score">Best: %1$d sushi</string>
     <string name="history_group_total_score">Total: %1$d sushi</string>
     <string name="history_group_games_played">Games: %1$d</string>
+    <string name="history_unable_to_load">Saved games could not be loaded.</string>
 
     <!-- Setup -->
     <string name="setup_title">Choose game mode</string>
@@ -179,6 +180,8 @@
     <string name="achievements_progress_summary">%1$d of %2$d achievements unlocked</string>
     <string name="achievements_progress_value">%1$d / %2$d</string>
     <string name="achievements_unlocked_at">Unlocked: %1$s</string>
+    <string name="achievements_accessibility_locked">Locked</string>
+    <string name="achievements_accessibility_unlocked">Unlocked</string>
     <string name="achievement_unlocked_banner">Achievement unlocked</string>
     <string name="achievements_category_sushi">Sushi</string>
     <string name="achievements_category_solo_lifetime_sushi">Lifetime Solo sushi</string>

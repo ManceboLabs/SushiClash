@@ -126,6 +126,18 @@ class HistoryViewModelTest {
     }
 
     @Test
+    fun givenCorruptedHistory_whenRetryRequested_thenReloadsHistory() = runTest {
+        val repository = FakeHistoryRepository().apply {
+            setSoloHistoryCorrupted()
+        }
+        val viewModel = HistoryViewModel(repository)
+
+        viewModel.onPersistenceRetry()
+
+        assertEquals(1, repository.reloadHistoryCallCount)
+    }
+
+    @Test
     fun givenPersistenceError_whenHistoryHasNoItems_thenHidesEmptyCopy() {
         assertFalse(shouldShowHistoryEmptyCopy(persistenceError = true, hasItems = false))
         assertTrue(shouldShowHistoryEmptyCopy(persistenceError = false, hasItems = false))

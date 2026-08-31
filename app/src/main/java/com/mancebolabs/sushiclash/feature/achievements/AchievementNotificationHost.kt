@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import com.mancebolabs.sushiclash.R
+import com.mancebolabs.sushiclash.ui.components.ChefRandomEventCoordinator
 import com.mancebolabs.sushiclash.domain.model.achievement.AchievementId
 import com.mancebolabs.sushiclash.domain.model.achievement.AchievementUnlock
 import com.mancebolabs.sushiclash.feature.feedback.AndroidGameFeedbackController
@@ -71,6 +72,7 @@ fun AchievementNotificationHost(
     LaunchedEffect(processor) {
         processor.process(
             events = AchievementNotificationDispatcher.events,
+            blockingPresentations = ChefRandomEventCoordinator.isBlockingPresentationActive,
             onFeedback = { unlock ->
                 currentFeedbackController.value.playAchievementUnlocked(
                     vibrationEnabled = currentVibrationEnabled.value,

@@ -11,10 +11,14 @@ import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.model.SoloHistoryRanking
 import com.mancebolabs.sushiclash.domain.model.isUnreadable
 import com.mancebolabs.sushiclash.domain.repository.HistoryRepository
+import java.io.IOException
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 enum class HistorySection {
     SOLO,
@@ -40,21 +44,24 @@ data class HistoryUiState(
 )
 
 class HistoryViewModel(
-    historyRepository: HistoryRepository,
+    private val historyRepository: HistoryRepository,
 ) : ViewModel() {
 
-    private val selectedSection = kotlinx.coroutines.flow.MutableStateFlow(HistorySection.SOLO)
+    private val selectedSection = MutableStateFlow(HistorySection.SOLO)
+    private val isPersistenceRetrying = MutableStateFlow(false)
 
     val uiState: StateFlow<HistoryUiState> = combine(
         historyRepository.soloHistory,
         historyRepository.groupHistory,
         selectedSection,
-    ) { soloHistory, groupHistory, section ->
+        isPersistenceRetrying,
+    ) { soloHistory, groupHistory, section, isRetrying ->
         HistoryUiState(
             selectedSection = section,
             soloItems = soloItemsFrom(soloHistory),
             groupItems = groupItemsFrom(groupHistory),
             persistenceError = soloHistory.isUnreadable() || groupHistory.isUnreadable(),
+            isPersistenceRetrying = isRetrying,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -66,7 +73,20 @@ class HistoryViewModel(
         selectedSection.value = section
     }
 
-    fun onPersistenceRetry() = Unit
+    fun onPersistenceRetry() {
+        if (!isPersistenceRetrying.compareAndSet(expect = false, update = true)) return
+        viewModelScope.launch {
+            try {
+                historyRepository.reloadHistory()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: IOException) {
+                // The repository flows keep exposing the unreadable state until data recovers.
+            } finally {
+                isPersistenceRetrying.value = false
+            }
+        }
+    }
 
     companion object {
         fun factory(historyRepository: HistoryRepository): ViewModelProvider.Factory {

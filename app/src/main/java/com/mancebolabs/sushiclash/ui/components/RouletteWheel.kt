@@ -5,7 +5,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mancebolabs.sushiclash.feature.wheel.WheelViewModel
 import com.mancebolabs.sushiclash.ui.theme.ItamaeWheelSegmentColors
+import com.mancebolabs.sushiclash.ui.theme.rememberItamaeIsDarkTheme
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -57,7 +57,7 @@ fun RouletteWheel(
         }
     }
 
-    val pointerColor = if (isSystemInDarkTheme()) {
+    val pointerColor = if (rememberItamaeIsDarkTheme()) {
         Color.White
     } else {
         Color.Black

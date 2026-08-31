@@ -3,6 +3,7 @@ package com.mancebolabs.sushiclash.feature.counter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.mancebolabs.sushiclash.ui.components.ChefRandomEventCoordinator
 import com.mancebolabs.sushiclash.domain.model.ChefEventAnimation
 import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.FrequentPlayer
@@ -491,6 +492,9 @@ class CounterViewModel(
 
         val nextEvent = pendingChefRandomEvents.pollFirst() ?: return
         activeChefRandomEvent.value = nextEvent
+        ChefRandomEventCoordinator.activate(nextEvent) {
+            onChefRandomEventDismissed()
+        }
     }
 
     private fun canShowChefRandomEvent(): Boolean {
@@ -505,6 +509,7 @@ class CounterViewModel(
     private fun clearChefRandomEvents() {
         pendingChefRandomEvents.clear()
         activeChefRandomEvent.value = null
+        ChefRandomEventCoordinator.deactivate()
     }
 
     private fun emitRouletteTriggerIfNeeded(

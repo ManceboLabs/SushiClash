@@ -127,6 +127,7 @@
     <string name="history_group_best_score">Beste: %1$d Sushi</string>
     <string name="history_group_total_score">Gesamt: %1$d Sushi</string>
     <string name="history_group_games_played">Spiele: %1$d</string>
+    <string name="history_unable_to_load">Gespeicherte Spiele konnten nicht geladen werden.</string>
 
     <!-- Setup -->
     <string name="setup_title">Spielmodus wählen</string>
@@ -179,6 +180,8 @@
     <string name="achievements_progress_summary">%1$d von %2$d Erfolgen freigeschaltet</string>
     <string name="achievements_progress_value">%1$d / %2$d</string>
     <string name="achievements_unlocked_at">Freigeschaltet: %1$s</string>
+    <string name="achievements_accessibility_locked">Gesperrt</string>
+    <string name="achievements_accessibility_unlocked">Freigeschaltet</string>
     <string name="achievement_unlocked_banner">Erfolg freigeschaltet</string>
     <string name="achievements_category_sushi">Sushi</string>
     <string name="achievements_category_solo_lifetime_sushi">Gesamt-Sushi im Solo-Modus</string>

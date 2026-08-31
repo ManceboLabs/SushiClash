@@ -4,6 +4,8 @@ import com.mancebolabs.sushiclash.domain.model.achievement.AchievementUnlock
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.selects.onTimeout
 import kotlinx.coroutines.selects.select
 
@@ -31,10 +33,13 @@ class AchievementNotificationSequenceProcessor(
 
     suspend fun process(
         events: Flow<AchievementUnlock>,
+        blockingPresentations: Flow<Boolean> = flowOf(false),
         onFeedback: suspend (AchievementUnlock) -> Unit,
         onStateChange: suspend (AchievementNotificationDisplayState) -> Unit,
     ) {
         events.collect { unlock ->
+            waitUntilBlockingPresentationInactive(blockingPresentations)
+
             drainPendingDismissSignals()
 
             onFeedback(unlock)
@@ -57,5 +62,13 @@ class AchievementNotificationSequenceProcessor(
         while (dismissSignal.tryReceive().isSuccess) {
             // Drop stale dismiss requests from a previous notification cycle.
         }
+    }
+
+    private suspend fun waitUntilBlockingPresentationInactive(
+        blockingPresentations: Flow<Boolean>,
+    ) {
+        if (!blockingPresentations.first()) return
+
+        blockingPresentations.first { !it }
     }
 }

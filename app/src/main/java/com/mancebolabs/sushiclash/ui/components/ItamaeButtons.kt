@@ -83,7 +83,7 @@ fun ItamaeGhostButton(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier,
+        modifier = modifier.defaultMinSize(minHeight = 48.dp),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Text(

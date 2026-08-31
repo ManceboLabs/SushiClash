@@ -127,6 +127,7 @@
     <string name="history_group_best_score">最佳：%1$d 贯寿司</string>
     <string name="history_group_total_score">总计：%1$d 贯寿司</string>
     <string name="history_group_games_played">对局：%1$d</string>
+    <string name="history_unable_to_load">无法加载已保存的对局。</string>
 
     <!-- Setup -->
     <string name="setup_title">选择游戏模式</string>
@@ -179,6 +180,8 @@
     <string name="achievements_progress_summary">已解锁 %1$d / %2$d 个成就</string>
     <string name="achievements_progress_value">%1$d / %2$d</string>
     <string name="achievements_unlocked_at">解锁时间：%1$s</string>
+    <string name="achievements_accessibility_locked">未解锁</string>
+    <string name="achievements_accessibility_unlocked">已解锁</string>
     <string name="achievement_unlocked_banner">成就已解锁</string>
     <string name="achievements_category_sushi">寿司</string>
     <string name="achievements_category_solo_lifetime_sushi">单人累计寿司</string>

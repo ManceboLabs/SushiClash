@@ -55,6 +55,8 @@ import com.mancebolabs.sushiclash.feature.wheel.WheelScreen
 import com.mancebolabs.sushiclash.feature.wheel.WheelViewModel
 import androidx.compose.ui.platform.testTag
 import com.mancebolabs.sushiclash.testing.SushiClashTestTags
+import com.mancebolabs.sushiclash.ui.components.ChefRandomEventCoordinator
+import com.mancebolabs.sushiclash.ui.components.ChefRandomEventOverlay
 import com.mancebolabs.sushiclash.ui.components.ItamaeFloatingNavBar
 import com.mancebolabs.sushiclash.ui.components.ItamaeNavItem
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
@@ -166,6 +168,7 @@ private fun SushiCounterNavHost(
 
     // Onboarding is a dedicated route; bottom navigation is limited to the four main tabs.
     val showBottomNavigation = currentRoute in mainTabRoutes
+    val activeChefRandomEvent by ChefRandomEventCoordinator.activeEvent.collectAsStateWithLifecycle()
 
     val navItems = listOf(
         ItamaeNavItem(
@@ -317,6 +320,7 @@ private fun SushiCounterNavHost(
                     HistoryScreen(
                         uiState = uiState,
                         onSectionSelected = viewModel::onSectionSelected,
+                        onPersistenceRetry = viewModel::onPersistenceRetry,
                     )
                 }
                 composable(SushiDestination.Settings.route) {
@@ -415,6 +419,14 @@ private fun SushiCounterNavHost(
                     .onSizeChanged { size ->
                         floatingNavBarHeight = with(density) { size.height.toDp() }
                     },
+            )
+        }
+
+        activeChefRandomEvent?.let { event ->
+            ChefRandomEventOverlay(
+                animation = event.animation,
+                onPlaybackComplete = { ChefRandomEventCoordinator.complete() },
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }

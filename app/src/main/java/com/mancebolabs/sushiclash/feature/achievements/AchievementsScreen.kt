@@ -25,6 +25,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,7 +43,7 @@ import com.mancebolabs.sushiclash.ui.components.SushiIcon
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
 import com.mancebolabs.sushiclash.ui.theme.itamaeScreenTopInsets
-import com.mancebolabs.sushiclash.ui.theme.rememberItamaeBottomContentPadding
+import com.mancebolabs.sushiclash.ui.theme.rememberItamaeSecondaryScreenBottomPadding
 import java.text.DateFormat
 import java.util.Date
 
@@ -50,7 +54,7 @@ fun AchievementsScreen(
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
-    val bottomContentPadding = rememberItamaeBottomContentPadding(scrollable = true)
+    val bottomContentPadding = rememberItamaeSecondaryScreenBottomPadding(scrollable = true)
 
     Column(
         modifier = modifier
@@ -115,9 +119,39 @@ private fun AchievementRow(
     category: AchievementCategory,
 ) {
     val dateFormat = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
+    val title = achievementTitle(achievement.id)
+    val description = achievementDescription(achievement.id)
+    val stateLabel = if (achievement.isUnlocked) {
+        stringResource(R.string.achievements_accessibility_unlocked)
+    } else {
+        stringResource(R.string.achievements_accessibility_locked)
+    }
+    val progressDescription = if (!achievement.isUnlocked && achievement.target > 1) {
+        stringResource(
+            R.string.achievements_progress_value,
+            achievement.progress,
+            achievement.target,
+        )
+    } else {
+        null
+    }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = buildString {
+                    append(title)
+                    append(". ")
+                    append(description)
+                    append(". ")
+                    append(stateLabel)
+                    progressDescription?.let { progress ->
+                        append(". ")
+                        append(progress)
+                    }
+                }
+            },
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(ItamaeSpacing.md),
     ) {
@@ -131,7 +165,7 @@ private fun AchievementRow(
             verticalArrangement = Arrangement.spacedBy(ItamaeSpacing.xs),
         ) {
             Text(
-                text = achievementTitle(achievement.id),
+                text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (achievement.isUnlocked) {
                     MaterialTheme.colorScheme.onSurface
@@ -140,7 +174,7 @@ private fun AchievementRow(
                 },
             )
             Text(
-                text = achievementDescription(achievement.id),
+                text = description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -150,7 +184,15 @@ private fun AchievementRow(
                     progress = {
                         achievement.progress.toFloat() / achievement.target.toFloat()
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics {
+                            progressBarRangeInfo = ProgressBarRangeInfo(
+                                current = achievement.progress.toFloat(),
+                                range = 0f..achievement.target.toFloat(),
+                                steps = 0,
+                            )
+                        },
                 )
                 Text(
                     text = stringResource(

@@ -13,6 +13,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
+fun rememberItamaeIsDarkTheme(): Boolean {
+    return MaterialTheme.colorScheme.background.luminance() < 0.5f
+}
+
+@Composable
 fun itamaeWasabiAccent(alpha: Float = 0.85f): Color {
     val colorScheme = MaterialTheme.colorScheme
     val wasabi = if (colorScheme.background.luminance() > 0.5f) {

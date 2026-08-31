@@ -10,5 +10,7 @@ interface HistoryRepository {
 
     val groupHistory: Flow<PersistenceReadState<List<GroupGameHistoryEntry>>>
 
+    suspend fun reloadHistory()
+
     suspend fun clearHistory()
 }

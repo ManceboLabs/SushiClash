@@ -29,6 +29,14 @@ class FakeHistoryRepository : HistoryRepository {
         _groupHistory.value = PersistenceReadState.Missing
     }
 
+    override suspend fun reloadHistory() {
+        reloadHistoryCallCount++
+        reloadHistoryThrowable?.let { throw it }
+    }
+
+    var reloadHistoryCallCount = 0
+    var reloadHistoryThrowable: Throwable? = null
+
     fun setSoloHistory(entries: List<SoloGameHistoryEntry>) {
         _soloHistory.value = PersistenceReadState.Data(entries)
     }

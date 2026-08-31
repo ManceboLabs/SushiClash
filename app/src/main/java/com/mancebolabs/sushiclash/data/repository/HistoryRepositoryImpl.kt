@@ -17,6 +17,10 @@ class HistoryRepositoryImpl(
     override val groupHistory: Flow<PersistenceReadState<List<GroupGameHistoryEntry>>> =
         dataStore.groupHistory
 
+    override suspend fun reloadHistory() {
+        dataStore.refreshPreferencesRead()
+    }
+
     override suspend fun clearHistory() {
         dataStore.clearHistory()
     }
