@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.ui.components.ComicSpeechBubble
+import com.mancebolabs.sushiclash.ui.components.resolveOnboardingSpeechBubbleTailCenterFraction
+import com.mancebolabs.sushiclash.ui.components.resolveOnboardingSpeechBubbleWidth
 import com.mancebolabs.sushiclash.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushiclash.ui.components.SushiIcon
@@ -241,8 +243,16 @@ fun OnboardingStepContent(
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
     ) {
+        val contentWidth = maxWidth
         val chefSize = resolveOnboardingChefSize(maxHeight)
         val illustrationSize = resolveOnboardingIllustrationSize(maxHeight)
+        val bubbleWidth = resolveOnboardingSpeechBubbleWidth(contentWidth)
+        val tailCenterFraction = resolveOnboardingSpeechBubbleTailCenterFraction(
+            chefPointToward = step.chefPointToward,
+            contentWidth = contentWidth,
+            bubbleWidth = bubbleWidth,
+            chefSize = chefSize,
+        )
 
         Column(
             modifier = Modifier
@@ -271,6 +281,7 @@ fun OnboardingStepContent(
                     .fillMaxWidth()
                     .widthIn(max = 320.dp),
                 textStyle = MaterialTheme.typography.titleMedium,
+                tailCenterFraction = tailCenterFraction,
             )
 
             Spacer(modifier = Modifier.height(ItamaeSpacing.md))
