@@ -14,6 +14,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.mancebolabs.sushiclash.domain.model.ChefEventAnimation
 import com.mancebolabs.sushiclash.ui.components.character.AnimatedCharacterGif
 import com.mancebolabs.sushiclash.ui.components.character.SushiClashCharacterAnimations
+import androidx.compose.ui.platform.testTag
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 
 @Composable
@@ -25,6 +27,7 @@ fun ChefRandomEventOverlay(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .testTag(SushiClashTestTags.CHEF_RANDOM_EVENT_OVERLAY)
             .consumeAllPointerInput()
             .background(Color.Black.copy(alpha = 0.42f)),
         contentAlignment = Alignment.Center,

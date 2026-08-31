@@ -11,6 +11,9 @@ import com.mancebolabs.sushiclash.data.repository.HistoryRepositoryImpl
 import com.mancebolabs.sushiclash.data.repository.OnboardingRepositoryImpl
 import com.mancebolabs.sushiclash.data.repository.ParticipantsRepositoryImpl
 import com.mancebolabs.sushiclash.data.repository.ThemeRepositoryImpl
+import com.mancebolabs.sushiclash.domain.model.ChefAnimationTriggerLogic
+import com.mancebolabs.sushiclash.domain.model.ChefEventAnimationSelector
+import com.mancebolabs.sushiclash.domain.model.RandomRouletteLogic
 import com.mancebolabs.sushiclash.domain.repository.AchievementRepository
 import com.mancebolabs.sushiclash.domain.repository.FeedbackSettingsRepository
 import com.mancebolabs.sushiclash.domain.repository.FrequentPlayersRepository
@@ -27,7 +30,14 @@ object AppContainer {
     }
 
     fun gameRepository(context: Context): GameRepository {
-        return GameRepositoryImpl(dataStore(context))
+        val chefRandom = AppContainerTestOverrides.chefRandomProviderOrDefault()
+        val rouletteRandom = AppContainerTestOverrides.rouletteRandomProviderOrDefault()
+        return GameRepositoryImpl(
+            dataStore = dataStore(context),
+            randomRouletteLogic = RandomRouletteLogic(rouletteRandom),
+            chefAnimationTriggerLogic = ChefAnimationTriggerLogic(chefRandom),
+            chefEventAnimationSelector = ChefEventAnimationSelector(chefRandom),
+        )
     }
 
     fun languageRepository(): LanguageRepository = sharedLanguageRepository
@@ -40,8 +50,7 @@ object AppContainer {
 
     fun participantsRepository(context: Context): ParticipantsRepository {
         val store = dataStore(context)
-        val gameRepository = GameRepositoryImpl(store)
-        return ParticipantsRepositoryImpl(store, gameRepository)
+        return ParticipantsRepositoryImpl(store, gameRepository(context))
     }
 
     fun themeRepository(context: Context): ThemeRepository {

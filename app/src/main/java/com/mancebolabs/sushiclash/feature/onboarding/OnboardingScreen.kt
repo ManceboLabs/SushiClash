@@ -35,7 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -322,7 +325,9 @@ private fun OnboardingGreetingChef(
 ) {
     AnimatedCharacterGif(
         rawResId = SushiClashCharacterAnimations.OnboardingGreeting,
-        modifier = modifier.size(chefSize),
+        modifier = modifier
+            .size(chefSize)
+            .testTag(SushiClashTestTags.ONBOARDING_CHEF_GREETING),
         contentDescription = null,
     )
 }
@@ -389,6 +394,7 @@ private fun OnboardingTutorialChef(
         rawResId = SushiClashCharacterAnimations.OnboardingTutorial,
         modifier = modifier
             .size(chefSize)
+            .testTag(SushiClashTestTags.ONBOARDING_CHEF_TUTORIAL)
             .graphicsLayer {
                 scaleX = if (mirrorHorizontally) -1f else 1f
             },
@@ -447,6 +453,8 @@ fun OnboardingProgressDots(
                 modifier = Modifier
                     .size(if (isSelected) 12.dp else 8.dp)
                     .clip(CircleShape)
+                    .testTag(SushiClashTestTags.onboardingProgressDot(index))
+                    .semantics { selected = isSelected }
                     .background(
                         if (isSelected) {
                             MaterialTheme.colorScheme.primary

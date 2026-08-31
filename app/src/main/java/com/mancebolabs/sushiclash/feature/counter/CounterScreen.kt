@@ -37,6 +37,8 @@ import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
 import com.mancebolabs.sushiclash.ui.components.SushiClickerButton
+import androidx.compose.ui.platform.testTag
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.components.character.SushiClashCharacterAnimations
 import com.mancebolabs.sushiclash.feature.feedback.CounterFeedbackEffect
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
@@ -372,6 +374,7 @@ private fun ActiveGameContent(
                         style = MaterialTheme.typography.displayLarge,
                         color = MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center,
+                        modifier = Modifier.testTag(SushiClashTestTags.SOLO_SUSHI_COUNT),
                     )
 
                     Spacer(modifier = Modifier.height(ItamaeSpacing.sm))

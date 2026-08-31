@@ -51,6 +51,7 @@ class WheelViewModel(
     private val participantsRepository: ParticipantsRepository,
     private val achievementRepository: AchievementRepository,
     private val randomProvider: RandomProvider = DefaultRandomProvider(),
+    private val spinDurationMs: Long = SPIN_DURATION_MS,
 ) : ViewModel() {
 
     private val inputName = MutableStateFlow("")
@@ -157,7 +158,7 @@ class WheelViewModel(
 
             wheelRotation.value = targetRotation
 
-            kotlinx.coroutines.delay(SPIN_DURATION_MS)
+            kotlinx.coroutines.delay(spinDurationMs)
             isSpinning.value = false
             selectedWinner.value = winner
             achievementRepository.onRouletteSpun()
@@ -265,6 +266,7 @@ class WheelViewModel(
             participantsRepository: ParticipantsRepository,
             achievementRepository: AchievementRepository,
             randomProvider: RandomProvider = DefaultRandomProvider(),
+            spinDurationMs: Long = SPIN_DURATION_MS,
         ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -273,6 +275,7 @@ class WheelViewModel(
                         participantsRepository,
                         achievementRepository,
                         randomProvider,
+                        spinDurationMs,
                     ) as T
                 }
             }

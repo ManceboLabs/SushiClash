@@ -40,7 +40,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
 import com.mancebolabs.sushiclash.R
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.theme.ItamaePreviewTheme
 import com.mancebolabs.sushiclash.ui.theme.ItamaeShapes
 import com.mancebolabs.sushiclash.ui.theme.itamaeInteractionShadow
@@ -149,6 +151,13 @@ fun SushiClickerButton(
                 Box(
                     modifier = Modifier
                         .size(buttonSize)
+                        .then(
+                            if (!playerName.isNullOrBlank()) {
+                                Modifier.testTag(SushiClashTestTags.groupPlayerButton(playerName))
+                            } else {
+                                Modifier
+                            },
+                        )
                         .then(shadowModifier)
                         .then(borderModifier)
                         .clip(ItamaeShapes.large)
@@ -293,6 +302,11 @@ fun SushiClickerButton(
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
+                    modifier = if (!playerName.isNullOrBlank()) {
+                        Modifier.testTag(SushiClashTestTags.groupPlayerCount(playerName))
+                    } else {
+                        Modifier
+                    },
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(

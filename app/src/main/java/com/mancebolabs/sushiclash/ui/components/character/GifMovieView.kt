@@ -7,6 +7,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.RawRes
+import com.mancebolabs.sushiclash.di.AppContainerTestOverrides
 import kotlin.math.min
 
 /**
@@ -60,7 +61,7 @@ internal class GifMovieView @JvmOverloads constructor(
 
         if (!hasReportedCycleComplete) {
             val playedMillis = System.currentTimeMillis() - movieStartMillis
-            if (playedMillis >= duration) {
+            if (AppContainerTestOverrides.completeGifCyclesImmediately || playedMillis >= duration) {
                 hasReportedCycleComplete = true
                 onSingleCycleComplete?.invoke()
             }

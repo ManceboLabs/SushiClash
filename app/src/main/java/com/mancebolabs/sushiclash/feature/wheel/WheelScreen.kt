@@ -21,7 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushiclash.R
@@ -103,7 +105,9 @@ fun WheelScreen(
                     value = uiState.inputName,
                     onValueChange = onInputChanged,
                     label = stringResource(R.string.wheel_name_hint),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag(SushiClashTestTags.WHEEL_PARTICIPANT_NAME_INPUT),
                 )
                 ItamaePrimaryButton(
                     text = stringResource(R.string.wheel_add),

@@ -37,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.di.AppContainer
+import com.mancebolabs.sushiclash.di.AppContainerTestOverrides
 import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
 import com.mancebolabs.sushiclash.feature.achievements.AchievementNotificationHost
@@ -52,6 +53,8 @@ import com.mancebolabs.sushiclash.feature.settings.SettingsScreen
 import com.mancebolabs.sushiclash.feature.settings.SettingsViewModel
 import com.mancebolabs.sushiclash.feature.wheel.WheelScreen
 import com.mancebolabs.sushiclash.feature.wheel.WheelViewModel
+import androidx.compose.ui.platform.testTag
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.components.ItamaeFloatingNavBar
 import com.mancebolabs.sushiclash.ui.components.ItamaeNavItem
 import com.mancebolabs.sushiclash.ui.theme.ItamaeSpacing
@@ -279,6 +282,8 @@ private fun SushiCounterNavHost(
                         factory = WheelViewModel.factory(
                             AppContainer.participantsRepository(context),
                             AppContainer.achievementRepository(context),
+                            randomProvider = AppContainerTestOverrides.wheelRandomProviderOrDefault(),
+                            spinDurationMs = AppContainerTestOverrides.wheelSpinDurationMs,
                         ),
                     )
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -404,6 +409,7 @@ private fun SushiCounterNavHost(
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .testTag(SushiClashTestTags.BOTTOM_NAV_BAR)
                     .navigationBarsPadding()
                     .padding(bottom = ItamaeSpacing.navBottomMargin)
                     .onSizeChanged { size ->

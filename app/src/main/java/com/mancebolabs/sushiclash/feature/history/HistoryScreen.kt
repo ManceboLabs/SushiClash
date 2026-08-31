@@ -23,6 +23,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.domain.model.GroupPlayerRanking
 import com.mancebolabs.sushiclash.domain.model.SoloGameHistoryEntry
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
@@ -102,13 +106,17 @@ private fun HistorySectionSelector(
             label = stringResource(R.string.history_section_solo),
             selected = selectedSection == HistorySection.SOLO,
             onClick = { onSectionSelected(HistorySection.SOLO) },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .testTag(SushiClashTestTags.HISTORY_SECTION_SOLO),
         )
         HistorySectionChip(
             label = stringResource(R.string.history_section_group),
             selected = selectedSection == HistorySection.GROUP,
             onClick = { onSectionSelected(HistorySection.GROUP) },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .testTag(SushiClashTestTags.HISTORY_SECTION_GROUP),
         )
     }
 }
@@ -133,6 +141,7 @@ private fun HistorySectionChip(
 
     Box(
         modifier = modifier
+            .fillMaxWidth()
             .clip(ItamaeShapes.small)
             .border(width = 1.dp, color = borderColor, shape = ItamaeShapes.small)
             .background(containerColor)
@@ -141,6 +150,7 @@ private fun HistorySectionChip(
                 indication = null,
                 onClick = onClick,
             )
+            .semantics { this.selected = selected }
             .padding(vertical = ItamaeSpacing.sm),
         contentAlignment = Alignment.Center,
     ) {
@@ -243,6 +253,9 @@ private fun GroupHistoryCard(
             ) {
                 Text(
                     text = item.ranking.playerName,
+                    modifier = Modifier.testTag(
+                        SushiClashTestTags.groupHistoryPlayerName(item.ranking.playerName),
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,

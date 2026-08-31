@@ -50,6 +50,8 @@ import com.mancebolabs.sushiclash.R
 import com.mancebolabs.sushiclash.domain.model.AppLanguage
 import com.mancebolabs.sushiclash.domain.model.AppThemeMode
 import com.mancebolabs.sushiclash.ui.components.ConfirmationDialog
+import androidx.compose.ui.platform.testTag
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
 import com.mancebolabs.sushiclash.ui.components.ItamaeScreenTitle
 import com.mancebolabs.sushiclash.ui.components.PersistenceErrorMessage
@@ -212,6 +214,7 @@ fun SettingsScreen(
                 description = stringResource(R.string.settings_view_tutorial_description),
                 trailing = SettingsTrailing.Chevron,
                 onClick = onViewTutorialRequested,
+                modifier = Modifier.testTag(SushiClashTestTags.SETTINGS_VIEW_TUTORIAL_ROW),
             )
 
             Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
@@ -297,6 +300,7 @@ private fun SettingsActionRow(
     description: String,
     trailing: SettingsTrailing,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     destructive: Boolean = false,
     contentDescription: String? = null,
 ) {
@@ -313,7 +317,7 @@ private fun SettingsActionRow(
     val rowClickable = trailing is SettingsTrailing.Chevron
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .then(
                 if (contentDescription != null) {

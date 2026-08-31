@@ -59,6 +59,8 @@ import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameSetupRules
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.RandomRouletteTriggerType
+import androidx.compose.ui.platform.testTag
+import com.mancebolabs.sushiclash.testing.SushiClashTestTags
 import com.mancebolabs.sushiclash.ui.components.ItamaeGhostButton
 import com.mancebolabs.sushiclash.ui.components.ItamaePrimaryButton
 import com.mancebolabs.sushiclash.ui.components.ItamaeTextField
@@ -222,7 +224,9 @@ fun GameSetupDialog(
                                         value = inputName,
                                         onValueChange = { inputName = it },
                                         label = stringResource(R.string.setup_player_name_hint),
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .testTag(SushiClashTestTags.PLAYER_NAME_INPUT),
                                     )
                                     ItamaePrimaryButton(
                                         text = stringResource(R.string.wheel_add),
@@ -234,6 +238,7 @@ fun GameSetupDialog(
                                             }
                                         },
                                         enabled = GameSetupRules.canAddGroupPlayerName(groupPlayers, inputName),
+                                        modifier = Modifier.testTag(SushiClashTestTags.SETUP_ADD_PLAYER_BUTTON),
                                     )
                                 }
 
@@ -366,6 +371,7 @@ private fun RandomRouletteSetupSection(
             Switch(
                 checked = enabled,
                 onCheckedChange = onEnabledChanged,
+                modifier = Modifier.testTag(SushiClashTestTags.SETUP_RANDOM_ROULETTE_SWITCH),
             )
         }
 

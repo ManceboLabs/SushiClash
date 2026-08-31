@@ -19,6 +19,7 @@ import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.GameStateValidator
+import com.mancebolabs.sushiclash.domain.model.GroupGameHistoryEntry
 import com.mancebolabs.sushiclash.domain.model.IncrementResult
 import com.mancebolabs.sushiclash.domain.model.InvalidActiveGameException
 import com.mancebolabs.sushiclash.domain.model.PersistenceReadState
@@ -722,6 +723,33 @@ class GameRepositoryImplTest {
                 shared.dataStoreJob.cancel()
             }
         }
+
+    @Test
+    fun givenGroupGameWithIncrements_whenFinishingWithSaving_thenGroupHistoryContainsPlayers() = runTest {
+        val shared = createSharedRealRepositories(sessionId = "group-finish-history")
+        try {
+            shared.firstRepository.completeSetup(
+                GameSetupConfig(
+                    gameMode = GameMode.GROUP,
+                    playerNames = listOf("Ana", "Luis"),
+                ),
+            )
+            val anaId = shared.firstRepository.gameState.first().players.first { it.name == "Ana" }.id
+            repeat(2) {
+                shared.firstRepository.incrementPlayerCount(anaId)
+            }
+
+            val result = shared.firstRepository.finishGameWithSaving()
+
+            assertEquals(FinishGameResult.Success, result)
+            val historyState = shared.appPreferences.groupHistory.first()
+            val history = (historyState as PersistenceReadState.Data<List<GroupGameHistoryEntry>>).value
+            assertEquals(1, history.size)
+            assertEquals(2, history.single().players.first { it.playerName == "Ana" }.sushiCount)
+        } finally {
+            shared.dataStoreJob.cancel()
+        }
+    }
 
     @Test
     fun givenTwoRepositoriesSharingRealStore_whenFinishingSoloGameConcurrently_thenHistoryHasExactlyOneEntry() =
