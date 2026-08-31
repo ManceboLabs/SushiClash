@@ -12,6 +12,7 @@ fun AnimatedCharacterGif(
     @RawRes rawResId: Int,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
+    onSingleCycleComplete: (() -> Unit)? = null,
 ) {
     AndroidView(
         modifier = modifier.semantics {
@@ -25,6 +26,7 @@ fun AnimatedCharacterGif(
         update = { view ->
             view.contentDescription = contentDescription
             view.setGifResource(rawResId)
+            view.onSingleCycleComplete = onSingleCycleComplete
         },
         onRelease = { view ->
             view.stop()

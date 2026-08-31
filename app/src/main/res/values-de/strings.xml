@@ -88,6 +88,13 @@
     <string name="game_start_celebration_content_description">Koch begrüßt ein neues Spiel</string>
     <string name="game_finish_speech">Ich kann nicht mehr...!</string>
     <string name="game_finish_celebration_content_description">Koch feiert das Ende eines Spiels</string>
+    <string name="chef_event_devouring_content_description">Koch verschlingt Sushi</string>
+    <string name="chef_event_giant_sushi_content_description">Koch mit Riesen-Sushi</string>
+    <string name="chef_event_coma_content_description">Koch im Esskoma</string>
+    <string name="chef_event_attack_content_description">Koch greift Sushi an</string>
+    <string name="chef_event_spicy_content_description">Koch isst scharfes Sushi</string>
+    <string name="chef_event_ninja_content_description">Ninja-Koch</string>
+    <string name="chef_event_monster_content_description">Koch verwandelt sich in ein Monster</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">Spiel beenden</string>

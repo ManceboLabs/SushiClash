@@ -3,6 +3,7 @@ package com.mancebolabs.sushiclash.feature.counter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.mancebolabs.sushiclash.domain.model.ChefEventAnimation
 import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.FrequentPlayer
 import com.mancebolabs.sushiclash.domain.model.GameMode
@@ -21,6 +22,7 @@ import com.mancebolabs.sushiclash.domain.repository.GameRepository
 import com.mancebolabs.sushiclash.domain.repository.OnboardingRepository
 import com.mancebolabs.sushiclash.feature.feedback.CounterFeedbackEvent
 import java.io.IOException
+import java.util.ArrayDeque
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -56,6 +58,7 @@ data class CounterUiState(
     val finishGameSaveError: Boolean = false,
     val showSetupDialog: Boolean = false,
     val chefCelebration: ChefCelebrationMoment? = null,
+    val chefRandomEvent: ChefEventAnimation? = null,
     val persistenceError: Boolean = false,
     val isPersistenceRetrying: Boolean = false,
     val soundEnabled: Boolean = true,
@@ -89,6 +92,8 @@ class CounterViewModel(
     private val finishGameSaveError = MutableStateFlow(false)
     private val showSetupDialog = MutableStateFlow(false)
     private val chefCelebration = MutableStateFlow<ChefCelebrationMoment?>(null)
+    private val activeChefRandomEvent = MutableStateFlow<ChefEventAnimation?>(null)
+    private val pendingChefRandomEvents = ArrayDeque<ChefEventAnimation>()
     private val persistenceError = MutableStateFlow(false)
     private val isPersistenceRetrying = MutableStateFlow(false)
     private val feedbackEvent = MutableStateFlow<CounterFeedbackEvent?>(null)
@@ -226,6 +231,7 @@ class CounterViewModel(
         ) { screenState, celebration ->
             screenState.copy(chefCelebration = celebration)
         },
+        activeChefRandomEvent,
         combine(
             persistenceError,
             isPersistenceRetrying,
@@ -242,7 +248,7 @@ class CounterViewModel(
             )
         },
         frequentPlayersRepository.frequentPlayers,
-    ) { gameState, screenState, preferences, frequentPlayers ->
+    ) { gameState, screenState, chefRandomEvent, preferences, frequentPlayers ->
         CounterUiState(
             gameState = gameState,
             startupState = screenState.startupState,
@@ -253,6 +259,7 @@ class CounterViewModel(
             finishGameSaveError = screenState.finishGame.hasError,
             showSetupDialog = screenState.showSetupDialog,
             chefCelebration = screenState.chefCelebration,
+            chefRandomEvent = chefRandomEvent,
             persistenceError = preferences.persistenceError,
             isPersistenceRetrying = preferences.isPersistenceRetrying,
             soundEnabled = preferences.soundEnabled,
@@ -276,6 +283,7 @@ class CounterViewModel(
 
     fun onPlayerSushiTapped(playerId: String) {
         if (startupState.value != AppStartupState.ActiveGame) return
+        if (activeChefRandomEvent.value != null) return
         viewModelScope.launch {
             incrementCount(playerId)
         }
@@ -309,6 +317,7 @@ class CounterViewModel(
 
     fun onSoloSushiTapped() {
         if (startupState.value != AppStartupState.ActiveGame) return
+        if (activeChefRandomEvent.value != null) return
         viewModelScope.launch {
             val playerId = gameRepository.gameState.first().players.firstOrNull()?.id ?: return@launch
             incrementCount(playerId)
@@ -334,6 +343,9 @@ class CounterViewModel(
                 achievementRepository.onAutomaticRouletteTriggered()
             } else {
                 feedbackEvent.value = CounterFeedbackEvent.SushiIncrement
+            }
+            result.chefAnimationEvent?.let { event ->
+                enqueueChefRandomEvent(event.animation)
             }
             val updatedState = gameRepository.gameState.first()
             achievementRepository.onSushiCountUpdated(updatedState.maxSushiInGame())
@@ -398,12 +410,14 @@ class CounterViewModel(
                             maxSushiInGame = maxSushiInGame,
                             totalSushiInGame = totalSushiInGame,
                         )
+                        clearChefRandomEvents()
                         showFinishGameDialog.value = false
                         finishGameSaveError.value = false
                         startupState.value = AppStartupState.NoActiveGame
                         chefCelebration.value = ChefCelebrationMoment.GameFinish
                     }
                     FinishGameResult.NoActiveGame -> {
+                        clearChefRandomEvents()
                         showFinishGameDialog.value = false
                         finishGameSaveError.value = false
                         startupState.value = AppStartupState.NoActiveGame
@@ -448,14 +462,49 @@ class CounterViewModel(
 
     fun onRouletteTriggerDismissed() {
         rouletteTriggerEvent.value = null
+        showNextChefRandomEventIfPossible()
     }
 
     fun onRouletteTriggerConfirmed() {
         rouletteTriggerEvent.value = null
+        showNextChefRandomEventIfPossible()
     }
 
     fun onChefCelebrationDismissed() {
         chefCelebration.value = null
+        showNextChefRandomEventIfPossible()
+    }
+
+    fun onChefRandomEventDismissed() {
+        activeChefRandomEvent.value = null
+        showNextChefRandomEventIfPossible()
+    }
+
+    private fun enqueueChefRandomEvent(animation: ChefEventAnimation) {
+        pendingChefRandomEvents.addLast(animation)
+        showNextChefRandomEventIfPossible()
+    }
+
+    private fun showNextChefRandomEventIfPossible() {
+        if (activeChefRandomEvent.value != null) return
+        if (!canShowChefRandomEvent()) return
+
+        val nextEvent = pendingChefRandomEvents.pollFirst() ?: return
+        activeChefRandomEvent.value = nextEvent
+    }
+
+    private fun canShowChefRandomEvent(): Boolean {
+        if (startupState.value != AppStartupState.ActiveGame) return false
+        if (chefCelebration.value != null) return false
+        if (rouletteTriggerEvent.value != null) return false
+        if (showFinishGameDialog.value) return false
+        if (playerResetRequest.value != null) return false
+        return true
+    }
+
+    private fun clearChefRandomEvents() {
+        pendingChefRandomEvents.clear()
+        activeChefRandomEvent.value = null
     }
 
     private fun emitRouletteTriggerIfNeeded(

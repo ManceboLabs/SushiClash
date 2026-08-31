@@ -1,6 +1,8 @@
 package com.mancebolabs.sushiclash.testutil
 
 import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
+import com.mancebolabs.sushiclash.domain.model.ChefAnimationEvent
+import com.mancebolabs.sushiclash.domain.model.ChefEventAnimation
 import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
@@ -24,6 +26,8 @@ object TestGameStates {
         triggerType: RandomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
         fixedThreshold: Int = 5,
         nextTarget: Int? = null,
+        nextChefTarget: Int? = null,
+        lastChefEventAnimation: ChefEventAnimation? = null,
     ): GameState {
         return GameState(
             hasActiveGame = true,
@@ -35,6 +39,8 @@ object TestGameStates {
                     name = "",
                     sushiCount = count,
                     nextRandomRouletteTarget = nextTarget,
+                    nextChefAnimationTarget = nextChefTarget,
+                    lastChefEventAnimation = lastChefEventAnimation,
                 ),
             ),
             randomRouletteEnabled = randomRouletteEnabled,
@@ -84,6 +90,7 @@ class FakeGameRepository(
     val finishGameWithoutSavingResults = mutableListOf<FinishGameResult>()
     var finishGameWithSavingGate: CompletableDeferred<Unit>? = null
     var finishGameWithSavingThrowable: Throwable? = null
+    val chefAnimationEvents = mutableListOf<ChefAnimationEvent?>()
 
     override suspend fun restoreGameState(): RestoreGameResult {
         restoreGameStateCallCount++
@@ -167,7 +174,12 @@ class FakeGameRepository(
             player.copy(sushiCount = newCount)
         }
         _gameState.value = current.copy(players = updatedPlayers)
-        return IncrementResult(newCount = newCount, shouldTriggerRoulette = shouldTrigger)
+        val chefAnimationEvent = chefAnimationEvents.removeFirstOrNull()
+        return IncrementResult(
+            newCount = newCount,
+            shouldTriggerRoulette = shouldTrigger,
+            chefAnimationEvent = chefAnimationEvent,
+        )
     }
 
     override suspend fun resetSoloCount() {

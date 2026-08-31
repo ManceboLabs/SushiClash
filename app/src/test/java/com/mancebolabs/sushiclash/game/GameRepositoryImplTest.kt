@@ -10,6 +10,9 @@ import com.mancebolabs.sushiclash.data.datastore.FinishGamePersistenceResult
 import com.mancebolabs.sushiclash.data.datastore.NoOpPersistenceLogger
 import com.mancebolabs.sushiclash.data.datastore.RestoreGamePersistenceResult
 import com.mancebolabs.sushiclash.data.repository.GameRepositoryImpl
+import com.mancebolabs.sushiclash.domain.model.ChefAnimationTriggerLogic
+import com.mancebolabs.sushiclash.domain.model.ChefEventAnimation
+import com.mancebolabs.sushiclash.domain.model.ChefEventAnimationSelector
 import com.mancebolabs.sushiclash.domain.model.CorruptGameHistoryException
 import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameMode
@@ -301,6 +304,86 @@ class GameRepositoryImplTest {
 
         assertTrue(result.shouldTriggerRoulette)
         assertEquals(12, gameStateFlow.value.players.first().nextRandomRouletteTarget)
+    }
+
+    @Test
+    fun givenSoloGameWithChefTarget_whenTargetReached_thenTriggersChefEventOnceAndAdvancesTarget() = runTest {
+        val chefRandom = FakeRandomProvider().apply { enqueue(3) }
+        val selectorRandom = FakeRandomProvider().apply { enqueue(1) }
+        repository = GameRepositoryImpl(
+            dataStore = dataStore,
+            chefAnimationTriggerLogic = ChefAnimationTriggerLogic(chefRandom),
+            chefEventAnimationSelector = ChefEventAnimationSelector(selectorRandom),
+            sessionIdProvider = { "session-created" },
+            clock = { 1_700_000_000_000L },
+        )
+        gameStateFlow.value = TestGameStates.soloActive(
+            count = 3,
+            nextChefTarget = 4,
+        )
+        persistPlayerUpdatesWithCooperativeYield()
+
+        val result = repository.incrementPlayerCount(AppPreferencesDataStore.SOLO_PLAYER_ID)
+
+        assertEquals(4, result.newCount)
+        assertEquals(ChefEventAnimation.GIANT_SUSHI, result.chefAnimationEvent?.animation)
+        assertEquals(7, gameStateFlow.value.players.first().nextChefAnimationTarget)
+        assertEquals(4, gameStateFlow.value.players.first().lastChefAnimationTrigger)
+    }
+
+    @Test
+    fun givenGroupGameWithIndependentChefTargets_whenOnePlayerReachesTarget_thenOthersAreUnaffected() = runTest {
+        val chefRandom = FakeRandomProvider().apply { enqueue(3) }
+        val selectorRandom = FakeRandomProvider().apply { enqueue(0) }
+        repository = GameRepositoryImpl(
+            dataStore = dataStore,
+            chefAnimationTriggerLogic = ChefAnimationTriggerLogic(chefRandom),
+            chefEventAnimationSelector = ChefEventAnimationSelector(selectorRandom),
+            sessionIdProvider = { "session-created" },
+            clock = { 1_700_000_000_000L },
+        )
+        gameStateFlow.value = TestGameStates.groupActive(
+            players = listOf(
+                Player(id = "p1", name = "Carlos", sushiCount = 3, nextChefAnimationTarget = 4),
+                Player(id = "p2", name = "Pablo", sushiCount = 4, nextChefAnimationTarget = 5),
+            ),
+        )
+        persistPlayerUpdatesWithCooperativeYield()
+
+        val result = repository.incrementPlayerCount("p1")
+
+        assertEquals(ChefEventAnimation.DEVOURING, result.chefAnimationEvent?.animation)
+        assertEquals(7, gameStateFlow.value.players.first { it.id == "p1" }.nextChefAnimationTarget)
+        assertEquals(5, gameStateFlow.value.players.first { it.id == "p2" }.nextChefAnimationTarget)
+        assertEquals(0, gameStateFlow.value.players.first { it.id == "p2" }.lastChefAnimationTrigger)
+    }
+
+    @Test
+    fun givenNewSoloGame_whenSetupCompleted_thenInitialChefTargetIsWithinBounds() = runTest {
+        val chefRandom = FakeRandomProvider().apply { enqueue(4) }
+        repository = GameRepositoryImpl(
+            dataStore = dataStore,
+            chefAnimationTriggerLogic = ChefAnimationTriggerLogic(chefRandom),
+            sessionIdProvider = { "session-created" },
+            clock = { 1_700_000_000_000L },
+        )
+        coEvery { dataStore.saveGameState(any(), any(), any(), any(), any(), any()) } just Runs
+        coEvery { dataStore.setParticipants(any()) } just Runs
+
+        repository.completeSetup(GameSetupConfig(gameMode = GameMode.SOLO))
+
+        val playersSlot = slot<List<Player>>()
+        coVerify {
+            dataStore.saveGameState(
+                sessionId = "session-created",
+                gameMode = GameMode.SOLO,
+                players = capture(playersSlot),
+                randomRouletteEnabled = false,
+                randomRouletteTriggerType = RandomRouletteTriggerType.FIXED,
+                randomRouletteFixedThreshold = GameState.DEFAULT_RANDOM_ROULETTE_THRESHOLD,
+            )
+        }
+        assertEquals(4, playersSlot.captured.first().nextChefAnimationTarget)
     }
 
     @Test

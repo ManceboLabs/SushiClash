@@ -620,6 +620,13 @@ class AppPreferencesDataStore(
                         put("nextRandomRouletteTarget", target)
                     }
                     put("lastRandomRouletteTrigger", player.lastRandomRouletteTrigger)
+                    player.nextChefAnimationTarget?.let { target ->
+                        put("nextChefAnimationTarget", target)
+                    }
+                    put("lastChefAnimationTrigger", player.lastChefAnimationTrigger)
+                    player.lastChefEventAnimation?.let { animation ->
+                        put("lastChefEventAnimation", animation.name)
+                    }
                 },
             )
         }
@@ -652,6 +659,31 @@ class AppPreferencesDataStore(
                                 item.getInt("lastRandomRouletteTrigger")
                             } else {
                                 0
+                            },
+                            nextChefAnimationTarget = if (
+                                item.has("nextChefAnimationTarget") &&
+                                !item.isNull("nextChefAnimationTarget")
+                            ) {
+                                item.getInt("nextChefAnimationTarget")
+                            } else {
+                                null
+                            },
+                            lastChefAnimationTrigger = if (item.has("lastChefAnimationTrigger")) {
+                                item.getInt("lastChefAnimationTrigger")
+                            } else {
+                                0
+                            },
+                            lastChefEventAnimation = if (
+                                item.has("lastChefEventAnimation") &&
+                                !item.isNull("lastChefEventAnimation")
+                            ) {
+                                runCatching {
+                                    com.mancebolabs.sushiclash.domain.model.ChefEventAnimation.valueOf(
+                                        item.getString("lastChefEventAnimation"),
+                                    )
+                                }.getOrNull()
+                            } else {
+                                null
                             },
                         ),
                     )

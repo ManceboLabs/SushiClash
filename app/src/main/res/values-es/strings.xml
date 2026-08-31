@@ -88,6 +88,13 @@
     <string name="game_start_celebration_content_description">Chef dando la bienvenida a una nueva partida</string>
     <string name="game_finish_speech">¡No puedo más…!</string>
     <string name="game_finish_celebration_content_description">Chef celebrando el final de una partida</string>
+    <string name="chef_event_devouring_content_description">Chef devorando sushi</string>
+    <string name="chef_event_giant_sushi_content_description">Chef con sushi gigante</string>
+    <string name="chef_event_coma_content_description">Chef en coma gastronómica</string>
+    <string name="chef_event_attack_content_description">Chef atacando sushi</string>
+    <string name="chef_event_spicy_content_description">Chef comiendo sushi picante</string>
+    <string name="chef_event_ninja_content_description">Chef ninja</string>
+    <string name="chef_event_monster_content_description">Chef convertido en monstruo</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">Finalizar partida</string>

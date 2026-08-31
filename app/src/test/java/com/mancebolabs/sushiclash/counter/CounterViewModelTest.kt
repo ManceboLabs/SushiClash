@@ -1,5 +1,6 @@
 package com.mancebolabs.sushiclash.counter
 
+import com.mancebolabs.sushiclash.domain.model.ChefAnimationEvent
 import com.mancebolabs.sushiclash.domain.model.FrequentPlayer
 import com.mancebolabs.sushiclash.domain.model.GameMode
 import com.mancebolabs.sushiclash.domain.model.FinishGameResult
@@ -7,6 +8,7 @@ import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.domain.model.RestoreGameResult
+import com.mancebolabs.sushiclash.domain.model.ChefEventAnimation
 import com.mancebolabs.sushiclash.feature.counter.AppStartupState
 import com.mancebolabs.sushiclash.feature.counter.ChefCelebrationMoment
 import com.mancebolabs.sushiclash.feature.counter.CounterViewModel
@@ -265,6 +267,164 @@ class CounterViewModelTest {
 
         assertTrue(viewModel.uiState.value.showFinishGameDialog)
         assertNull(viewModel.uiState.value.chefCelebration)
+    }
+
+    @Test
+    fun givenChefAnimationEvent_whenIncrementSucceeds_thenShowsRandomOverlay() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 3)).apply {
+            chefAnimationEvents += ChefAnimationEvent(ChefEventAnimation.NINJA)
+        }
+        val viewModel = CounterViewModel(
+            gameRepository,
+            FakeOnboardingRepository(),
+            FakeFeedbackSettingsRepository(),
+            FakeAchievementRepository(),
+            FakeFrequentPlayersRepository(),
+        )
+        advanceUntilIdle()
+
+        viewModel.onSoloSushiTapped()
+        advanceUntilIdle()
+
+        assertEquals(ChefEventAnimation.NINJA, viewModel.uiState.value.chefRandomEvent)
+    }
+
+    @Test
+    fun givenChefRandomOverlay_whenPlaybackCompletes_thenClearsWithoutReplaying() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 3)).apply {
+            chefAnimationEvents += ChefAnimationEvent(ChefEventAnimation.SPICY)
+        }
+        val viewModel = CounterViewModel(
+            gameRepository,
+            FakeOnboardingRepository(),
+            FakeFeedbackSettingsRepository(),
+            FakeAchievementRepository(),
+            FakeFrequentPlayersRepository(),
+        )
+        advanceUntilIdle()
+        viewModel.onSoloSushiTapped()
+        advanceUntilIdle()
+
+        viewModel.onChefRandomEventDismissed()
+
+        assertNull(viewModel.uiState.value.chefRandomEvent)
+        assertEquals(1, gameRepository.incrementPlayerCountCallCount)
+    }
+
+    @Test
+    fun givenChefRandomOverlayVisible_whenSoloTapped_thenDoesNotIncrementOrClearEvent() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 3)).apply {
+            chefAnimationEvents += ChefAnimationEvent(ChefEventAnimation.SPICY)
+        }
+        val viewModel = CounterViewModel(
+            gameRepository,
+            FakeOnboardingRepository(),
+            FakeFeedbackSettingsRepository(),
+            FakeAchievementRepository(),
+            FakeFrequentPlayersRepository(),
+        )
+        advanceUntilIdle()
+        viewModel.onSoloSushiTapped()
+        advanceUntilIdle()
+
+        assertEquals(ChefEventAnimation.SPICY, viewModel.uiState.value.chefRandomEvent)
+        val incrementsBefore = gameRepository.incrementPlayerCountCallCount
+
+        viewModel.onSoloSushiTapped()
+        advanceUntilIdle()
+
+        assertEquals(ChefEventAnimation.SPICY, viewModel.uiState.value.chefRandomEvent)
+        assertEquals(incrementsBefore, gameRepository.incrementPlayerCountCallCount)
+    }
+
+    @Test
+    fun givenChefRandomOverlayVisible_whenGroupPlayerTapped_thenDoesNotIncrementOrClearEvent() = runTest {
+        val players = listOf(
+            Player(id = "p1", name = "Carlos", sushiCount = 2),
+            Player(id = "p2", name = "Pablo", sushiCount = 0),
+        )
+        val gameRepository = FakeGameRepository(
+            TestGameStates.groupActive(players = players),
+        ).apply {
+            chefAnimationEvents += ChefAnimationEvent(ChefEventAnimation.ATTACK)
+        }
+        val viewModel = CounterViewModel(
+            gameRepository,
+            FakeOnboardingRepository(),
+            FakeFeedbackSettingsRepository(),
+            FakeAchievementRepository(),
+            FakeFrequentPlayersRepository(),
+        )
+        advanceUntilIdle()
+
+        viewModel.onPlayerSushiTapped("p1")
+        advanceUntilIdle()
+
+        assertEquals(ChefEventAnimation.ATTACK, viewModel.uiState.value.chefRandomEvent)
+        val incrementsBefore = gameRepository.incrementPlayerCountCallCount
+
+        viewModel.onPlayerSushiTapped("p1")
+        viewModel.onPlayerSushiTapped("p2")
+        advanceUntilIdle()
+
+        assertEquals(ChefEventAnimation.ATTACK, viewModel.uiState.value.chefRandomEvent)
+        assertEquals(incrementsBefore, gameRepository.incrementPlayerCountCallCount)
+    }
+
+    @Test
+    fun givenRouletteAndChefEventsOnSameIncrement_whenRouletteDismissed_thenShowsQueuedChefEvent() = runTest {
+        val gameRepository = FakeGameRepository(
+            TestGameStates.soloActive(
+                count = 4,
+                randomRouletteEnabled = true,
+                fixedThreshold = 5,
+            ),
+        ).apply {
+            chefAnimationEvents += ChefAnimationEvent(ChefEventAnimation.MONSTER)
+        }
+        val viewModel = CounterViewModel(
+            gameRepository,
+            FakeOnboardingRepository(),
+            FakeFeedbackSettingsRepository(),
+            FakeAchievementRepository(),
+            FakeFrequentPlayersRepository(),
+        )
+        advanceUntilIdle()
+
+        viewModel.onSoloSushiTapped()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.rouletteTriggerEvent is com.mancebolabs.sushiclash.feature.counter.RouletteTriggerEvent.Solo)
+        assertNull(viewModel.uiState.value.chefRandomEvent)
+
+        viewModel.onRouletteTriggerDismissed()
+        advanceUntilIdle()
+
+        assertEquals(ChefEventAnimation.MONSTER, viewModel.uiState.value.chefRandomEvent)
+    }
+
+    @Test
+    fun givenPendingChefEvent_whenGameFinishes_thenClearsRandomOverlayState() = runTest {
+        val gameRepository = FakeGameRepository(TestGameStates.soloActive(count = 3)).apply {
+            chefAnimationEvents += ChefAnimationEvent(ChefEventAnimation.ATTACK)
+        }
+        val viewModel = CounterViewModel(
+            gameRepository,
+            FakeOnboardingRepository(),
+            FakeFeedbackSettingsRepository(),
+            FakeAchievementRepository(),
+            FakeFrequentPlayersRepository(),
+        )
+        advanceUntilIdle()
+        viewModel.onSoloSushiTapped()
+        advanceUntilIdle()
+        assertEquals(ChefEventAnimation.ATTACK, viewModel.uiState.value.chefRandomEvent)
+
+        viewModel.onFinishGameWithSaving()
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.chefRandomEvent)
+        assertEquals(ChefCelebrationMoment.GameFinish, viewModel.uiState.value.chefCelebration)
     }
 
     @Test

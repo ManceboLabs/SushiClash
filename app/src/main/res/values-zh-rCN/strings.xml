@@ -88,6 +88,13 @@
     <string name="game_start_celebration_content_description">厨师欢迎新对局</string>
     <string name="game_finish_speech">我吃不下了……！</string>
     <string name="game_finish_celebration_content_description">厨师庆祝对局结束</string>
+    <string name="chef_event_devouring_content_description">厨师狂吃寿司</string>
+    <string name="chef_event_giant_sushi_content_description">厨师与巨型寿司</string>
+    <string name="chef_event_coma_content_description">厨师吃到昏迷</string>
+    <string name="chef_event_attack_content_description">厨师进攻寿司</string>
+    <string name="chef_event_spicy_content_description">厨师吃辣寿司</string>
+    <string name="chef_event_ninja_content_description">忍者厨师</string>
+    <string name="chef_event_monster_content_description">厨师变成怪物</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">结束对局</string>

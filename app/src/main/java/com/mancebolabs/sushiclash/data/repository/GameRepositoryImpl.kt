@@ -4,6 +4,9 @@ import com.mancebolabs.sushiclash.data.datastore.AppPreferencesDataStore
 import com.mancebolabs.sushiclash.data.datastore.DecodedGameState
 import com.mancebolabs.sushiclash.data.datastore.FinishGamePersistenceResult
 import com.mancebolabs.sushiclash.data.datastore.RestoreGamePersistenceResult
+import com.mancebolabs.sushiclash.domain.model.ChefAnimationEvent
+import com.mancebolabs.sushiclash.domain.model.ChefAnimationTriggerLogic
+import com.mancebolabs.sushiclash.domain.model.ChefEventAnimationSelector
 import com.mancebolabs.sushiclash.domain.model.CorruptGameHistoryException
 import com.mancebolabs.sushiclash.domain.model.FinishGameResult
 import com.mancebolabs.sushiclash.domain.model.GameMode
@@ -30,6 +33,8 @@ import kotlinx.coroutines.sync.withLock
 class GameRepositoryImpl(
     private val dataStore: AppPreferencesDataStore,
     private val randomRouletteLogic: RandomRouletteLogic = RandomRouletteLogic.Default,
+    private val chefAnimationTriggerLogic: ChefAnimationTriggerLogic = ChefAnimationTriggerLogic.Default,
+    private val chefEventAnimationSelector: ChefEventAnimationSelector = ChefEventAnimationSelector.Default,
     private val sessionIdProvider: () -> String = { UUID.randomUUID().toString() },
     private val clock: () -> Long = System::currentTimeMillis,
 ) : GameRepository {
@@ -147,8 +152,9 @@ class GameRepositoryImpl(
             // Mutex orders calls on this instance; DataStore.edit is the cross-instance read-modify-write.
             dataStore.incrementPlayerCount(playerId) { player, currentState ->
                 val newCount = player.sushiCount + 1
-                var shouldTrigger = false
+                var shouldTriggerRoulette = false
                 var updatedPlayer = player.copy(sushiCount = newCount)
+                var chefAnimationEvent: ChefAnimationEvent? = null
 
                 if (currentState.randomRouletteEnabled) {
                     when (currentState.randomRouletteTriggerType) {
@@ -157,13 +163,13 @@ class GameRepositoryImpl(
                                 GameState.MIN_RANDOM_ROULETTE_THRESHOLD,
                                 GameState.MAX_RANDOM_ROULETTE_THRESHOLD,
                             )
-                            shouldTrigger = randomRouletteLogic.shouldTriggerFixed(newCount, threshold)
+                            shouldTriggerRoulette = randomRouletteLogic.shouldTriggerFixed(newCount, threshold)
                         }
                         RandomRouletteTriggerType.RANDOM -> {
                             val target = player.nextRandomRouletteTarget
                                 ?: randomRouletteLogic.generateInitialTarget()
-                            shouldTrigger = randomRouletteLogic.shouldTriggerRandom(newCount, target)
-                            updatedPlayer = if (shouldTrigger) {
+                            shouldTriggerRoulette = randomRouletteLogic.shouldTriggerRandom(newCount, target)
+                            updatedPlayer = if (shouldTriggerRoulette) {
                                 updatedPlayer.copy(
                                     lastRandomRouletteTrigger = newCount,
                                     nextRandomRouletteTarget = randomRouletteLogic.generateNextTargetAfterTrigger(
@@ -177,9 +183,29 @@ class GameRepositoryImpl(
                     }
                 }
 
+                val chefTarget = chefAnimationTriggerLogic.resolveStoredTarget(updatedPlayer)
+                val shouldTriggerChefAnimation = chefAnimationTriggerLogic.shouldTrigger(
+                    count = newCount,
+                    target = chefTarget,
+                )
+                updatedPlayer = if (shouldTriggerChefAnimation) {
+                    val selectedAnimation = chefEventAnimationSelector.select(updatedPlayer.lastChefEventAnimation)
+                    chefAnimationEvent = ChefAnimationEvent(animation = selectedAnimation)
+                    updatedPlayer.copy(
+                        lastChefAnimationTrigger = newCount,
+                        nextChefAnimationTarget = chefAnimationTriggerLogic.generateNextTargetAfterTrigger(
+                            currentCount = newCount,
+                        ),
+                        lastChefEventAnimation = selectedAnimation,
+                    )
+                } else {
+                    updatedPlayer.copy(nextChefAnimationTarget = chefTarget)
+                }
+
                 updatedPlayer to IncrementResult(
                     newCount = newCount,
-                    shouldTriggerRoulette = shouldTrigger,
+                    shouldTriggerRoulette = shouldTriggerRoulette,
+                    chefAnimationEvent = chefAnimationEvent,
                 )
             }
         }
@@ -193,9 +219,11 @@ class GameRepositoryImpl(
             }
 
             val updatedPlayers = currentState.players.map { player ->
-                resetRandomRoulettePlayer(
-                    player = player.copy(sushiCount = 0),
-                    state = currentState,
+                resetChefAnimationPlayer(
+                    resetRandomRoulettePlayer(
+                        player = player.copy(sushiCount = 0),
+                        state = currentState,
+                    ),
                 )
             }
             dataStore.setPlayers(updatedPlayers)
@@ -211,9 +239,11 @@ class GameRepositoryImpl(
 
             val updatedPlayers = currentState.players.map { player ->
                 if (player.id == playerId) {
-                    resetRandomRoulettePlayer(
-                        player = player.copy(sushiCount = 0),
-                        state = currentState,
+                    resetChefAnimationPlayer(
+                        resetRandomRoulettePlayer(
+                            player = player.copy(sushiCount = 0),
+                            state = currentState,
+                        ),
                     )
                 } else {
                     player
@@ -241,6 +271,17 @@ class GameRepositoryImpl(
             } else {
                 null
             },
+            lastChefAnimationTrigger = 0,
+            nextChefAnimationTarget = chefAnimationTriggerLogic.generateInitialTarget(),
+            lastChefEventAnimation = null,
+        )
+    }
+
+    private fun resetChefAnimationPlayer(player: Player): Player {
+        return player.copy(
+            lastChefAnimationTrigger = 0,
+            nextChefAnimationTarget = chefAnimationTriggerLogic.generateInitialTarget(),
+            lastChefEventAnimation = null,
         )
     }
 

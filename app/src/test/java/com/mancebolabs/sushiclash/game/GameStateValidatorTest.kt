@@ -161,6 +161,40 @@ class GameStateValidatorTest {
         )
     }
 
+    @Test
+    fun givenLegacyActiveGameWithoutChefTargets_whenValidated_thenRemainsValid() {
+        val state = soloState(
+            count = 8,
+            players = listOf(
+                Player(
+                    id = GameStateValidator.SOLO_PLAYER_ID,
+                    name = "",
+                    sushiCount = 8,
+                ),
+            ),
+        )
+
+        assertTrue(GameStateValidator.isValid(state))
+    }
+
+    @Test
+    fun givenChefTargetAheadOfCount_whenValidated_thenRemainsValid() {
+        val state = soloState(
+            count = 4,
+            players = listOf(
+                Player(
+                    id = GameStateValidator.SOLO_PLAYER_ID,
+                    name = "",
+                    sushiCount = 4,
+                    nextChefAnimationTarget = 7,
+                    lastChefAnimationTrigger = 4,
+                ),
+            ),
+        )
+
+        assertTrue(GameStateValidator.isValid(state))
+    }
+
     private fun soloState(
         count: Int = 0,
         players: List<Player> = listOf(

@@ -37,7 +37,10 @@ object GameStateValidator {
     private fun hasValidProgress(player: Player): Boolean {
         return player.sushiCount >= 0 &&
             player.lastRandomRouletteTrigger >= 0 &&
-            player.lastRandomRouletteTrigger <= player.sushiCount
+            player.lastRandomRouletteTrigger <= player.sushiCount &&
+            player.lastChefAnimationTrigger >= 0 &&
+            player.lastChefAnimationTrigger <= player.sushiCount &&
+            hasValidChefAnimationTarget(player)
     }
 
     private fun hasValidRandomTarget(player: Player): Boolean {
@@ -51,6 +54,25 @@ object GameStateValidator {
         val lastTrigger = player.lastRandomRouletteTrigger.toLong()
         return targetAsLong in
             (lastTrigger + 1)..(lastTrigger + MAX_PROGRESSIVE_TARGET_OFFSET)
+    }
+
+    private fun hasValidChefAnimationTarget(player: Player): Boolean {
+        val target = player.nextChefAnimationTarget ?: return true
+        if (target <= player.sushiCount) return false
+        if (player.lastChefAnimationTrigger > player.sushiCount) return false
+
+        if (player.lastChefAnimationTrigger == 0) {
+            if (player.sushiCount == 0) {
+                return target in ChefAnimationTriggerLogic.MIN_INTERVAL..ChefAnimationTriggerLogic.MAX_INTERVAL
+            }
+            return target > player.sushiCount
+        }
+
+        val lastTrigger = player.lastChefAnimationTrigger.toLong()
+        return target.toLong() in
+            (lastTrigger + ChefAnimationTriggerLogic.MIN_INTERVAL)..(
+                lastTrigger + ChefAnimationTriggerLogic.MAX_INTERVAL
+                )
     }
 
     private const val MAX_PROGRESSIVE_TARGET_OFFSET = 11L

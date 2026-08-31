@@ -88,6 +88,13 @@
     <string name="game_start_celebration_content_description">新しい対局を迎えるシェフ</string>
     <string name="game_finish_speech">もう無理…！</string>
     <string name="game_finish_celebration_content_description">対局の終わりを祝うシェフ</string>
+    <string name="chef_event_devouring_content_description">寿司をむさぼるシェフ</string>
+    <string name="chef_event_giant_sushi_content_description">巨大寿司とシェフ</string>
+    <string name="chef_event_coma_content_description">食べ過ぎで倒れたシェフ</string>
+    <string name="chef_event_attack_content_description">寿司に襲いかかるシェフ</string>
+    <string name="chef_event_spicy_content_description">辛い寿司を食べるシェフ</string>
+    <string name="chef_event_ninja_content_description">忍者シェフ</string>
+    <string name="chef_event_monster_content_description">モンスターになったシェフ</string>
 
     <!-- Finish game -->
     <string name="finish_game_title">対局を終了</string>

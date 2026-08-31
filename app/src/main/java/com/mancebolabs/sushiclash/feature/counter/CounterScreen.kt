@@ -28,6 +28,7 @@ import com.mancebolabs.sushiclash.domain.model.GameSetupConfig
 import com.mancebolabs.sushiclash.domain.model.GameState
 import com.mancebolabs.sushiclash.domain.model.Player
 import com.mancebolabs.sushiclash.ui.components.ChefCharacterCelebrationOverlay
+import com.mancebolabs.sushiclash.ui.components.ChefRandomEventOverlay
 import com.mancebolabs.sushiclash.ui.components.ConfirmationDialog
 import com.mancebolabs.sushiclash.ui.components.FinishGameDialog
 import com.mancebolabs.sushiclash.ui.components.ItamaeCard
@@ -62,6 +63,7 @@ fun CounterScreen(
     onRouletteTriggerAccepted: () -> Unit,
     onRouletteTriggerDismissed: () -> Unit,
     onChefCelebrationDismissed: () -> Unit,
+    onChefRandomEventDismissed: () -> Unit,
     onPersistenceRetry: () -> Unit,
     onFeedbackConsumed: () -> Unit,
     modifier: Modifier = Modifier,
@@ -78,11 +80,6 @@ fun CounterScreen(
         onFinishGameCancelled = onFinishGameCancelled,
         onFinishGameWithoutSaving = onFinishGameWithoutSaving,
         onFinishGameWithSaving = onFinishGameWithSaving,
-    )
-
-    ChefCelebrationOverlay(
-        celebration = uiState.chefCelebration,
-        onDismiss = onChefCelebrationDismissed,
     )
 
     if (uiState.showSetupDialog) {
@@ -123,6 +120,20 @@ fun CounterScreen(
                 modifier = modifier,
             )
         }
+    }
+
+    // Start/finish celebrations use Dialog windows; random events use an in-tree overlay that
+    // must compose after the screen content or ActiveGameContent will draw on top of it.
+    ChefCelebrationOverlay(
+        celebration = uiState.chefCelebration,
+        onDismiss = onChefCelebrationDismissed,
+    )
+
+    uiState.chefRandomEvent?.let { animation ->
+        ChefRandomEventOverlay(
+            animation = animation,
+            onPlaybackComplete = onChefRandomEventDismissed,
+        )
     }
 }
 
@@ -417,6 +428,7 @@ private fun PreviewCounterScreen(uiState: CounterUiState) {
         onRouletteTriggerAccepted = {},
         onRouletteTriggerDismissed = {},
         onChefCelebrationDismissed = {},
+        onChefRandomEventDismissed = {},
         onPersistenceRetry = {},
         onFeedbackConsumed = {},
     )
