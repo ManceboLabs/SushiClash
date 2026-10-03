@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.TheaterComedy
 import androidx.compose.material.icons.outlined.Vibration
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -73,6 +74,7 @@ fun SettingsScreen(
     onAppLanguageRefreshRequested: () -> Unit,
     onSoundEnabledChanged: (Boolean) -> Unit,
     onVibrationEnabledChanged: (Boolean) -> Unit,
+    onRandomChefAnimationsEnabledChanged: (Boolean) -> Unit,
     onClearHistoryRequested: () -> Unit,
     onClearHistoryConfirmed: () -> Unit,
     onClearHistoryDismissed: () -> Unit,
@@ -203,6 +205,16 @@ fun SettingsScreen(
                 description = stringResource(R.string.settings_vibration_description),
                 checked = uiState.vibrationEnabled,
                 onCheckedChange = onVibrationEnabledChanged,
+            )
+
+            Spacer(modifier = Modifier.height(ItamaeSpacing.sm))
+
+            SettingsToggleRow(
+                icon = Icons.Outlined.TheaterComedy,
+                title = stringResource(R.string.settings_random_chef_animations_title),
+                description = stringResource(R.string.settings_random_chef_animations_description),
+                checked = uiState.randomChefAnimationsEnabled,
+                onCheckedChange = onRandomChefAnimationsEnabledChanged,
             )
         }
 
@@ -555,6 +567,7 @@ private fun SettingsLanguagePickerOpenPreview() {
             onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
+            onRandomChefAnimationsEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
@@ -594,6 +607,7 @@ private fun SettingsLightPreview() {
             onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
+            onRandomChefAnimationsEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
@@ -621,6 +635,7 @@ private fun SettingsDarkPreview() {
             onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
+            onRandomChefAnimationsEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
@@ -651,6 +666,7 @@ private fun SettingsClearHistoryDialogPreview() {
             onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
+            onRandomChefAnimationsEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
@@ -681,6 +697,7 @@ private fun SettingsPersistenceErrorLightPreview() {
             onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
+            onRandomChefAnimationsEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},
@@ -711,6 +728,7 @@ private fun SettingsPersistenceErrorDarkPreview() {
             onAppLanguageRefreshRequested = {},
             onSoundEnabledChanged = {},
             onVibrationEnabledChanged = {},
+            onRandomChefAnimationsEnabledChanged = {},
             onClearHistoryRequested = {},
             onClearHistoryConfirmed = {},
             onClearHistoryDismissed = {},

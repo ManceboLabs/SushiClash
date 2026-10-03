@@ -133,9 +133,100 @@ class CounterViewModelChefRandomIntegrationTest {
         assertEquals(5, harness.gameRepository.gameState.first().players.first { it.id == pablo.id }.nextChefAnimationTarget)
     }
 
+    @Test
+    fun givenRandomChefAnimationsDisabled_whenIncrementingThroughTarget_thenDoesNotEmitChefEventAndKeepsScheduling() =
+        runTest {
+            val chefRandom = FakeRandomProvider().apply {
+                enqueue(4)
+                enqueue(3)
+            }
+            val selectorRandom = FakeRandomProvider().apply { enqueue(0) }
+            val feedbackSettingsRepository = FakeFeedbackSettingsRepository(
+                randomChefAnimationsEnabled = false,
+            )
+            val harness = ChefRandomIntegrationHarness(
+                chefRandom = chefRandom,
+                selectorRandom = selectorRandom,
+                feedbackSettingsRepository = feedbackSettingsRepository,
+            )
+            val viewModel = harness.createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onSetupConfirmed(GameSetupConfig(gameMode = GameMode.SOLO))
+            advanceUntilIdle()
+            assertEquals(
+                com.mancebolabs.sushiclash.feature.counter.ChefCelebrationMoment.GameStart,
+                viewModel.uiState.value.chefCelebration,
+            )
+            viewModel.onChefCelebrationDismissed()
+            advanceUntilIdle()
+
+            val initialTarget = harness.gameRepository.gameState.first().players.first().nextChefAnimationTarget!!
+            repeat(initialTarget) {
+                viewModel.onSoloSushiTapped()
+                advanceUntilIdle()
+                assertNull(viewModel.uiState.value.chefRandomEvent)
+            }
+
+            assertEquals(
+                initialTarget + 3,
+                harness.gameRepository.gameState.first().players.first().nextChefAnimationTarget,
+            )
+        }
+
+    @Test
+    fun givenRandomChefAnimationsReEnabled_whenReachingNextTarget_thenEmitsChefEvent() = runTest {
+        val chefRandom = FakeRandomProvider().apply {
+            enqueue(3)
+            enqueue(3)
+        }
+        val selectorRandom = FakeRandomProvider().apply {
+            enqueue(0) // first silent trigger still selects DEVOURING in repository
+            enqueue(0) // after re-enable, next non-repeat candidate is GIANT_SUSHI
+        }
+        val feedbackSettingsRepository = FakeFeedbackSettingsRepository(
+            randomChefAnimationsEnabled = false,
+        )
+        val harness = ChefRandomIntegrationHarness(
+            chefRandom = chefRandom,
+            selectorRandom = selectorRandom,
+            feedbackSettingsRepository = feedbackSettingsRepository,
+        )
+        val viewModel = harness.createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onSetupConfirmed(GameSetupConfig(gameMode = GameMode.SOLO))
+        advanceUntilIdle()
+        viewModel.onChefCelebrationDismissed()
+        advanceUntilIdle()
+
+        // First target is 3; hits advance scheduling silently while the preference is off.
+        repeat(3) {
+            viewModel.onSoloSushiTapped()
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.chefRandomEvent)
+        }
+        assertEquals(6, harness.gameRepository.gameState.first().players.first().nextChefAnimationTarget)
+
+        feedbackSettingsRepository.setRandomChefAnimationsEnabled(true)
+        advanceUntilIdle()
+
+        repeat(2) {
+            viewModel.onSoloSushiTapped()
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.chefRandomEvent)
+        }
+
+        viewModel.onSoloSushiTapped()
+        advanceUntilIdle()
+
+        assertEquals(ChefEventAnimation.GIANT_SUSHI, viewModel.uiState.value.chefRandomEvent)
+    }
+
     private class ChefRandomIntegrationHarness(
         chefRandom: FakeRandomProvider,
         selectorRandom: FakeRandomProvider,
+        private val feedbackSettingsRepository: FakeFeedbackSettingsRepository = FakeFeedbackSettingsRepository(),
     ) {
         private val dataStore = mockk<AppPreferencesDataStore>(relaxed = true)
         private val gameStateFlow = MutableStateFlow(GameState())
@@ -194,7 +285,7 @@ class CounterViewModelChefRandomIntegrationTest {
             return CounterViewModel(
                 gameRepository,
                 FakeOnboardingRepository(completed = true),
-                FakeFeedbackSettingsRepository(),
+                feedbackSettingsRepository,
                 FakeAchievementRepository(),
                 FakeFrequentPlayersRepository(),
             )

@@ -360,6 +360,8 @@ private fun SushiCounterNavHost(
                         },
                         onSoundEnabledChanged = viewModel::onSoundEnabledChanged,
                         onVibrationEnabledChanged = viewModel::onVibrationEnabledChanged,
+                        onRandomChefAnimationsEnabledChanged =
+                            viewModel::onRandomChefAnimationsEnabledChanged,
                         onPersistenceRetry = viewModel::onPersistenceRetry,
                         appVersion = appVersion,
                     )

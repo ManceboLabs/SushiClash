@@ -12,11 +12,17 @@ class FeedbackSettingsRepositoryImpl(
 
     override val vibrationEnabled: Flow<Boolean> = dataStore.vibrationEnabled
 
+    override val randomChefAnimationsEnabled: Flow<Boolean> = dataStore.randomChefAnimationsEnabled
+
     override suspend fun setSoundEnabled(enabled: Boolean) {
         dataStore.setSoundEnabled(enabled)
     }
 
     override suspend fun setVibrationEnabled(enabled: Boolean) {
         dataStore.setVibrationEnabled(enabled)
+    }
+
+    override suspend fun setRandomChefAnimationsEnabled(enabled: Boolean) {
+        dataStore.setRandomChefAnimationsEnabled(enabled)
     }
 }

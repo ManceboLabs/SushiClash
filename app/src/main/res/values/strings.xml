@@ -47,6 +47,8 @@
     <string name="settings_sound_description">Plays a short sound when counting sushi and during special events.</string>
     <string name="settings_vibration_title">Vibration</string>
     <string name="settings_vibration_description">Vibrates when counting sushi and with a different pattern during automatic roulette.</string>
+    <string name="settings_random_chef_animations_title">Random animations</string>
+    <string name="settings_random_chef_animations_description">Show random chef animations while counting sushi.</string>
 
     <!-- Onboarding -->
     <string name="onboarding_skip">Skip</string>

@@ -7,7 +7,11 @@ interface FeedbackSettingsRepository {
 
     val vibrationEnabled: Flow<Boolean>
 
+    val randomChefAnimationsEnabled: Flow<Boolean>
+
     suspend fun setSoundEnabled(enabled: Boolean)
 
     suspend fun setVibrationEnabled(enabled: Boolean)
+
+    suspend fun setRandomChefAnimationsEnabled(enabled: Boolean)
 }

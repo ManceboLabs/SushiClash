@@ -224,6 +224,26 @@ class SettingsViewModelTest {
             val state = awaitItem()
             assertTrue(state.soundEnabled)
             assertTrue(state.vibrationEnabled)
+            assertTrue(state.randomChefAnimationsEnabled)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun givenRandomChefAnimationsDisabled_whenUpdating_thenStateReflectsChange() = runTest {
+        val feedbackSettingsRepository = FakeFeedbackSettingsRepository()
+        val viewModel = SettingsViewModel(
+            FakeThemeRepository(),
+            FakeLanguageRepository(),
+            FakeHistoryRepository(),
+            feedbackSettingsRepository,
+            FakeAchievementRepository(),
+        )
+
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.onRandomChefAnimationsEnabledChanged(false)
+            assertFalse(awaitItem().randomChefAnimationsEnabled)
             cancelAndIgnoreRemainingEvents()
         }
     }

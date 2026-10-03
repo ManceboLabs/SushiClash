@@ -47,6 +47,8 @@
     <string name="settings_sound_description">寿司をカウントしたり、特別なイベントが発生したりしたときに短い音を再生します。</string>
     <string name="settings_vibration_title">バイブレーション</string>
     <string name="settings_vibration_description">寿司をカウントしたときに振動し、自動ルーレットでは別のパターンで振動します。</string>
+    <string name="settings_random_chef_animations_title">ランダムアニメーション</string>
+    <string name="settings_random_chef_animations_description">寿司をカウントしている間、シェフのランダムアニメーションを表示します。</string>
 
     <!-- Onboarding -->
     <string name="onboarding_skip">スキップ</string>

@@ -98,6 +98,7 @@ class CounterViewModel(
     private val persistenceError = MutableStateFlow(false)
     private val isPersistenceRetrying = MutableStateFlow(false)
     private val feedbackEvent = MutableStateFlow<CounterFeedbackEvent?>(null)
+    private val randomChefAnimationsEnabled = MutableStateFlow(true)
     private var lastFailedPersistenceAction: LastFailedPersistenceAction? = null
 
     init {
@@ -105,6 +106,15 @@ class CounterViewModel(
         viewModelScope.launch {
             awaitOnboardingOrUnreadable()
             resolveStartupStateFromPersistence(clearErrorOnSuccess = false)
+        }
+        viewModelScope.launch {
+            feedbackSettingsRepository.randomChefAnimationsEnabled.collect { enabled ->
+                randomChefAnimationsEnabled.value = enabled
+                // Drop queued surprises when disabled; let any already-visible overlay finish.
+                if (!enabled) {
+                    pendingChefRandomEvents.clear()
+                }
+            }
         }
     }
 
@@ -482,6 +492,8 @@ class CounterViewModel(
     }
 
     private fun enqueueChefRandomEvent(animation: ChefEventAnimation) {
+        // Repository still advances trigger targets; only presentation is gated by preference.
+        if (!randomChefAnimationsEnabled.value) return
         pendingChefRandomEvents.addLast(animation)
         showNextChefRandomEventIfPossible()
     }
@@ -498,6 +510,7 @@ class CounterViewModel(
     }
 
     private fun canShowChefRandomEvent(): Boolean {
+        if (!randomChefAnimationsEnabled.value) return false
         if (startupState.value != AppStartupState.ActiveGame) return false
         if (chefCelebration.value != null) return false
         if (rouletteTriggerEvent.value != null) return false

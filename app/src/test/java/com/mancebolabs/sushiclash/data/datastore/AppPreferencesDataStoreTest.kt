@@ -77,6 +77,7 @@ class AppPreferencesDataStoreTest {
         try {
             assertTrue(store.soundEnabled.first())
             assertTrue(store.vibrationEnabled.first())
+            assertTrue(store.randomChefAnimationsEnabled.first())
             assertEquals(
                 PersistenceReadState.Missing,
                 store.soundEnabledState.first(),
@@ -84,6 +85,10 @@ class AppPreferencesDataStoreTest {
             assertEquals(
                 PersistenceReadState.Missing,
                 store.vibrationEnabledState.first(),
+            )
+            assertEquals(
+                PersistenceReadState.Missing,
+                store.randomChefAnimationsEnabledState.first(),
             )
         } finally {
             dataStoreJob.cancel()
@@ -101,9 +106,11 @@ class AppPreferencesDataStoreTest {
         try {
             store.setSoundEnabled(false)
             store.setVibrationEnabled(false)
+            store.setRandomChefAnimationsEnabled(false)
 
             assertFalse(store.soundEnabled.first())
             assertFalse(store.vibrationEnabled.first())
+            assertFalse(store.randomChefAnimationsEnabled.first())
             assertEquals(
                 PersistenceReadState.Data(false),
                 store.soundEnabledState.first(),
@@ -111,6 +118,10 @@ class AppPreferencesDataStoreTest {
             assertEquals(
                 PersistenceReadState.Data(false),
                 store.vibrationEnabledState.first(),
+            )
+            assertEquals(
+                PersistenceReadState.Data(false),
+                store.randomChefAnimationsEnabledState.first(),
             )
         } finally {
             dataStoreJob.cancel()
@@ -128,6 +139,10 @@ class AppPreferencesDataStoreTest {
         try {
             assertEquals(FeedbackSettingsDefaults.SOUND_ENABLED, store.soundEnabled.first())
             assertEquals(FeedbackSettingsDefaults.VIBRATION_ENABLED, store.vibrationEnabled.first())
+            assertEquals(
+                FeedbackSettingsDefaults.RANDOM_CHEF_ANIMATIONS_ENABLED,
+                store.randomChefAnimationsEnabled.first(),
+            )
         } finally {
             dataStoreJob.cancel()
         }

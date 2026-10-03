@@ -47,6 +47,8 @@
     <string name="settings_sound_description">在计数寿司和特殊事件时播放短音效。</string>
     <string name="settings_vibration_title">振动</string>
     <string name="settings_vibration_description">在计数寿司时振动，自动转盘时使用不同的振动模式。</string>
+    <string name="settings_random_chef_animations_title">随机动画</string>
+    <string name="settings_random_chef_animations_description">在计数寿司时显示随机的厨师动画。</string>
 
     <!-- Onboarding -->
     <string name="onboarding_skip">跳过</string>

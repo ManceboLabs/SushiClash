@@ -25,6 +25,7 @@ data class SettingsUiState(
     val showLanguagePickerDialog: Boolean = false,
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
+    val randomChefAnimationsEnabled: Boolean = true,
     val showClearHistoryDialog: Boolean = false,
     val showClearAchievementsDialog: Boolean = false,
     val persistenceError: Boolean = false,
@@ -54,6 +55,7 @@ class SettingsViewModel(
         combine(
             feedbackSettingsRepository.soundEnabled,
             feedbackSettingsRepository.vibrationEnabled,
+            feedbackSettingsRepository.randomChefAnimationsEnabled,
             combine(
                 showClearHistoryDialog,
                 showClearAchievementsDialog,
@@ -67,10 +69,11 @@ class SettingsViewModel(
                     isPersistenceRetrying = isRetrying,
                 )
             },
-        ) { soundEnabled, vibrationEnabled, persistence ->
+        ) { soundEnabled, vibrationEnabled, randomChefAnimationsEnabled, persistence ->
             SettingsPreferencesUiState(
                 soundEnabled = soundEnabled,
                 vibrationEnabled = vibrationEnabled,
+                randomChefAnimationsEnabled = randomChefAnimationsEnabled,
                 persistence = persistence,
             )
         },
@@ -81,6 +84,7 @@ class SettingsViewModel(
             showLanguagePickerDialog = languageDialogVisible,
             soundEnabled = preferences.soundEnabled,
             vibrationEnabled = preferences.vibrationEnabled,
+            randomChefAnimationsEnabled = preferences.randomChefAnimationsEnabled,
             showClearHistoryDialog = preferences.persistence.showClearHistoryDialog,
             showClearAchievementsDialog = preferences.persistence.showClearAchievementsDialog,
             persistenceError = preferences.persistence.persistenceError,
@@ -131,6 +135,12 @@ class SettingsViewModel(
         }
     }
 
+    fun onRandomChefAnimationsEnabledChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            persistRandomChefAnimationsEnabled(enabled)
+        }
+    }
+
     fun onClearHistoryRequested() {
         showClearHistoryDialog.value = true
     }
@@ -168,6 +178,8 @@ class SettingsViewModel(
                     is PendingSettingsWrite.Theme -> persistThemeMode(pending.themeMode)
                     is PendingSettingsWrite.Sound -> persistSoundEnabled(pending.enabled)
                     is PendingSettingsWrite.Vibration -> persistVibrationEnabled(pending.enabled)
+                    is PendingSettingsWrite.RandomChefAnimations ->
+                        persistRandomChefAnimationsEnabled(pending.enabled)
                     PendingSettingsWrite.ClearHistory -> persistClearHistory()
                     PendingSettingsWrite.ClearAchievements -> persistClearAchievements()
                 }
@@ -244,6 +256,19 @@ class SettingsViewModel(
         }
     }
 
+    private suspend fun persistRandomChefAnimationsEnabled(enabled: Boolean) {
+        try {
+            feedbackSettingsRepository.setRandomChefAnimationsEnabled(enabled)
+            pendingSettingsWrite = null
+            persistenceError.value = false
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: IOException) {
+            pendingSettingsWrite = PendingSettingsWrite.RandomChefAnimations(enabled)
+            persistenceError.value = true
+        }
+    }
+
     companion object {
         fun factory(
             themeRepository: ThemeRepository,
@@ -272,6 +297,7 @@ private sealed interface PendingSettingsWrite {
     data class Theme(val themeMode: AppThemeMode) : PendingSettingsWrite
     data class Sound(val enabled: Boolean) : PendingSettingsWrite
     data class Vibration(val enabled: Boolean) : PendingSettingsWrite
+    data class RandomChefAnimations(val enabled: Boolean) : PendingSettingsWrite
     data object ClearHistory : PendingSettingsWrite
     data object ClearAchievements : PendingSettingsWrite
 }
@@ -279,6 +305,7 @@ private sealed interface PendingSettingsWrite {
 private data class SettingsPreferencesUiState(
     val soundEnabled: Boolean,
     val vibrationEnabled: Boolean,
+    val randomChefAnimationsEnabled: Boolean,
     val persistence: SettingsPersistenceUiState,
 )
 

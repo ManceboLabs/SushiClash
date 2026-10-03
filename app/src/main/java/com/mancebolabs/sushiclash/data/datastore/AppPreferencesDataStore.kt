@@ -315,6 +315,25 @@ class AppPreferencesDataStore(
         }
     }
 
+    internal val randomChefAnimationsEnabledState: Flow<PersistenceReadState<Boolean>> = dataStore.data
+        .mapWithPersistenceReadState(
+            logger = logger,
+            operation = "readRandomChefAnimationsEnabled",
+        ) { preferences ->
+            val stored = preferences[RANDOM_CHEF_ANIMATIONS_ENABLED_KEY]
+                ?: return@mapWithPersistenceReadState PersistenceReadState.Missing
+            PersistenceReadState.Data(stored)
+        }
+
+    val randomChefAnimationsEnabled: Flow<Boolean> = randomChefAnimationsEnabledState.map { state ->
+        when (state) {
+            is PersistenceReadState.Data -> state.value
+            PersistenceReadState.Missing,
+            PersistenceReadState.Corrupted,
+            PersistenceReadState.Unavailable -> FeedbackSettingsDefaults.RANDOM_CHEF_ANIMATIONS_ENABLED
+        }
+    }
+
     suspend fun setSoundEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[SOUND_ENABLED_KEY] = enabled
@@ -324,6 +343,12 @@ class AppPreferencesDataStore(
     suspend fun setVibrationEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[VIBRATION_ENABLED_KEY] = enabled
+        }
+    }
+
+    suspend fun setRandomChefAnimationsEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[RANDOM_CHEF_ANIMATIONS_ENABLED_KEY] = enabled
         }
     }
 
@@ -802,6 +827,8 @@ class AppPreferencesDataStore(
         internal val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         internal val SOUND_ENABLED_KEY = booleanPreferencesKey("sound_enabled")
         internal val VIBRATION_ENABLED_KEY = booleanPreferencesKey("vibration_enabled")
+        internal val RANDOM_CHEF_ANIMATIONS_ENABLED_KEY =
+            booleanPreferencesKey("random_chef_animations_enabled")
         internal val ACHIEVEMENT_STATE_KEY = stringPreferencesKey("achievement_state")
         const val SOLO_PLAYER_ID = GameStateValidator.SOLO_PLAYER_ID
         const val MAX_GROUP_PLAYERS = GameSetupRules.MAX_GROUP_PLAYERS
