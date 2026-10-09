@@ -537,6 +537,19 @@ fun SushiClashComposeTestRule.waitForAchievementBanner(timeoutMillis: Long = 15_
     }
 }
 
+/**
+ * Waits until no achievement-unlock banner nodes remain.
+ *
+ * Banner display is ~3000ms plus ~300ms exit animation; use timeout >= 5000ms.
+ */
+fun SushiClashComposeTestRule.waitUntilAchievementBannerGone(timeoutMillis: Long = 5_000L) {
+    waitUntil(timeoutMillis) {
+        onAllNodesWithText(string(R.string.achievement_unlocked_banner), useUnmergedTree = true)
+            .fetchSemanticsNodes(atLeastOneRootRequired = false)
+            .isEmpty()
+    }
+}
+
 fun SushiClashComposeTestRule.configureChefRandomTriggerAt(target: Int) {
     configureAppContainerAndRelaunch {
         chefRandomProvider = FakeRandomProvider().apply {

@@ -1,54 +1,101 @@
-# Sushi Clash
+# 🍣 Sushi Clash
 
-A native Android sushi counter for solo play or group nights out. Built with Jetpack Compose by [Mancebo Labs](https://github.com/ManceboLabs).
+**Count sushi. Compete with friends. Let the chef spice up the table.**
 
-Count sushi pieces, spin the roulette, track history, and unlock achievements — all on device, with no account required.
+Sushi Clash is a native Android app for tracking sushi eaten alone or with friends — turning a simple count into a playful, game-like session with a chef mascot, a decision roulette, achievements, and history.
+
+Built with **Kotlin** and **Jetpack Compose** by [Mancebo Labs](https://github.com/ManceboLabs).
+
+<p align="center">
+  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" alt="Sushi Clash app icon" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Android-API%2024%2B-3DDC84?logo=android&logoColor=white" alt="Android API 24+" />
+  <img src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin" />
+  <img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
+  <img src="https://img.shields.io/badge/Version-1.0-FF7F50" alt="Version 1.0" />
+</p>
+
+---
+
+## About Sushi Clash
+
+Sushi nights are fun — remembering who ate what is usually not. Sushi Clash keeps the count for you and adds just enough game energy to keep the table engaged.
+
+Play Solo when you want a personal tally, or Group when the phone sits in the middle of the table. Between taps, a custom chef mascot reacts, a roulette can settle who goes next, and finished sessions land in local history with unlockable achievements.
+
+Everything runs on the device. No account. No feed. No cloud gameplay.
 
 ---
 
 ## Features
 
-- **Solo and Group modes** — one counter for yourself, or up to six named players around the table
-- **Tap-to-count sushi buttons** — long-press to reset an individual counter during a game
-- **Roulette wheel** — pick a random participant; add or remove names while a group game is active
-- **Random roulette triggers** — optional automatic spins on a fixed threshold or progressive random target
-- **Game history** — saved solo and group results with rankings
-- **Achievements** — 35 unlockable goals based on gameplay, sushi totals, and roulette use
-- **Frequent players** — quick name suggestions when starting a new group game
-- **Onboarding tutorial** — first-launch walkthrough, replayable from Settings
-- **Appearance and feedback** — light/dark theme, sound and haptic feedback toggles
-- **App language** — per-app locale override or follow the system language
-- **Floating bottom navigation** — Counter, History, Achievements, and Settings
+### Gameplay
+- **Solo mode** — tap the sushi to count every piece you eat; long-press to reset
+- **Group mode** — up to **6** named players with independent counters
+- **Active game persistence** — leave the app mid-session and return where you left off
+- **Finish flow** — save to history or discard the result
+
+### Roulette
+- **Decision wheel** — add participants and spin to pick a winner
+- **Automatic triggers** — optional fixed-threshold or progressive random triggers during counting
+- **Winner celebration** — chef animation when the wheel settles
+
+### Chef mascot & personality
+- **Onboarding guide** — comic-style dialogue with animated chef GIFs
+- **Game start / finish celebrations**
+- **Random chef events while counting** — surprise animations with independent per-player scheduling in Group mode
+- **Settings toggle** — disable random counting animations without turning off start, finish, roulette, or onboarding celebrations
+
+### Progress & memory
+- **35 achievements** — sushi peaks, lifetime totals, games completed, and roulette milestones
+- **History & rankings** — saved Solo and Group results
+- **Frequent players** — name suggestions for the next Group game
+
+### App experience
+- **Onboarding tutorial** — first launch, replayable from Settings
+- **Floating bottom navigation** — Counter, Roulette, History, Settings
+- **Light / dark theme**
+- **Sound and vibration** toggles
+- **6 languages** with per-app locale or follow the system language
+- **Local-first / offline** — no login, ads, or analytics SDKs
+
+---
+
+## Chef mascot
+
+Sushi Clash has an original pixel-art chef who shows up throughout the experience:
+
+| Moment | Role |
+|--------|------|
+| Onboarding | Walks you through Solo, Group, roulette, history, and responsible use |
+| Game start | Welcomes a new session |
+| While counting | Random surprise events (optional in Settings) |
+| Roulette winner | Celebrates the spin result |
+| Game finish | Closes the session |
+
+The mascot gives the app a small arcade personality without getting in the way of a fast tap-to-count flow.
+
+> Animated chef assets live under `app/src/main/res/raw/` as GIFs used by the in-app renderer. They are not duplicated here for GitHub preview.
 
 ---
 
 ## Screenshots
 
-Screenshots are not included yet. When ready, add PNG files under `docs/screenshots/` using the names below, then uncomment the gallery in this section.
-
-| File | Suggested capture |
-|------|-------------------|
-| `docs/screenshots/counter-solo.png` | Solo counter during an active game |
-| `docs/screenshots/counter-group.png` | Group layout with multiple players |
-| `docs/screenshots/roulette.png` | Roulette wheel screen |
-| `docs/screenshots/history.png` | History rankings |
-| `docs/screenshots/achievements.png` | Achievements list |
-| `docs/screenshots/settings.png` | Settings screen (theme / language) |
-
-<!--
-Gallery (uncomment after adding the PNG files above):
-
 <p align="center">
-  <img src="docs/screenshots/counter-solo.png" width="200" alt="Solo counter" />
-  <img src="docs/screenshots/counter-group.png" width="200" alt="Group counter" />
-  <img src="docs/screenshots/roulette.png" width="200" alt="Roulette" />
+  <img src="docs/screenshots/en/01_onboarding.png" width="180" alt="Onboarding welcome with chef mascot and tutorial intro" />
+  <img src="docs/screenshots/en/02_solo.png" width="180" alt="Solo mode sushi counter during an active game" />
+  <img src="docs/screenshots/en/03_group.png" width="180" alt="Group mode with multiple player counters" />
+  <img src="docs/screenshots/en/04_roulette.png" width="180" alt="Roulette wheel ready to spin" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/history.png" width="200" alt="History" />
-  <img src="docs/screenshots/achievements.png" width="200" alt="Achievements" />
-  <img src="docs/screenshots/settings.png" width="200" alt="Settings" />
+  <img src="docs/screenshots/en/05_achievements.png" width="180" alt="Achievements list with unlock progress" />
+  <img src="docs/screenshots/en/06_history.png" width="180" alt="History rankings for saved Solo and Group games" />
+  <img src="docs/screenshots/en/07_settings.png" width="180" alt="Settings for theme, language, and preferences" />
 </p>
--->
+
+Additional locales and regeneration steps are under [`docs/screenshots/`](docs/screenshots/).
 
 ---
 
@@ -57,50 +104,84 @@ Gallery (uncomment after adding the PNG files above):
 | Area | Choices |
 |------|---------|
 | Language | Kotlin |
-| UI | Jetpack Compose, Material 3 |
-| Architecture | Unidirectional data flow with ViewModels and repository interfaces |
+| UI | Jetpack Compose, Material 3, custom **Itamae** design tokens |
+| Architecture | Feature UI → ViewModels / UI state → domain rules → DataStore repositories |
 | Async / state | Kotlin Coroutines, `StateFlow` |
 | Navigation | Navigation Compose |
-| Persistence | Preferences DataStore |
-| Testing | JUnit, MockK, Turbine, Compose UI tests |
-| Build | Android Gradle Plugin 9, Gradle 9, R8 on release |
-| Min / target SDK | 24 / 37 |
+| Persistence | Preferences DataStore (+ AppCompat per-app locales) |
+| Randomness | `RandomProvider` abstraction for deterministic tests |
+| Testing | JUnit, MockK, Turbine, Compose UI tests, AndroidX Test Orchestrator |
+| Build | Android Gradle Plugin 9, Gradle 9, R8 minify + resource shrink on release |
+| Min / target SDK | **24 / 37** |
 
 ---
 
 ## Architecture
 
-The codebase is organized by responsibility:
+```mermaid
+flowchart LR
+  UI[Compose UI] --> VM[ViewModels / UI state]
+  VM --> Domain[Domain logic]
+  VM --> Repo[Repository interfaces]
+  Repo --> Data[DataStore implementations]
+  Domain --> Repo
+  DI[AppContainer] --> Repo
+  DI --> VM
+```
 
-- **`feature/`** — Compose screens, UI state, and ViewModels
-- **`domain/`** — models, business rules, and repository contracts
-- **`data/`** — DataStore access and repository implementations
-- **`navigation/`** — app navigation graph and routes
-- **`ui/`** — shared theme, spacing, and reusable components
-- **`di/`** — manual dependency wiring via `AppContainer`
+Package layout under `app/src/main/java/com/mancebolabs/sushiclash/`:
 
-Game rules, validation, roulette logic, and achievement evaluation live in the domain layer. Composables focus on rendering state and forwarding user actions.
+| Package | Responsibility |
+|---------|----------------|
+| `feature/` | Screens, ViewModels, feature UI state |
+| `domain/` | Models, rules (setup, roulette, chef triggers, achievements), repository contracts |
+| `data/` | DataStore access and repository implementations |
+| `navigation/` | Routes, NavHost, main-tab transitions |
+| `ui/` | Theme (Itamae), shared components, chef GIF renderer |
+| `di/` | Manual wiring via `AppContainer` |
 
-### Persistence
-
-All user data is stored locally:
-
-- A single **Preferences DataStore** file holds active game state, history, achievements, frequent players, and settings
-- **AppCompat per-app locales** store the language override
-- Complex structures (players, history, achievements) are serialized as JSON inside DataStore preferences
-- **Android backup** is enabled with explicit include rules; an install marker excludes stale in-progress games after restore
-
-There are no backend services, accounts, or analytics SDKs.
+Composables render state and emit actions. Business rules stay out of UI code. Random chef intervals and wheel outcomes go through `RandomProvider` so unit and instrumented tests can stay deterministic.
 
 ---
 
-## Testing and CI
+## Local-first & privacy
 
-| Layer | Coverage |
-|-------|----------|
-| Unit tests | 255 tests — ViewModels, repositories, persistence, domain logic |
-| Instrumented tests | 7 smoke tests — onboarding, counter/finish flow, settings, history (API 24+, run locally with an emulator) |
-| CI | GitHub Actions on `main` and pull requests — unit tests, lint, debug build |
+- Gameplay data stays **on the device** (active game, history, player names, achievements, settings)
+- **No** Mancebo Labs backend, accounts, ads, or analytics SDKs
+- **No** runtime permissions declared in the manifest
+- Android backup is enabled with explicit include rules; a restore marker avoids reviving stale in-progress games
+
+Policy and Play Console notes in this repository:
+
+- [Privacy Policy (source)](docs/privacy-policy/index.md)
+- [Published Privacy Policy](https://mancebolabs.github.io/SushiClash/privacy-policy/)
+- [Play Data Safety checklist](docs/PLAY_DATA_SAFETY.md)
+
+---
+
+## Localization
+
+| Language | Role |
+|----------|------|
+| English | Base / fallback |
+| Spanish | `values-es` |
+| German | `values-de` |
+| French | `values-fr` |
+| Simplified Chinese | `values-zh-rCN` |
+| Japanese | `values-ja` |
+
+Per-app language selection (or follow the system) via AppCompat locales and `locales_config.xml`.
+
+---
+
+## Testing & quality
+
+Current suite (counted from `@Test` methods in the repository):
+
+| Layer | Count | Focus |
+|-------|------:|-------|
+| Unit | **316** | ViewModels, repositories, DataStore, setup rules, roulette, chef triggers, achievements, history, onboarding, settings, localization |
+| Instrumented | **43** | Onboarding, Solo/Group flows, chef celebrations & random events, roulette, history, achievements, settings smoke, lifecycle, GIF reload |
 
 ```bash
 ./gradlew testDebugUnitTest
@@ -108,85 +189,72 @@ There are no backend services, accounts, or analytics SDKs.
 ./gradlew assembleDebug
 ```
 
-Instrumented tests (device or emulator required):
+Instrumented (device or emulator required):
 
 ```bash
 ./gradlew connectedDebugAndroidTest
 ```
 
----
-
-## Supported languages
-
-English, Spanish, German, French, Simplified Chinese, and Japanese.
-
-Strings live under `app/src/main/res/values*` with per-app locale support via `locales_config.xml`.
+**CI** (GitHub Actions on `main` and pull requests): unit tests, lint, and debug build. Release builds use R8; upload signing is configured locally via `keystore.properties` (see `keystore.properties.example`) — secrets are not in the repository.
 
 ---
 
-## Privacy
+## Building
 
-Gameplay data (history, player names, achievements, and settings) is stored **on your device only**. Mancebo Labs does not collect or operate servers for this app.
+**Requirements**
 
-Optional Android backup may copy allowed app data to your Google or device backup, managed by the operating system.
-
-Full details: [Privacy Policy](https://mancebolabs.github.io/SushiClash/privacy-policy/)
-
----
-
-## Requirements
-
-- **JDK 17** (matches CI)
-- **Android SDK** with API 37 platform and Build Tools 36.0.0
-- Android Studio or compatible IDE recommended
-
----
-
-## Build
-
-Clone the repository, then from the project root:
+- JDK **17** (matches CI)
+- Android SDK with API **37** platform
+- Android Studio or a compatible IDE recommended
 
 ```bash
+git clone https://github.com/ManceboLabs/SushiClash.git
+cd SushiClash
 ./gradlew assembleDebug
+./gradlew installDebug   # optional, connected device/emulator
 ```
 
-Install the debug APK on a connected device or emulator:
-
-```bash
-./gradlew installDebug
-```
-
-Release builds use R8 minification and require upload signing configuration. See `keystore.properties.example` for the expected local layout — credentials are not part of the repository.
+Release artifacts (`assembleRelease` / `bundleRelease`) require a local upload keystore. Copy `keystore.properties.example` to `keystore.properties` and fill in the values — never commit that file.
 
 ---
 
 ## Project status
 
-**Version 1.0** — actively maintained portfolio project preparing for Google Play release.
+**Sushi Clash 1.0** — finished core product and portfolio project, preparing for Google Play.
 
 | Item | Status |
 |------|--------|
-| Core gameplay | Complete |
+| Core gameplay (Solo / Group / roulette / chef) | Complete |
+| Achievements, history, onboarding | Complete |
 | Localization (6 languages) | Complete |
-| Unit and instrumented tests | Complete |
+| Unit + instrumented regression suite | Complete |
 | CI (unit tests, lint, debug build) | Complete |
-| Release signing and R8 | Configured locally |
-| Play Store listing | In progress |
+| Release signing + R8 | Configured locally |
+| Google Play listing | In progress |
 
----
-
-## License
-
-Copyright © 2026 Mancebo Labs. All rights reserved.
-
-This repository is publicly available for portfolio and educational viewing purposes only.
-
-No permission is granted to copy, modify, distribute, sublicense, or use this source code in other projects without prior written permission from the copyright holder.
+<!-- When the Play Store page is live, add:
+[![Get it on Google Play](https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png)](PLAY_STORE_URL)
+-->
 
 ---
 
 ## Related documentation
 
-- [Privacy Policy (source)](PRIVACY_POLICY.md)
+- [Agent & contribution guidelines](AGENTS.md)
+- [Development notes](DEVELOPMENT_NOTES.md)
 - [Play Data Safety checklist](docs/PLAY_DATA_SAFETY.md)
-- [Agent and contribution guidelines](AGENTS.md)
+- [Privacy Policy (source)](docs/privacy-policy/index.md)
+
+---
+
+## Mancebo Labs
+
+Sushi Clash is developed and maintained by **[Mancebo Labs](https://github.com/ManceboLabs)**.
+
+---
+
+© 2026 Mancebo Labs. All rights reserved.
+
+This repository is publicly available for portfolio and educational viewing.
+
+No permission is granted to copy, modify, distribute, sublicense, or use this source code in other projects without prior written permission from the copyright holder.

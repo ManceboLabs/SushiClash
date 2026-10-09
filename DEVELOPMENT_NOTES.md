@@ -39,6 +39,10 @@ First-launch onboarding is handled as a dedicated `onboarding/FIRST_LAUNCH` navi
 
 Finishing a game opens a confirmation dialog first. The active game stays in persistence until the user chooses Guardar or No guardar, so Cancel and unexpected app closure do not lose in-progress counters. The finish dialog itself is not restored on relaunch.
 
+## Screenshots
+
+Store/README screenshot generation: see [docs/screenshots/README.md](docs/screenshots/README.md).
+
 ## Compose Previews
 
 - Keep `@Preview` functions at the bottom of the same file as the Composable they showcase.
